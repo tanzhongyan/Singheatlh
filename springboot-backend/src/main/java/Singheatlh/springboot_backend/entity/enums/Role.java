@@ -1,4 +1,8 @@
 package Singheatlh.springboot_backend.entity.enums;
 
-public class Role {
+public enum Role {
+    ROLE_PATIENT,
+    ROLE_STAFF,
+    ROLE_ADMIN
+
 }

@@ -1,4 +1,4 @@
 package Singheatlh.springboot_backend.entity.enums;
 
-public class AppointmentStatus {
+public enum AppointmentStatus {
 }

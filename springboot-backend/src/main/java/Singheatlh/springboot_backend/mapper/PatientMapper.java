@@ -1,4 +1,4 @@
 package Singheatlh.springboot_backend.mapper;
 
-public class Patient {
+public class PatientMapper {
 }
