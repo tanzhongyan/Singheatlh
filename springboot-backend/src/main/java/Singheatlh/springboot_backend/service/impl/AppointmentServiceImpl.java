@@ -32,7 +32,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     
     @Override
     public AppointmentDto createAppointment(CreateAppointmentRequest request) {
-        // Basic validation
+
         if (request.getPatientId() == null || request.getDoctorId() == null || 
             request.getClinicId() == null || request.getAppointmentDatetime() == null) {
             throw new IllegalArgumentException("All required fields must be provided");
@@ -42,13 +42,10 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new IllegalArgumentException("Appointment cannot be scheduled in the past");
         }
         
-        // Convert DTO to entity
         Appointment appointment = appointmentMapper.toEntity(request);
         
-        // Save to database
         Appointment savedAppointment = appointmentRepository.save(appointment);
         
-        // Convert back to DTO and return
         return appointmentMapper.toDto(savedAppointment);
     }
     
@@ -120,7 +117,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     
     @Override
     public void cancelAppointment(Long appointmentId) {
-        updateAppointmentStatus(appointmentId, AppointmentStatus.CANCELLED);
+        updateAppointmentStatus(appointmentId, AppointmentStatus.Cancelled);
     }
     
     @Override
@@ -133,7 +130,7 @@ public class AppointmentServiceImpl implements AppointmentService {
             .orElseThrow(() -> new RuntimeException("Appointment not found with id: " + appointmentId));
         
         appointment.setAppointmentDatetime(newDateTime);
-        appointment.setStatus(AppointmentStatus.RESCHEDULED);
+        appointment.setStatus(AppointmentStatus.Upcoming);
         Appointment updatedAppointment = appointmentRepository.save(appointment);
         
         return appointmentMapper.toDto(updatedAppointment);
@@ -143,6 +140,15 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional(readOnly = true)
     public List<AppointmentDto> getAllAppointments() {
         List<Appointment> appointments = appointmentRepository.findAll();
+        return appointments.stream()
+                .map(appointmentMapper::toDto)
+                .collect(Collectors.toList());
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<AppointmentDto> getAppointmentsByStatus(AppointmentStatus status) {
+        List<Appointment> appointments = appointmentRepository.findByStatus(status);
         return appointments.stream()
                 .map(appointmentMapper::toDto)
                 .collect(Collectors.toList());

@@ -42,7 +42,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     // Find upcoming appointments for a patient
     @Query("SELECT a FROM Appointment a WHERE a.patientId = :patientId " +
            "AND a.appointmentDatetime > :currentTime " +
-           "AND a.status IN ('SCHEDULED', 'CONFIRMED') " +
+           "AND a.status = 'Upcoming' " +
            "ORDER BY a.appointmentDatetime ASC")
     List<Appointment> findUpcomingAppointmentsByPatientId(
         @Param("patientId") Long patientId, 
@@ -51,7 +51,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     // Find upcoming appointments for a doctor
     @Query("SELECT a FROM Appointment a WHERE a.doctorId = :doctorId " +
            "AND a.appointmentDatetime > :currentTime " +
-           "AND a.status IN ('SCHEDULED', 'CONFIRMED') " +
+           "AND a.status = 'Upcoming' " +
            "ORDER BY a.appointmentDatetime ASC")
     List<Appointment> findUpcomingAppointmentsByDoctorId(
         @Param("doctorId") Long doctorId, 

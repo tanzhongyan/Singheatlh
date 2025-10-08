@@ -37,7 +37,7 @@ public class Appointment {
     
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
-    private AppointmentStatus status = AppointmentStatus.SCHEDULED;
+    private AppointmentStatus status = AppointmentStatus.Upcoming;
     
     @Column(name = "doctor_id", nullable = false)
     private Long doctorId;
@@ -58,6 +58,6 @@ public class Appointment {
         this.doctorId = doctorId;
         this.clinicId = clinicId;
         this.patientId = patientId;
-        this.status = AppointmentStatus.SCHEDULED;
+        this.status = AppointmentStatus.Upcoming;
     }
 }
