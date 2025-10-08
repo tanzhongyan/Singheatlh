@@ -20,13 +20,14 @@ import java.util.stream.Collectors;
 public class ClinicManagementServiceImpl implements ClinicManagementService {
 
     private ClinicRepository clinicRepository;
+    private ClinicMapper clinicMapper;
 
     @Override
     @Transactional
     public ClinicDto createClinic(ClinicDto clinicDto) {
-        Clinic clinic = ClinicMapper.mapToClinic(clinicDto);
+        Clinic clinic = clinicMapper.toEntity(clinicDto);
         Clinic savedClinic = clinicRepository.save(clinic);
-        return ClinicMapper.mapToClinicDto(savedClinic);
+        return clinicMapper.toDto(savedClinic);
     }
 
     @Override
@@ -43,7 +44,7 @@ public class ClinicManagementServiceImpl implements ClinicManagementService {
         existingClinic.setClosingHours(clinicDto.getClosingHours());
 
         Clinic updatedClinic = clinicRepository.save(existingClinic);
-        return ClinicMapper.mapToClinicDto(updatedClinic);
+        return clinicMapper.toDto(updatedClinic);
     }
 
     @Override
@@ -58,32 +59,32 @@ public class ClinicManagementServiceImpl implements ClinicManagementService {
     public ClinicDto getClinicById(Integer clinicId) {
         Clinic clinic = clinicRepository.findById(clinicId)
                 .orElseThrow(() -> new ResourceNotFoundExecption("Clinic not found with id: " + clinicId));
-        return ClinicMapper.mapToClinicDto(clinic);
+        return clinicMapper.toDto(clinic);
     }
 
     @Override
     public List<ClinicDto> getAllClinics() {
         List<Clinic> clinics = clinicRepository.findAll();
-        return clinics.stream().map(ClinicMapper::mapToClinicDto).collect(Collectors.toList());
+        return clinics.stream().map(clinicMapper::toDto).collect(Collectors.toList());
     }
 
     @Override
     public List<ClinicDto> getClinicsByType(String type) {
         List<Clinic> clinics = clinicRepository.findByType(type);
-        return clinics.stream().map(ClinicMapper::mapToClinicDto).collect(Collectors.toList());
+        return clinics.stream().map(clinicMapper::toDto).collect(Collectors.toList());
     }
 
     @Override
     @Transactional
     public List<ClinicDto> importClinics(List<ClinicDto> clinics) {
         List<Clinic> clinicEntities = clinics.stream()
-                .map(ClinicMapper::mapToClinic)
+                .map(clinicMapper::toEntity)
                 .collect(Collectors.toList());
 
         List<Clinic> savedClinics = clinicRepository.saveAll(clinicEntities);
 
         return savedClinics.stream()
-                .map(ClinicMapper::mapToClinicDto)
+                .map(clinicMapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -98,6 +99,6 @@ public class ClinicManagementServiceImpl implements ClinicManagementService {
         clinic.setClosingHours(LocalTime.parse(closingHours, formatter));
 
         Clinic updatedClinic = clinicRepository.save(clinic);
-        return ClinicMapper.mapToClinicDto(updatedClinic);
+        return clinicMapper.toDto(updatedClinic);
     }
 }
