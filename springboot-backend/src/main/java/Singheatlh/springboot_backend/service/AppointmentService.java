@@ -41,4 +41,7 @@ public interface AppointmentService {
     
     
     List<AppointmentDto> getAllAppointments();
+    
+    
+    List<AppointmentDto> getAppointmentsByStatus(AppointmentStatus status);
 }
