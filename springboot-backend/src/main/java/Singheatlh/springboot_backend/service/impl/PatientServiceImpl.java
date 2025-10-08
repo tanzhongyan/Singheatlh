@@ -2,6 +2,7 @@ package Singheatlh.springboot_backend.service.impl;
 
 import Singheatlh.springboot_backend.dto.PatientDto;
 import Singheatlh.springboot_backend.entity.Patient;
+import Singheatlh.springboot_backend.entity.enums.Role;
 import Singheatlh.springboot_backend.exception.ResourceNotFoundExecption;
 import Singheatlh.springboot_backend.mapper.PatientMapper;
 import Singheatlh.springboot_backend.repository.PatientRepository;
@@ -32,8 +33,10 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
-    public PatientDto createPatient(PatientDto patientDto) {
+    public PatientDto createPatient(PatientDto patientDto, String password) {
         Patient patient = patientMapper.toEntity(patientDto);
+        patient.setHashedPassword(password);
+        patient.setRole(Role.PATIENT);
         Patient savedPatient = patientRepository.save(patient);
         return patientMapper.toDto(savedPatient);
     }
@@ -56,7 +59,6 @@ public class PatientServiceImpl implements PatientService {
         patient.setName(patientDto.getName());
         patient.setEmail(patientDto.getEmail());
         patient.setUsername(patientDto.getUsername());
-        patient.setRole(patientDto.getRole());
 
         Patient savedPatient = patientRepository.save(patient);
         return patientMapper.toDto(savedPatient);

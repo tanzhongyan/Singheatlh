@@ -1,8 +1,7 @@
 package Singheatlh.springboot_backend.controller;
 
+import Singheatlh.springboot_backend.controller.request.CreateUserRequest;
 import Singheatlh.springboot_backend.dto.PatientDto;
-import Singheatlh.springboot_backend.dto.PatientDto;
-import Singheatlh.springboot_backend.entity.Patient;
 import Singheatlh.springboot_backend.service.PatientService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -31,8 +30,15 @@ public class PatientController {
     }
 
     @PostMapping
-    public ResponseEntity<PatientDto> createPatient(@RequestBody PatientDto patientDTO) {
-        PatientDto newPatient = patientService.createPatient(patientDTO);
+    public ResponseEntity<PatientDto> createPatient(@RequestBody CreateUserRequest createPatientRequest) {
+        PatientDto patientDto = PatientDto.builder()
+                .username(createPatientRequest.getUsername())
+                .name(createPatientRequest.getName())
+                .email(createPatientRequest.getEmail())
+                .appointments(null)
+                .build();
+
+        PatientDto newPatient = patientService.createPatient(patientDto, createPatientRequest.getHashedPassword());
         return new ResponseEntity<>(newPatient,HttpStatus.CREATED);
     }
 

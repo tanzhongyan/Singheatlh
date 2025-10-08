@@ -2,7 +2,9 @@ package Singheatlh.springboot_backend.mapper;
 
 import Singheatlh.springboot_backend.dto.ClinicDto;
 import Singheatlh.springboot_backend.entity.Clinic;
+import org.springframework.stereotype.Component;
 
+@Component
 public class ClinicMapper {
 
     public static ClinicDto mapToClinicDto(Clinic clinic) {

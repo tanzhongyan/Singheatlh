@@ -11,6 +11,6 @@ import lombok.Setter;
 public class ClinicStaff extends User {
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "clinic_id", nullable = false)
+    @JoinColumn(name = "clinic_id", nullable = true)
     private Clinic clinic;
 }

@@ -1,9 +1,7 @@
 package Singheatlh.springboot_backend.entity;
 import java.util.List;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.OneToMany;
+
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -12,6 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
+@DiscriminatorValue("PATIENT")
 public class Patient extends User {
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
