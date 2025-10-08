@@ -28,7 +28,7 @@ public class ClinicStaffMapper {
         // ✅ Convert Clinic entity to ClinicDto using injected ClinicMapper
         Clinic clinic = clinicStaff.getClinic();
         if (clinic != null) {
-            ClinicDto clinicDto = ClinicMapper.mapToClinicDto(clinic);
+            ClinicDto clinicDto = clinicMapper.toDto(clinic);
             dto.setClinicDto(clinicDto);
         }
 
@@ -48,7 +48,7 @@ public class ClinicStaffMapper {
 
         ClinicDto clinicDto = dto.getClinicDto();
         if (clinicDto != null) {
-            Clinic clinic = ClinicMapper.mapToClinic(clinicDto);
+            Clinic clinic = clinicMapper.toEntity(clinicDto);
             clinicStaff.setClinic(clinic);
         }
 
