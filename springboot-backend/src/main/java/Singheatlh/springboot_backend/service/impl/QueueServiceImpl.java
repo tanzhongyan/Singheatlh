@@ -170,9 +170,7 @@ public class QueueServiceImpl implements QueueService {
         }
         
         QueueTicket nextTicket = activeQueue.stream()
-            .filter(ticket -> ticket.getStatus() == QueueStatus.WAITING 
-                          || ticket.getStatus() == QueueStatus.NOTIFIED_3_AWAY 
-                          || ticket.getStatus() == QueueStatus.NOTIFIED_NEXT)
+            .filter(ticket -> ticket.getStatus() == QueueStatus.WAITING)
             .findFirst()
             .orElseThrow(() -> new IllegalStateException("No waiting patients in queue"));
         
@@ -233,9 +231,7 @@ public class QueueServiceImpl implements QueueService {
             .orElseThrow(() -> new ResourceNotFoundExecption("Queue ticket not found with id: " + ticketId));
         
         // Validate status
-        if (queueTicket.getStatus() != QueueStatus.WAITING 
-            && queueTicket.getStatus() != QueueStatus.NOTIFIED_3_AWAY
-            && queueTicket.getStatus() != QueueStatus.NOTIFIED_NEXT) {
+        if (queueTicket.getStatus() != QueueStatus.WAITING) {
             throw new IllegalStateException("Cannot fast-track patient with status: " + queueTicket.getStatus());
         }
         
@@ -287,31 +283,25 @@ public class QueueServiceImpl implements QueueService {
             return;
         }
         
-        // Notify patients 3 away
+        // Notify patients 3 away (without changing status)
         Integer notify3AwayNumber = currentServingNumber + 3;
         List<QueueTicket> ticketsToNotify3Away = queueTicketRepository.findTicketsToNotify3Away(
             doctorId, today, notify3AwayNumber);
         
         for (QueueTicket ticket : ticketsToNotify3Away) {
-            // Update status to NOTIFIED_3_AWAY to track that notification was sent. TO COMPLETE NOTIFICATIONS
-            ticket.setStatus(QueueStatus.NOTIFIED_3_AWAY);
-            queueTicketRepository.save(ticket);
-            
-            // TO COMPLETE NOTIFICATIONS THEN UNCOMMENT 
+
+            // Notification service will handle sending alerts to patients
             if (notificationService != null) {
                 // notificationService.sendQueueNotification3Away(ticket); 
             }
         }
         
-        // Notify next patient
+        // Notify next patient (without changing status)
         Integer nextQueueNumber = currentServingNumber + 1;
         queueTicketRepository.findTicketToNotifyNext(doctorId, today, nextQueueNumber)
             .ifPresent(ticket -> {
-                // Update status to NOTIFIED_NEXT to track that notification was sent
-                ticket.setStatus(QueueStatus.NOTIFIED_NEXT);
-                queueTicketRepository.save(ticket);
-                
-                // TO COMPLETE NOTIFICATIONS THEN UNCOMMENT 
+                // Send notification without changing status
+                // Notification service will handle sending alerts to patients
                 if (notificationService != null) {
                     // notificationService.sendQueueNotificationNext(ticket);
                 }
@@ -352,10 +342,6 @@ public class QueueServiceImpl implements QueueService {
                 }
                 return "You are Queue #" + queueTicket.getQueueNumber() + ", currently serving #" + currentNumber;
             
-            case NOTIFIED_3_AWAY:
-                return "You are " + position + " patient(s) away. Please proceed closer to the consultation room.";
-            
-            case NOTIFIED_NEXT:
             case CALLED:
                 return "It's your turn. Kindly enter the consultation room.";
             
