@@ -103,6 +103,15 @@ public class QueueController {
     public ResponseEntity<QueueTicketDto> callNextQueue(@PathVariable Long doctorId) {
         try {
             QueueTicketDto nextTicket = queueService.callNextQueue(doctorId);
+            
+            if (nextTicket == null) {
+                // q empty
+                Map<String, String> response = new HashMap<>();
+                response.put("message", "Current patient completed. No more patients in queue.");
+                return ResponseEntity.ok()
+                    .body(null);
+            }
+            
             return ResponseEntity.ok(nextTicket);
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
@@ -179,7 +188,7 @@ public class QueueController {
         try {
             queueService.cancelQueueTicket(ticketId);
             Map<String, String> response = new HashMap<>();
-            response.put("message", "Queue ticket cancelled successfully");
+            response.put("message", "Queue ticket removed successfully - marked as NO_SHOW");
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);

@@ -1,5 +1,6 @@
 package Singheatlh.springboot_backend.service.impl;
 
+import java.util.Optional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -67,11 +68,21 @@ public class QueueServiceImpl implements QueueService {
             appointment.getPatientId()
         );
         
+        // If patient is first in queue (queue_number = 1), automatically set to CALLED
+        if (newQueueNumber == 1) {
+            queueTicket.setStatus(QueueStatus.CALLED);
+        }
+        
         queueTicket = queueTicketRepository.save(queueTicket);
         
         appointment.setStatus(AppointmentStatus.Ongoing);
         appointmentRepository.save(appointment);
         
+        if (newQueueNumber == 1 && notificationService != null) {
+            notificationService.sendQueueCalledNotification(queueTicket);
+        }
+        
+        // Process notifications for other patients in queue. tO COMPLETE IN NOTIFICATIONSERVICE
         processQueueNotifications(appointment.getDoctorId());
         
         return queueTicketMapper.toDto(queueTicket);
@@ -153,10 +164,10 @@ public class QueueServiceImpl implements QueueService {
             throw new IllegalStateException("No patients in queue");
         }
         
-        // mark current patient as completted if exists, move queue by 1
+        // Mark current patient as completed if exists
         List<QueueTicket> currentlyServing = queueTicketRepository.findCurrentQueueNumberByDoctorIdAndDate(doctorId, today);
         for (QueueTicket serving : currentlyServing) {
-            if (serving.getStatus() == QueueStatus.IN_CONSULTATION) {
+            if (serving.getStatus() == QueueStatus.CALLED) {
                 serving.setStatus(QueueStatus.COMPLETED);
                 queueTicketRepository.save(serving);
                 
@@ -169,18 +180,23 @@ public class QueueServiceImpl implements QueueService {
             }
         }
         
-        QueueTicket nextTicket = activeQueue.stream()
-            .filter(ticket -> ticket.getStatus() == QueueStatus.WAITING)
-            .findFirst()
-            .orElseThrow(() -> new IllegalStateException("No waiting patients in queue"));
+        // to prevent deadlock check if theres others in q if not return null
+        Optional<QueueTicket> nextTicketOptional = activeQueue.stream()
+            .filter(ticket -> ticket.getStatus() == QueueStatus.CHECKED_IN)
+            .findFirst();
         
-        nextTicket.setStatus(QueueStatus.CALLED);
-        nextTicket = queueTicketRepository.save(nextTicket);
+        if (nextTicketOptional.isPresent()) {
+            QueueTicket nextTicket = nextTicketOptional.get();
+            nextTicket.setStatus(QueueStatus.CALLED);
+            nextTicket = queueTicketRepository.save(nextTicket);
+            
+            processQueueNotifications(doctorId);
+            
+            return queueTicketMapper.toDto(nextTicket);
+        }
         
-        // Process notifications for remaining patients. TO COMPLETE NOTIFICATIONS
-        processQueueNotifications(doctorId);
-        
-        return queueTicketMapper.toDto(nextTicket);
+        // q empty
+        return null;
     }
 
     @Override
@@ -212,7 +228,7 @@ public class QueueServiceImpl implements QueueService {
 
     @Override
     public QueueTicketDto markAsCheckedIn(Long ticketId) {
-        return updateQueueStatus(ticketId, QueueStatus.WAITING);
+        return updateQueueStatus(ticketId, QueueStatus.CHECKED_IN);
     }
 
     @Override
@@ -231,7 +247,7 @@ public class QueueServiceImpl implements QueueService {
             .orElseThrow(() -> new ResourceNotFoundExecption("Queue ticket not found with id: " + ticketId));
         
         // Validate status
-        if (queueTicket.getStatus() != QueueStatus.WAITING) {
+        if (queueTicket.getStatus() != QueueStatus.CHECKED_IN) {
             throw new IllegalStateException("Cannot fast-track patient with status: " + queueTicket.getStatus());
         }
         
@@ -251,7 +267,8 @@ public class QueueServiceImpl implements QueueService {
         QueueTicket queueTicket = queueTicketRepository.findById(ticketId)
             .orElseThrow(() -> new ResourceNotFoundExecption("Queue ticket not found with id: " + ticketId));
         
-        queueTicket.setStatus(QueueStatus.CANCELLED);
+        // Set status to NO_SHOW to indicate patient is no longer in queue
+        queueTicket.setStatus(QueueStatus.NO_SHOW);
         queueTicketRepository.save(queueTicket);
         
         // Update appointment status
@@ -289,10 +306,10 @@ public class QueueServiceImpl implements QueueService {
             doctorId, today, notify3AwayNumber);
         
         for (QueueTicket ticket : ticketsToNotify3Away) {
-
+            // Send notification without changing status
             // Notification service will handle sending alerts to patients
             if (notificationService != null) {
-                // notificationService.sendQueueNotification3Away(ticket); 
+                notificationService.sendQueueNotification3Away(ticket); 
             }
         }
         
@@ -300,10 +317,9 @@ public class QueueServiceImpl implements QueueService {
         Integer nextQueueNumber = currentServingNumber + 1;
         queueTicketRepository.findTicketToNotifyNext(doctorId, today, nextQueueNumber)
             .ifPresent(ticket -> {
-                // Send notification without changing status
                 // Notification service will handle sending alerts to patients
                 if (notificationService != null) {
-                    // notificationService.sendQueueNotificationNext(ticket);
+                    notificationService.sendQueueNotificationNext(ticket);
                 }
             });
     }
@@ -314,16 +330,19 @@ public class QueueServiceImpl implements QueueService {
         List<QueueTicket> currentlyServing = queueTicketRepository.findCurrentQueueNumberByDoctorIdAndDate(doctorId, today);
         
         if (!currentlyServing.isEmpty()) {
+
             return currentlyServing.get(0).getQueueNumber();
         }
         
-        // If no one is currently being served, return the last completed number
+        // If no one is currently being served, check if queue has started today
+        // by looking for any completed patients
         List<QueueTicket> allToday = queueTicketRepository.findActiveQueueByDoctorIdAndDate(doctorId, today);
         if (allToday.isEmpty()) {
             return 0;
         }
         
-        // if queue is empty or not started
+        // Queue exists but no one is actively being served
+        // Return 0 to indicate waiting for first patient to be called
         return 0;
     }
 
@@ -336,7 +355,7 @@ public class QueueServiceImpl implements QueueService {
     // to work in conjuction with notification service, message is returned already
     private String buildQueueStatusMessage(QueueTicket queueTicket, Integer currentNumber, int position) {
         switch (queueTicket.getStatus()) {
-            case WAITING:
+            case CHECKED_IN:
                 if (position <= 3) {
                     return "You are " + position + " patient(s) away. Please proceed closer to the consultation room.";
                 }
@@ -345,17 +364,11 @@ public class QueueServiceImpl implements QueueService {
             case CALLED:
                 return "It's your turn. Kindly enter the consultation room.";
             
-            case IN_CONSULTATION:
-                return "You are currently with the doctor.";
-            
             case COMPLETED:
                 return "Your consultation is completed. Thank you!";
             
             case NO_SHOW:
                 return "You were marked as no-show. Please check in again if you're present.";
-            
-            case CANCELLED:
-                return "Your queue ticket has been cancelled.";
             
             case FAST_TRACKED:
                 return "You have been fast-tracked. You will be called soon.";

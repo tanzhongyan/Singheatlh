@@ -39,7 +39,7 @@ public interface QueueTicketRepository extends JpaRepository<QueueTicket, Long> 
     // Find active queue tickets for a doctor today (ordered by queue number)
     @Query("SELECT qt FROM QueueTicket qt WHERE qt.doctorId = :doctorId " +
            "AND DATE(qt.checkInTime) = DATE(:date) " +
-           "AND qt.status NOT IN ('COMPLETED', 'NO_SHOW', 'CANCELLED') " +
+           "AND qt.status NOT IN ('COMPLETED', 'NO_SHOW') " +
            "ORDER BY CASE WHEN qt.isFastTracked = true THEN 0 ELSE 1 END, qt.queueNumber ASC")
     List<QueueTicket> findActiveQueueByDoctorIdAndDate(
         @Param("doctorId") Long doctorId, 
@@ -48,7 +48,7 @@ public interface QueueTicketRepository extends JpaRepository<QueueTicket, Long> 
     // Find active queue tickets for a clinic today (ordered by queue number)
     @Query("SELECT qt FROM QueueTicket qt WHERE qt.clinicId = :clinicId " +
            "AND DATE(qt.checkInTime) = DATE(:date) " +
-           "AND qt.status NOT IN ('COMPLETED', 'NO_SHOW', 'CANCELLED') " +
+           "AND qt.status NOT IN ('COMPLETED', 'NO_SHOW') " +
            "ORDER BY CASE WHEN qt.isFastTracked = true THEN 0 ELSE 1 END, qt.queueNumber ASC")
     List<QueueTicket> findActiveQueueByClinicIdAndDate(
         @Param("clinicId") Long clinicId, 
@@ -62,10 +62,10 @@ public interface QueueTicketRepository extends JpaRepository<QueueTicket, Long> 
         @Param("doctorId") Long doctorId, 
         @Param("date") LocalDateTime date);
     
-    // Find the current queue number being served (CALLED or IN_CONSULTATION status)
+    // Find the current queue number being served (CALLED status)
     @Query("SELECT qt FROM QueueTicket qt WHERE qt.doctorId = :doctorId " +
            "AND DATE(qt.checkInTime) = DATE(:date) " +
-           "AND qt.status IN ('CALLED', 'IN_CONSULTATION') " +
+           "AND qt.status IN ('CALLED') " +
            "ORDER BY qt.queueNumber ASC")
     List<QueueTicket> findCurrentQueueNumberByDoctorIdAndDate(
         @Param("doctorId") Long doctorId, 
@@ -74,7 +74,7 @@ public interface QueueTicketRepository extends JpaRepository<QueueTicket, Long> 
     // Find queue tickets that need to be notified (3 away from current)
     @Query("SELECT qt FROM QueueTicket qt WHERE qt.doctorId = :doctorId " +
            "AND DATE(qt.checkInTime) = DATE(:date) " +
-           "AND qt.status = 'WAITING' " +
+           "AND qt.status = 'CHECKED_IN' " +
            "AND qt.queueNumber <= :targetQueueNumber " +
            "ORDER BY qt.queueNumber ASC")
     List<QueueTicket> findTicketsToNotify3Away(
@@ -85,7 +85,7 @@ public interface QueueTicketRepository extends JpaRepository<QueueTicket, Long> 
     // Find queue tickets that need to be notified (next in line)
     @Query("SELECT qt FROM QueueTicket qt WHERE qt.doctorId = :doctorId " +
            "AND DATE(qt.checkInTime) = DATE(:date) " +
-           "AND qt.status = 'WAITING' " +
+           "AND qt.status = 'CHECKED_IN' " +
            "AND qt.queueNumber = :nextQueueNumber")
     Optional<QueueTicket> findTicketToNotifyNext(
         @Param("doctorId") Long doctorId, 
@@ -95,7 +95,7 @@ public interface QueueTicketRepository extends JpaRepository<QueueTicket, Long> 
     // Count active queue tickets for a doctor today
     @Query("SELECT COUNT(qt) FROM QueueTicket qt WHERE qt.doctorId = :doctorId " +
            "AND DATE(qt.checkInTime) = DATE(:date) " +
-           "AND qt.status NOT IN ('COMPLETED', 'NO_SHOW', 'CANCELLED')")
+           "AND qt.status NOT IN ('COMPLETED', 'NO_SHOW')")
     Long countActiveQueueByDoctorIdAndDate(
         @Param("doctorId") Long doctorId, 
         @Param("date") LocalDateTime date);
@@ -103,7 +103,7 @@ public interface QueueTicketRepository extends JpaRepository<QueueTicket, Long> 
     // Find patient's curreent position in queue
     @Query("SELECT COUNT(qt) FROM QueueTicket qt WHERE qt.doctorId = :doctorId " +
            "AND DATE(qt.checkInTime) = DATE(:date) " +
-           "AND qt.status NOT IN ('COMPLETED', 'NO_SHOW', 'CANCELLED') " +
+           "AND qt.status NOT IN ('COMPLETED', 'NO_SHOW') " +
            "AND (qt.queueNumber < :queueNumber " +
            "     OR (qt.queueNumber = :queueNumber AND qt.ticketId < :ticketId)) " +
            "ORDER BY CASE WHEN qt.isFastTracked = true THEN 0 ELSE 1 END, qt.queueNumber ASC")

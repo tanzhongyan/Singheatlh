@@ -37,7 +37,7 @@ public class QueueTicket {
     
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
-    private QueueStatus status = QueueStatus.WAITING;
+    private QueueStatus status = QueueStatus.CHECKED_IN;
     
     @Column(name = "check_in_time", nullable = false)
     private LocalDateTime checkInTime;
@@ -73,7 +73,7 @@ public class QueueTicket {
         this.clinicId = clinicId;
         this.doctorId = doctorId;
         this.patientId = patientId;
-        this.status = QueueStatus.WAITING;
+        this.status = QueueStatus.CHECKED_IN;
         this.isFastTracked = false;
     }
 }
