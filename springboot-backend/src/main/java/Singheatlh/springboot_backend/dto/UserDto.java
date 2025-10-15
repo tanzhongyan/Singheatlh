@@ -12,7 +12,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @SuperBuilder(toBuilder = true)
 public class UserDto {
-    private Long id;
+    private String id;
     private String username;
     private String name;
     private String email;

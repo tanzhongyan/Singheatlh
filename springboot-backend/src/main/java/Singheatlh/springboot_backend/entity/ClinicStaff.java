@@ -2,12 +2,14 @@ package Singheatlh.springboot_backend.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Entity
-@DiscriminatorValue("CLINIC_STAFF")
+@NoArgsConstructor
 @Getter
 @Setter
+@Entity
+@DiscriminatorValue("CLINIC_STAFF")
 public class ClinicStaff extends User {
 
     @ManyToOne(fetch = FetchType.LAZY)

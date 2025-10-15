@@ -1,5 +1,6 @@
 package Singheatlh.springboot_backend.mapper;
 
+import Singheatlh.springboot_backend.entity.Appointment;
 import org.springframework.stereotype.Component;
 import Singheatlh.springboot_backend.dto.AppointmentDto;
 import Singheatlh.springboot_backend.dto.PatientDto;
@@ -11,27 +12,22 @@ import java.util.stream.Collectors;
 @Component
 public class PatientMapper {
 
-    private final AppointmentMapper appointmentMapper;
-
-    public PatientMapper(AppointmentMapper appointmentMapper) {
-        this.appointmentMapper = appointmentMapper;
-    }
 
     public PatientDto toDto(Patient patient) {
         if (patient == null) return null;
 
         PatientDto dto = new PatientDto();
-        dto.setId(patient.getId());
+        dto.setId(patient.getSupabaseUid());
         dto.setUsername(patient.getUsername());
         dto.setName(patient.getName());
         dto.setEmail(patient.getEmail());
         dto.setRole(patient.getRole());
 
         if (patient.getAppointments() != null) {
-            List<AppointmentDto> appointmentDtos = patient.getAppointments().stream()
-                    .map(appointmentMapper::toDto)
+            List<Long> appointmentIds = patient.getAppointments().stream()
+                    .map(Appointment::getAppointmentId)
                     .collect(Collectors.toList());
-            dto.setAppointments(appointmentDtos);
+            dto.setAppointmentIds(appointmentIds);
         }
 
         return dto;
@@ -41,7 +37,7 @@ public class PatientMapper {
         if (dto == null) return null;
 
         Patient patient = new Patient();
-        patient.setId(dto.getId());
+        patient.setSupabaseUid(dto.getId());
         patient.setUsername(dto.getUsername());
         patient.setName(dto.getName());
         patient.setEmail(dto.getEmail());

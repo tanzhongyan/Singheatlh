@@ -11,5 +11,5 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 public class PatientDto extends UserDto {
-    private List<AppointmentDto> appointments;
+    private List<Long> appointmentIds;
 }

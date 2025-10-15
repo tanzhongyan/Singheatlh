@@ -8,13 +8,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 @Entity
-@Table(name="users")
+@Table(name = "users")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "dtype", discriminatorType = DiscriminatorType.STRING)
 public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long id;
+    @Column(name = "supabase_uid", unique = true) // NEW: Store Supabase user ID
+    String supabaseUid;
 
     @Column(name = "user_name")
     String username;
@@ -23,9 +23,6 @@ public class User {
 
     @Column(unique = true)
     String email;
-
-    @Column(name = "hashed_password")
-    String hashedPassword;
 
     @Enumerated(EnumType.STRING)
     private Role role;

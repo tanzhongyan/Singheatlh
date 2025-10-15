@@ -7,25 +7,21 @@ import Singheatlh.springboot_backend.exception.ResourceNotFoundExecption;
 import Singheatlh.springboot_backend.mapper.PatientMapper;
 import Singheatlh.springboot_backend.repository.PatientRepository;
 import Singheatlh.springboot_backend.service.PatientService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class PatientServiceImpl implements PatientService {
 
     private final PatientRepository patientRepository;
     private final PatientMapper patientMapper;
 
-    // ✅ Constructor injection (preferred by Spring)
-    public PatientServiceImpl(PatientRepository patientRepository, PatientMapper patientMapper) {
-        this.patientRepository = patientRepository;
-        this.patientMapper = patientMapper;
-    }
-
     @Override
-    public PatientDto getById(Long id) {
+    public PatientDto getById(String id) {
         Patient patient = patientRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundExecption("Patient does not exist with the given id " + id)
         );
@@ -33,10 +29,15 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
-    public PatientDto createPatient(PatientDto patientDto, String password) {
+    public PatientDto createPatient(PatientDto patientDto) {
+        if (patientRepository.existsById(patientDto.getId())) {
+            throw new RuntimeException("Patient already exists with id: " + patientDto.getId());
+        }
+
         Patient patient = patientMapper.toEntity(patientDto);
-        patient.setHashedPassword(password);
         patient.setRole(Role.PATIENT);
+        // ✅ No password handling - handled by Supabase Auth
+
         Patient savedPatient = patientRepository.save(patient);
         return patientMapper.toDto(savedPatient);
     }
@@ -57,7 +58,6 @@ public class PatientServiceImpl implements PatientService {
 
         // ✅ Update fields
         patient.setName(patientDto.getName());
-        patient.setEmail(patientDto.getEmail());
         patient.setUsername(patientDto.getUsername());
 
         Patient savedPatient = patientRepository.save(patient);
@@ -65,10 +65,18 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
-    public void deletePatient(Long id) {
+    public void deletePatient(String id) {
         Patient patient = patientRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundExecption("Patient does not exist with the given id " + id)
         );
-        patientRepository.delete(patient);
+        patientRepository.deleteById(id);
+    }
+
+    @Override
+    public PatientDto getByEmail(String email) {
+        Patient patient = patientRepository.findByEmail(email).orElseThrow(
+                ()-> new ResourceNotFoundExecption("Patient does not exist with the given email: " + email)
+        );
+        return patientMapper.toDto(patient);
     }
 }
