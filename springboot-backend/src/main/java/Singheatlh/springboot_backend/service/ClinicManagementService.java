@@ -29,4 +29,7 @@ public interface ClinicManagementService {
 
     // Set clinic hours
     ClinicDto setClinicHours(Integer clinicId, String openingHours, String closingHours);
+
+    // Set appointment slot duration
+    ClinicDto setAppointmentSlotDuration(Integer clinicId, Integer slotDuration);
 }

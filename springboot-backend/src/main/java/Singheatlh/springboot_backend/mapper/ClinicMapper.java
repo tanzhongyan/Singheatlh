@@ -37,7 +37,9 @@ public class ClinicMapper {
                 clinicDto.getTelephoneNumber(),
                 clinicDto.getType(),
                 clinicDto.getOpeningHours(),
-                clinicDto.getClosingHours()
+                clinicDto.getClosingHours(),
+                null, // appointmentSlotDuration
+                null  // doctors
         );
     }
 }

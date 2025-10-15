@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalTime;
+import java.util.List;
 
 @Entity
 @Table(name = "clinics")
@@ -37,7 +38,9 @@ public class Clinic {
     @Column(name = "closing_hours", nullable = false)
     private LocalTime closingHours;
 
-    // TODO: Uncomment when Doctor entity is completed by another developer
-    // @OneToMany(mappedBy = "clinic", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    // private List<Doctor> doctors;
+    @Column(name = "appointment_slot_duration")
+    private Integer appointmentSlotDuration;
+
+    @OneToMany(mappedBy = "clinic", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Doctor> doctors;
 }

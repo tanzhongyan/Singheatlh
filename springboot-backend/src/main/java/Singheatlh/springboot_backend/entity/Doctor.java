@@ -25,6 +25,7 @@ public class Doctor {
     @Column(nullable = false)
     private String schedule;
 
-    @Column(name = "clinic_id")
-    private Integer clinicId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "clinic_id")
+    private Clinic clinic;
 }

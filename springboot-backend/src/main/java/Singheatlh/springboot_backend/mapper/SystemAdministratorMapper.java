@@ -11,13 +11,13 @@ public class SystemAdministratorMapper {
             return null;
         }
 
-        SystemAdministratorDto systemAdministratorDto = new SystemAdministratorDto();
-        systemAdministratorDto.setId(systemAdministrator.getSupabaseUid());
-        systemAdministratorDto.setUsername(systemAdministrator.getUsername());
-        systemAdministratorDto.setName(systemAdministrator.getName());
-        systemAdministratorDto.setEmail(systemAdministrator.getEmail());
-        systemAdministratorDto.setRole(systemAdministrator.getRole());
-        return systemAdministratorDto;
+        return SystemAdministratorDto.builder()
+                .id(systemAdministrator.getSupabaseUid())
+                .username(systemAdministrator.getUsername())
+                .name(systemAdministrator.getName())
+                .email(systemAdministrator.getEmail())
+                .role(systemAdministrator.getRole())
+                .build();
     }
 
     public SystemAdministrator toEntity(SystemAdministratorDto systemAdministratorDto) {

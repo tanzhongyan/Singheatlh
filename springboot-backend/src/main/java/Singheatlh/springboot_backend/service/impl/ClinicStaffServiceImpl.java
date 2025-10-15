@@ -78,7 +78,7 @@ public class ClinicStaffServiceImpl implements ClinicStaffService {
 
     @Override
     public List<ClinicStaffDto> getClinicStaffByClinic(int clinicId) {
-        List<ClinicStaff> staffList = clinicStaffRepository.findByClinicId(clinicId);
+        List<ClinicStaff> staffList = clinicStaffRepository.findByClinicClinicId(clinicId);
         return staffList.stream()
                 .map(clinicStaffMapper::toDto)
                 .collect(Collectors.toList());
