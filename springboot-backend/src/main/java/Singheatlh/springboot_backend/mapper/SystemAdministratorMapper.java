@@ -12,11 +12,11 @@ public class SystemAdministratorMapper {
         }
 
         return SystemAdministratorDto.builder()
-                .id(systemAdministrator.getSupabaseUid())
-                .username(systemAdministrator.getUsername())
+                .userId(systemAdministrator.getUserId())
                 .name(systemAdministrator.getName())
                 .email(systemAdministrator.getEmail())
                 .role(systemAdministrator.getRole())
+                .telephoneNumber(systemAdministrator.getTelephoneNumber())
                 .build();
     }
 
@@ -25,11 +25,11 @@ public class SystemAdministratorMapper {
             return null;
         }
         SystemAdministrator systemAdministrator = new SystemAdministrator();
-        systemAdministrator.setSupabaseUid(systemAdministratorDto.getId());
-        systemAdministrator.setUsername(systemAdministratorDto.getUsername());
+        systemAdministrator.setUserId(systemAdministratorDto.getUserId());
         systemAdministrator.setName(systemAdministratorDto.getName());
         systemAdministrator.setEmail(systemAdministratorDto.getEmail());
         systemAdministrator.setRole(systemAdministratorDto.getRole());
+        systemAdministrator.setTelephoneNumber(systemAdministratorDto.getTelephoneNumber());
         return systemAdministrator;
     }
 }

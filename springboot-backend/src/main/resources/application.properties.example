@@ -1,0 +1,68 @@
+# =====================================================
+# Application Configuration
+# =====================================================
+spring.application.name=springboot-backend
+
+# =====================================================
+# Database Configuration (PostgreSQL / Supabase)
+# =====================================================
+# For local Docker development (external port 5434):
+spring.datasource.url=jdbc:postgresql://localhost:5434/postgres
+spring.datasource.username=postgres
+spring.datasource.password=your-super-secret-and-long-postgres-password
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+# =====================================================
+# Hibernate / JPA Configuration
+# =====================================================
+spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+
+# IMPORTANT: Set to 'none' when using Flyway
+# Flyway will manage schema, not Hibernate
+spring.jpa.hibernate.ddl-auto=none
+
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+
+# =====================================================
+# Flyway Configuration
+# =====================================================
+# Enable Flyway migrations
+spring.flyway.enabled=true
+
+# Location of migration scripts
+spring.flyway.locations=classpath:db/migration
+
+# Baseline on migrate (allows Flyway to work with existing databases)
+spring.flyway.baseline-on-migrate=true
+
+# Table name to track migration history
+spring.flyway.table=flyway_schema_history
+
+# Validate migrations on startup
+spring.flyway.validate-on-migrate=true
+
+# Schemas to manage (include both public and auth for Supabase)
+spring.flyway.schemas=public
+
+# Fail fast if migrations fail
+spring.flyway.fail-on-missing-locations=true
+
+# Clean database on validation error (NEVER enable in production!)
+spring.flyway.clean-disabled=true
+
+# =====================================================
+# HikariCP Connection Pool Settings
+# =====================================================
+spring.datasource.hikari.maximum-pool-size=5
+spring.datasource.hikari.connection-timeout=30000
+spring.datasource.hikari.idle-timeout=600000
+spring.datasource.hikari.max-lifetime=1800000
+spring.datasource.hikari.minimum-idle=2
+
+# =====================================================
+# Logging Configuration
+# =====================================================
+logging.level.org.flywaydb=INFO
+logging.level.org.hibernate.SQL=DEBUG
+logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE

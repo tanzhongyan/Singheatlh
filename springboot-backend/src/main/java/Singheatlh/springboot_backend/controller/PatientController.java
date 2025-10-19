@@ -9,8 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
-@CrossOrigin("*")
 @AllArgsConstructor
 @RestController
 @RequestMapping("/api/patients")
@@ -32,8 +32,7 @@ public class PatientController {
     @PostMapping
     public ResponseEntity<PatientDto> createPatient(@RequestBody CreatePatientRequest createPatientRequest) {
         PatientDto patientDto = PatientDto.builder()
-                .id(createPatientRequest.getId())
-                .username(createPatientRequest.getUsername())
+                .userId(UUID.fromString(createPatientRequest.getId()))
                 .name(createPatientRequest.getName())
                 .email(createPatientRequest.getEmail())
                 .appointmentIds(null)
@@ -45,7 +44,7 @@ public class PatientController {
 
     @PutMapping("{id}")
     public ResponseEntity<PatientDto> updatePatient(@PathVariable("id") String patientId, @RequestBody PatientDto patientDTO) {
-        patientDTO.setId(patientId);
+        patientDTO.setUserId(UUID.fromString(patientId));
         PatientDto newPatient = patientService.updatePatient(patientDTO);
         return ResponseEntity.ok(newPatient);
     }

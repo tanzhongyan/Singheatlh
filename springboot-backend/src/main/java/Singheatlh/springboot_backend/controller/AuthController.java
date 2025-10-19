@@ -26,7 +26,7 @@ public class AuthController {
 
         try {
             UserDto userDto = authService.signUp(signUpRequest);
-            log.info("User successfully registered with ID: {}", userDto.getId());
+            log.info("User successfully registered with ID: {}", userDto.getUserId());
 
             return ResponseEntity.status(HttpStatus.CREATED).body(userDto);
 

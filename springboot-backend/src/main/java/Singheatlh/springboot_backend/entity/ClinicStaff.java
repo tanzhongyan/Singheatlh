@@ -9,10 +9,10 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@DiscriminatorValue("CLINIC_STAFF")
+@DiscriminatorValue("C")
 public class ClinicStaff extends User {
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "clinic_id", nullable = true)
+    @JoinColumn(name = "clinic_id", insertable = false, updatable = false)
     private Clinic clinic;
 }

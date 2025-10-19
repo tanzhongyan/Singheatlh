@@ -2,6 +2,7 @@ package Singheatlh.springboot_backend.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import Singheatlh.springboot_backend.dto.AppointmentDto;
 import Singheatlh.springboot_backend.dto.CreateAppointmentRequest;
@@ -13,31 +14,28 @@ public interface AppointmentService {
     AppointmentDto createAppointment(CreateAppointmentRequest request);
     
     
-    AppointmentDto getAppointmentById(Long appointmentId);
+    AppointmentDto getAppointmentById(String appointmentId);
     
     
-    List<AppointmentDto> getAppointmentsByPatientId(Long patientId);
+    List<AppointmentDto> getAppointmentsByPatientId(UUID patientId);
     
     
-    List<AppointmentDto> getAppointmentsByDoctorId(Long doctorId);
+    List<AppointmentDto> getAppointmentsByDoctorId(String doctorId);
     
     
-    List<AppointmentDto> getAppointmentsByClinicId(Long clinicId);
+    List<AppointmentDto> getUpcomingAppointmentsByPatientId(UUID patientId);
     
     
-    List<AppointmentDto> getUpcomingAppointmentsByPatientId(Long patientId);
+    List<AppointmentDto> getUpcomingAppointmentsByDoctorId(String doctorId);
     
     
-    List<AppointmentDto> getUpcomingAppointmentsByDoctorId(Long doctorId);
+    AppointmentDto updateAppointmentStatus(String appointmentId, AppointmentStatus status);
     
     
-    AppointmentDto updateAppointmentStatus(Long appointmentId, AppointmentStatus status);
+    void cancelAppointment(String appointmentId);
     
     
-    void cancelAppointment(Long appointmentId);
-    
-    
-    AppointmentDto rescheduleAppointment(Long appointmentId, LocalDateTime newDateTime);
+    AppointmentDto rescheduleAppointment(String appointmentId, LocalDateTime newDateTime);
     
     
     List<AppointmentDto> getAllAppointments();

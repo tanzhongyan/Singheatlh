@@ -9,7 +9,7 @@ import java.time.LocalTime;
 import java.util.List;
 
 @Entity
-@Table(name = "clinics")
+@Table(name = "clinic")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,26 +20,24 @@ public class Clinic {
     @Column(name = "clinic_id")
     private Integer clinicId;
 
-    @Column(nullable = false)
-    private String name;
-
-    @Column(nullable = false)
-    private String address;
-
-    @Column(name = "telephone_number", nullable = false)
-    private String telephoneNumber;
-
-    @Column(nullable = false)
+    @Column(name = "type", nullable = false, length = 1)
     private String type;
 
-    @Column(name = "opening_hours", nullable = false)
+    @Column(name = "name", nullable = false)
+    private String name;
+
+    @Column(name = "address")
+    private String address;
+
+    @Column(name = "telephone_number")
+    private String telephoneNumber;
+
+    @Column(name = "opening_hours")
     private LocalTime openingHours;
 
-    @Column(name = "closing_hours", nullable = false)
+    @Column(name = "closing_hours")
     private LocalTime closingHours;
 
-    @Column(name = "appointment_slot_duration")
-    private Integer appointmentSlotDuration;
 
     @OneToMany(mappedBy = "clinic", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Doctor> doctors;

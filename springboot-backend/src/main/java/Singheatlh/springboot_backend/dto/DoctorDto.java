@@ -15,9 +15,6 @@ public class DoctorDto {
 
     @NotBlank(message = "Doctor name is required")
     private String name;
-
-    @NotBlank(message = "Doctor schedule is required")
     private String schedule;
-
     private Integer clinicId;
 }

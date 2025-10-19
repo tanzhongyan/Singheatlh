@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,7 +26,8 @@ public class ClinicStaffServiceImpl implements ClinicStaffService {
 
     @Override
     public ClinicStaffDto getById(String id) {
-        ClinicStaff clinicStaff = clinicStaffRepository.findById(id)
+        UUID staffId = UUID.fromString(id);
+        ClinicStaff clinicStaff = clinicStaffRepository.findById(staffId)
                 .orElseThrow(() -> new ResourceNotFoundExecption("Clinic staff not found with id: " + id));
         return clinicStaffMapper.toDto(clinicStaff);
     }
@@ -33,19 +35,18 @@ public class ClinicStaffServiceImpl implements ClinicStaffService {
     @Override
     public ClinicStaffDto create(ClinicStaffDto clinicStaffDto) {
         ClinicStaff clinicStaff = clinicStaffMapper.toEntity(clinicStaffDto);
-        clinicStaff.setRole(Role.CLINIC_STAFF);
+        clinicStaff.setRole(Role.C);
         ClinicStaff savedStaff = clinicStaffRepository.save(clinicStaff);
         return clinicStaffMapper.toDto(savedStaff);
     }
 
     @Override
     public ClinicStaffDto update(ClinicStaffDto clinicStaffDto) {
-        ClinicStaff clinicStaff = clinicStaffRepository.findById(clinicStaffDto.getId())
-                .orElseThrow(() -> new ResourceNotFoundExecption("Clinic staff not found with id: " + clinicStaffDto.getId()));
+        ClinicStaff clinicStaff = clinicStaffRepository.findById(clinicStaffDto.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundExecption("Clinic staff not found with id: " + clinicStaffDto.getUserId()));
 
         // ✅ Update fields (avoid overwriting clinic reference unless provided)
         clinicStaff.setName(clinicStaffDto.getName());
-        clinicStaff.setUsername(clinicStaffDto.getUsername());
 
         // Clinic should be updated through a separate method or service
 
@@ -71,14 +72,15 @@ public class ClinicStaffServiceImpl implements ClinicStaffService {
 
     @Override
     public void deleteClinicStaffBy(String id) {
-        ClinicStaff clinicStaff = clinicStaffRepository.findById(id)
+        UUID staffId = UUID.fromString(id);
+        ClinicStaff clinicStaff = clinicStaffRepository.findById(staffId)
                 .orElseThrow(() -> new ResourceNotFoundExecption("Clinic staff not found with id: " + id));
-        clinicStaffRepository.deleteById(id);
+        clinicStaffRepository.deleteById(staffId);
     }
 
     @Override
     public List<ClinicStaffDto> getClinicStaffByClinic(int clinicId) {
-        List<ClinicStaff> staffList = clinicStaffRepository.findByClinicClinicId(clinicId);
+        List<ClinicStaff> staffList = clinicStaffRepository.findByClinicId(clinicId);
         return staffList.stream()
                 .map(clinicStaffMapper::toDto)
                 .collect(Collectors.toList());

@@ -11,10 +11,12 @@ public class UserMapper {
         if (user == null) return null;
 
         UserDto dto = new UserDto();
-        dto.setId(user.getSupabaseUid());
-        dto.setUsername(user.getUsername());
+        dto.setUserId(user.getUserId());
+        dto.setName(user.getName());
         dto.setEmail(user.getEmail());
         dto.setRole(user.getRole());
+        dto.setTelephoneNumber(user.getTelephoneNumber());
+        // clinicId not included in base UserDto - only in ClinicStaffDto
         return dto;
     }
 
@@ -22,10 +24,12 @@ public class UserMapper {
         if (dto == null) return null;
 
         User user = new User();
-        user.setSupabaseUid(dto.getId());
-        user.setUsername(dto.getUsername());
+        user.setUserId(dto.getUserId());
+        user.setName(dto.getName());
         user.setEmail(dto.getEmail());
         user.setRole(dto.getRole());
+        user.setTelephoneNumber(dto.getTelephoneNumber());
+        // clinicId not included in base UserDto - only in ClinicStaffDto
         return user;
     }
 }

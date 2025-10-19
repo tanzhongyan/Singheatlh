@@ -8,8 +8,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -28,36 +26,39 @@ import lombok.Setter;
 public class Appointment {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "appointment_id")
-    private Long appointmentId;
-    
-    @Column(name = "appointment_datetime", nullable = false)
-    private LocalDateTime appointmentDatetime;
-    
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 20)
-    private AppointmentStatus status = AppointmentStatus.Upcoming;
-    
-    @Column(name = "doctor_id", nullable = false)
-    private Long doctorId;
-    
-    @Column(name = "clinic_id", nullable = false)
-    private Long clinicId;
+    @Column(name = "appointment_id", length = 10)
+    private String appointmentId; // Changed from Long to String to match CHAR(10)
     
     @Column(name = "patient_id", nullable = false)
-    private Long patientId;
+    private java.util.UUID patientId; // Changed to UUID to match User_Profile
     
+    @Column(name = "doctor_id", nullable = false, length = 10)
+    private String doctorId; // Changed to String to match Doctor
+    
+    @Column(name = "start_datetime", nullable = false)
+    private LocalDateTime startDatetime; // Renamed from appointmentDatetime
+    
+    @Column(name = "end_datetime", nullable = false)
+    private LocalDateTime endDatetime; // Added to match schema
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", length = 20)
+    private AppointmentStatus status; // Changed to enum for type safety
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patient_id", insertable = false, updatable = false)
-    private Patient patient;
+    private Patient patient; // Relationship to Patient entity
     
-    public Appointment(LocalDateTime appointmentDatetime, Long doctorId, Long clinicId, Long patientId) {
-        this.appointmentDatetime = appointmentDatetime;
-        this.doctorId = doctorId;
-        this.clinicId = clinicId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "doctor_id", insertable = false, updatable = false)
+    private Doctor doctor;
+    
+    public Appointment(String appointmentId, java.util.UUID patientId, String doctorId, LocalDateTime startDatetime, LocalDateTime endDatetime) {
+        this.appointmentId = appointmentId;
         this.patientId = patientId;
+        this.doctorId = doctorId;
+        this.startDatetime = startDatetime;
+        this.endDatetime = endDatetime;
         this.status = AppointmentStatus.Upcoming;
     }
 }

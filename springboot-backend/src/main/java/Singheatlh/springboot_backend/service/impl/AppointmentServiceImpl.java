@@ -2,6 +2,7 @@ package Singheatlh.springboot_backend.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,11 +35,11 @@ public class AppointmentServiceImpl implements AppointmentService {
     public AppointmentDto createAppointment(CreateAppointmentRequest request) {
 
         if (request.getPatientId() == null || request.getDoctorId() == null || 
-            request.getClinicId() == null || request.getAppointmentDatetime() == null) {
+            request.getStartDatetime() == null || request.getEndDatetime() == null) {
             throw new IllegalArgumentException("All required fields must be provided");
         }
         
-        if (request.getAppointmentDatetime().isBefore(LocalDateTime.now())) {
+        if (request.getStartDatetime().isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("Appointment cannot be scheduled in the past");
         }
         
@@ -51,7 +52,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     
     @Override
     @Transactional(readOnly = true)
-    public AppointmentDto getAppointmentById(Long appointmentId) {
+    public AppointmentDto getAppointmentById(String appointmentId) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
             .orElseThrow(() -> new RuntimeException("Appointment not found with id: " + appointmentId));
         return appointmentMapper.toDto(appointment);
@@ -59,7 +60,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     
     @Override
     @Transactional(readOnly = true)
-    public List<AppointmentDto> getAppointmentsByPatientId(Long patientId) {
+    public List<AppointmentDto> getAppointmentsByPatientId(UUID patientId) {
         List<Appointment> appointments = appointmentRepository.findByPatientId(patientId);
         return appointments.stream()
                 .map(appointmentMapper::toDto)
@@ -68,7 +69,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     
     @Override
     @Transactional(readOnly = true)
-    public List<AppointmentDto> getAppointmentsByDoctorId(Long doctorId) {
+    public List<AppointmentDto> getAppointmentsByDoctorId(String doctorId) {
         List<Appointment> appointments = appointmentRepository.findByDoctorId(doctorId);
         return appointments.stream()
                 .map(appointmentMapper::toDto)
@@ -77,16 +78,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     
     @Override
     @Transactional(readOnly = true)
-    public List<AppointmentDto> getAppointmentsByClinicId(Long clinicId) {
-        List<Appointment> appointments = appointmentRepository.findByClinicId(clinicId);
-        return appointments.stream()
-                .map(appointmentMapper::toDto)
-                .collect(Collectors.toList());
-    }
-    
-    @Override
-    @Transactional(readOnly = true)
-    public List<AppointmentDto> getUpcomingAppointmentsByPatientId(Long patientId) {
+    public List<AppointmentDto> getUpcomingAppointmentsByPatientId(UUID patientId) {
         List<Appointment> appointments = appointmentRepository
             .findUpcomingAppointmentsByPatientId(patientId, LocalDateTime.now());
         return appointments.stream()
@@ -96,7 +88,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     
     @Override
     @Transactional(readOnly = true)
-    public List<AppointmentDto> getUpcomingAppointmentsByDoctorId(Long doctorId) {
+    public List<AppointmentDto> getUpcomingAppointmentsByDoctorId(String doctorId) {
         List<Appointment> appointments = appointmentRepository
             .findUpcomingAppointmentsByDoctorId(doctorId, LocalDateTime.now());
         return appointments.stream()
@@ -105,7 +97,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
     
     @Override
-    public AppointmentDto updateAppointmentStatus(Long appointmentId, AppointmentStatus status) {
+    public AppointmentDto updateAppointmentStatus(String appointmentId, AppointmentStatus status) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
             .orElseThrow(() -> new RuntimeException("Appointment not found with id: " + appointmentId));
         
@@ -116,12 +108,12 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
     
     @Override
-    public void cancelAppointment(Long appointmentId) {
+    public void cancelAppointment(String appointmentId) {
         updateAppointmentStatus(appointmentId, AppointmentStatus.Cancelled);
     }
     
     @Override
-    public AppointmentDto rescheduleAppointment(Long appointmentId, LocalDateTime newDateTime) {
+    public AppointmentDto rescheduleAppointment(String appointmentId, LocalDateTime newDateTime) {
         if (newDateTime.isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("New appointment time cannot be in the past");
         }
@@ -129,7 +121,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         Appointment appointment = appointmentRepository.findById(appointmentId)
             .orElseThrow(() -> new RuntimeException("Appointment not found with id: " + appointmentId));
         
-        appointment.setAppointmentDatetime(newDateTime);
+        appointment.setStartDatetime(newDateTime);
         appointment.setStatus(AppointmentStatus.Upcoming);
         Appointment updatedAppointment = appointmentRepository.save(appointment);
         

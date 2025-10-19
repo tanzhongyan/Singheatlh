@@ -1,6 +1,7 @@
 package Singheatlh.springboot_backend.dto;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,11 +14,11 @@ import lombok.Setter;
 @AllArgsConstructor
 public class CreateAppointmentRequest {
     
-    private Long patientId;
+    private UUID patientId;  // Changed to UUID
     
-    private Long doctorId;
+    private String doctorId;  // Changed to String (CHAR(10))
     
-    private Long clinicId;
+    private LocalDateTime startDatetime;  // Renamed from appointmentDatetime
     
-    private LocalDateTime appointmentDatetime;
+    private LocalDateTime endDatetime;  // Added
 }

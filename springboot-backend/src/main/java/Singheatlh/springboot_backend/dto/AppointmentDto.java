@@ -1,6 +1,7 @@
 package Singheatlh.springboot_backend.dto;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import Singheatlh.springboot_backend.entity.enums.AppointmentStatus;
 import lombok.AllArgsConstructor;
@@ -14,11 +15,11 @@ import lombok.Setter;
 @AllArgsConstructor
 public class AppointmentDto {
     
-    private Long appointmentId;
-    private Long patientId;
+    private String appointmentId;  // CHAR(10)
+    private UUID patientId;  // UUID
     private String patientName; 
-    private Long doctorId;
-    private Long clinicId;
-    private LocalDateTime appointmentDatetime;
-    private AppointmentStatus status;
+    private String doctorId;  // CHAR(10)
+    private LocalDateTime startDatetime;
+    private LocalDateTime endDatetime;
+    private AppointmentStatus status;  // Changed to enum for type safety
 }

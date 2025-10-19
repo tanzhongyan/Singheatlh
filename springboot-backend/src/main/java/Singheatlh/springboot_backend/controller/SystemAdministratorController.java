@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/system-administrators")
@@ -26,8 +27,7 @@ public class SystemAdministratorController {
     public ResponseEntity<SystemAdministratorDto> createSystemAdministrator(
             @RequestBody CreateSystemAdministratorRequest createRequest) {
         SystemAdministratorDto adminDto = SystemAdministratorDto.builder()
-                .id(createRequest.getId())
-                .username(createRequest.getUsername())
+                .userId(UUID.fromString(createRequest.getId()))
                 .name(createRequest.getName())
                 .email(createRequest.getEmail())
                 .build();
@@ -52,7 +52,7 @@ public class SystemAdministratorController {
     public ResponseEntity<SystemAdministratorDto> updateSystemAdministrator(
             @PathVariable String id,
             @RequestBody SystemAdministratorDto adminDto) {
-        adminDto.setId(id); // Ensure path ID is used
+        adminDto.setUserId(UUID.fromString(id)); // Ensure path ID is used
         SystemAdministratorDto updatedAdmin = systemAdministratorService.updateSystemAdministrator(adminDto);
         return ResponseEntity.ok(updatedAdmin);
     }
@@ -89,7 +89,7 @@ public class SystemAdministratorController {
 
     @PutMapping("/users/{userId}")
     public ResponseEntity<UserDto> updateUser(@PathVariable String userId, @RequestBody UserDto userDto) {
-        userDto.setId(userId);
+        userDto.setUserId(UUID.fromString(userId));
         UserDto updatedUser = userService.updateUser(userDto);
         return ResponseEntity.ok(updatedUser);
     }
@@ -108,7 +108,7 @@ public class SystemAdministratorController {
     }
 
     @PutMapping("/doctors/{doctorId}")
-    public ResponseEntity<DoctorDto> updateDoctor(@PathVariable Long doctorId, @RequestBody DoctorDto doctorDto) {
+    public ResponseEntity<DoctorDto> updateDoctor(@PathVariable String doctorId, @RequestBody DoctorDto doctorDto) {
         doctorDto.setDoctorId(doctorId);
         DoctorDto updatedDoctor = doctorService.updateDoctor(doctorDto);
         return ResponseEntity.ok(updatedDoctor);
@@ -124,12 +124,6 @@ public class SystemAdministratorController {
     @PutMapping("/clinics/{clinicId}/hours")
     public ResponseEntity<ClinicDto> setClinicHours(@PathVariable Integer clinicId, @RequestBody UpdateClinicHoursRequest request) {
         ClinicDto updatedClinic = clinicManagementService.setClinicHours(clinicId, request.getOpeningHours(), request.getClosingHours());
-        return ResponseEntity.ok(updatedClinic);
-    }
-
-    @PutMapping("/clinics/{clinicId}/slot-duration")
-    public ResponseEntity<ClinicDto> setAppointmentSlotDuration(@PathVariable Integer clinicId, @RequestBody UpdateClinicSlotDurationRequest request) {
-        ClinicDto updatedClinic = clinicManagementService.setAppointmentSlotDuration(clinicId, request.getSlotDuration());
         return ResponseEntity.ok(updatedClinic);
     }
 

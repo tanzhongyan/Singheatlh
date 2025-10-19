@@ -15,17 +15,19 @@ import lombok.Setter;
 public class Doctor {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "doctor_id")
-    private Long doctorId;
+    @Column(name = "doctor_id", length = 10)
+    private String doctorId; // Changed from Long to String to match CHAR(10)
 
-    @Column(nullable = false)
+    @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(nullable = false)
-    private String schedule;
+    @Column(name = "clinic_id", nullable = false)
+    private Integer clinicId; // Direct foreign key instead of relationship for now
+
+    // Note: "schedule" column doesn't exist in schema - removed
+    // Use Schedule entity for doctor availability
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "clinic_id")
+    @JoinColumn(name = "clinic_id", insertable = false, updatable = false)
     private Clinic clinic;
 }

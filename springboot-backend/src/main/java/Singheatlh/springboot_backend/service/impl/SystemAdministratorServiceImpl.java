@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,19 +35,20 @@ public class SystemAdministratorServiceImpl implements SystemAdministratorServic
 
     @Override
     public SystemAdministratorDto getById(String id) {
-        SystemAdministrator admin = systemAdministratorRepository.findById(id)
+        UUID adminId = UUID.fromString(id);
+        SystemAdministrator admin = systemAdministratorRepository.findById(adminId)
                 .orElseThrow(() -> new ResourceNotFoundExecption("System Administrator not found with id: " + id));
         return systemAdministratorMapper.toDto(admin);
     }
 
     @Override
     public SystemAdministratorDto createSystemAdministrator(SystemAdministratorDto adminDto) {
-        if (systemAdministratorRepository.existsById(adminDto.getId())) {
-            throw new RuntimeException("System Administrator already exists with id: " + adminDto.getId());
+        if (systemAdministratorRepository.existsById(adminDto.getUserId())) {
+            throw new RuntimeException("System Administrator already exists with id: " + adminDto.getUserId());
         }
 
         SystemAdministrator admin = systemAdministratorMapper.toEntity(adminDto);
-        admin.setRole(Role.SYSTEM_ADMINISTRATOR);
+        admin.setRole(Role.S);
 
         SystemAdministrator savedAdmin = systemAdministratorRepository.save(admin);
         return systemAdministratorMapper.toDto(savedAdmin);
@@ -62,12 +64,11 @@ public class SystemAdministratorServiceImpl implements SystemAdministratorServic
 
     @Override
     public SystemAdministratorDto updateSystemAdministrator(SystemAdministratorDto adminDto) {
-        SystemAdministrator admin = systemAdministratorRepository.findById(adminDto.getId())
-                .orElseThrow(() -> new ResourceNotFoundExecption("System Administrator not found with id: " + adminDto.getId()));
+        SystemAdministrator admin = systemAdministratorRepository.findById(adminDto.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundExecption("System Administrator not found with id: " + adminDto.getUserId()));
 
         // Update only allowed fields
         admin.setName(adminDto.getName());
-        admin.setUsername(adminDto.getUsername());
         // Email and role should be updated through separate auth service
 
         SystemAdministrator savedAdmin = systemAdministratorRepository.save(admin);
@@ -76,10 +77,11 @@ public class SystemAdministratorServiceImpl implements SystemAdministratorServic
 
     @Override
     public void deleteSystemAdministrator(String id) {
-        if (!systemAdministratorRepository.existsById(id)) {
+        UUID adminId = UUID.fromString(id);
+        if (!systemAdministratorRepository.existsById(adminId)) {
             throw new ResourceNotFoundExecption("System Administrator not found with id: " + id);
         }
-        systemAdministratorRepository.deleteById(id);
+        systemAdministratorRepository.deleteById(adminId);
     }
 
     @Override
@@ -95,15 +97,14 @@ public class SystemAdministratorServiceImpl implements SystemAdministratorServic
         }
 
         PatientDto patientDto = PatientDto.builder()
-                .id(request.getId())
-                .username(request.getUsername())
+                .userId(UUID.fromString(request.getId()))
                 .name(request.getName())
                 .email(request.getEmail())
-                .role(Role.PATIENT)
+                .role(Role.P)
                 .build();
 
         Patient patient = patientMapper.toEntity(patientDto);
-        patient.setRole(Role.PATIENT);
+        patient.setRole(Role.P);
 
         Patient savedPatient = patientRepository.save(patient);
         return patientMapper.toDto(savedPatient);
@@ -121,16 +122,15 @@ public class SystemAdministratorServiceImpl implements SystemAdministratorServic
         }
 
         ClinicStaffDto staffDto = ClinicStaffDto.builder()
-                .id(request.getId())
-                .username(request.getUsername())
+                .userId(UUID.fromString(request.getId()))
                 .name(request.getName())
                 .email(request.getEmail())
-                .role(Role.CLINIC_STAFF)
+                .role(Role.C)
                 .clinicId(request.getClinicId())
                 .build();
 
         ClinicStaff clinicStaff = clinicStaffMapper.toEntity(staffDto);
-        clinicStaff.setRole(Role.CLINIC_STAFF);
+        clinicStaff.setRole(Role.C);
 
         if (request.getClinicId() != 0) {
             Clinic clinic = clinicRepository.findById(request.getClinicId())

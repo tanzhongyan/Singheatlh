@@ -17,14 +17,15 @@ public class PatientMapper {
         if (patient == null) return null;
 
         PatientDto dto = new PatientDto();
-        dto.setId(patient.getSupabaseUid());
-        dto.setUsername(patient.getUsername());
+        dto.setUserId(patient.getUserId());
         dto.setName(patient.getName());
         dto.setEmail(patient.getEmail());
         dto.setRole(patient.getRole());
+        dto.setTelephoneNumber(patient.getTelephoneNumber());
+        // Patient doesn't have clinicId in DTO (only ClinicStaff does)
 
         if (patient.getAppointments() != null) {
-            List<Long> appointmentIds = patient.getAppointments().stream()
+            List<String> appointmentIds = patient.getAppointments().stream()
                     .map(Appointment::getAppointmentId)
                     .collect(Collectors.toList());
             dto.setAppointmentIds(appointmentIds);
@@ -37,11 +38,12 @@ public class PatientMapper {
         if (dto == null) return null;
 
         Patient patient = new Patient();
-        patient.setSupabaseUid(dto.getId());
-        patient.setUsername(dto.getUsername());
+        patient.setUserId(dto.getUserId());
         patient.setName(dto.getName());
         patient.setEmail(dto.getEmail());
         patient.setRole(dto.getRole());
+        patient.setTelephoneNumber(dto.getTelephoneNumber());
+        // Patient doesn't have clinicId in DTO (only ClinicStaff does)
         // appointments handled by AppointmentService or separate mapper logic
         return patient;
     }

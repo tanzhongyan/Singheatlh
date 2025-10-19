@@ -25,7 +25,8 @@ public class DoctorServiceImpl implements DoctorService {
 
     @Override
     public DoctorDto getById(Long id) {
-        Doctor doctor = doctorRepository.findById(id).orElseThrow(
+        String doctorId = String.valueOf(id);
+        Doctor doctor = doctorRepository.findById(doctorId).orElseThrow(
                 () -> new ResourceNotFoundExecption("Doctor does not exist with the given id " + id)
         );
         return doctorMapper.toDto(doctor);
@@ -57,7 +58,7 @@ public class DoctorServiceImpl implements DoctorService {
 
     @Override
     public List<DoctorDto> getDoctorsByClinicId(Integer clinicId) {
-        List<Doctor> doctors = doctorRepository.findByClinicClinicId(clinicId);
+        List<Doctor> doctors = doctorRepository.findByClinicId(clinicId);
         return doctors.stream()
                 .map(doctorMapper::toDto)
                 .collect(Collectors.toList());
@@ -71,7 +72,6 @@ public class DoctorServiceImpl implements DoctorService {
         );
 
         doctor.setName(doctorDto.getName());
-        doctor.setSchedule(doctorDto.getSchedule());
 
         if (doctorDto.getClinicId() != null) {
             Clinic clinic = clinicRepository.findById(doctorDto.getClinicId()).orElseThrow(
@@ -89,9 +89,10 @@ public class DoctorServiceImpl implements DoctorService {
     @Override
     @Transactional
     public void deleteDoctor(Long id) {
-        doctorRepository.findById(id).orElseThrow(
+        String doctorId = String.valueOf(id);
+        doctorRepository.findById(doctorId).orElseThrow(
                 () -> new ResourceNotFoundExecption("Doctor does not exist with the given id " + id)
         );
-        doctorRepository.deleteById(id);
+        doctorRepository.deleteById(doctorId);
     }
 }

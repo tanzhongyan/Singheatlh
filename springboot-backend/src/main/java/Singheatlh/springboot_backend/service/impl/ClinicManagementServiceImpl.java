@@ -101,16 +101,4 @@ public class ClinicManagementServiceImpl implements ClinicManagementService {
         Clinic updatedClinic = clinicRepository.save(clinic);
         return clinicMapper.toDto(updatedClinic);
     }
-
-    @Override
-    @Transactional
-    public ClinicDto setAppointmentSlotDuration(Integer clinicId, Integer slotDuration) {
-        Clinic clinic = clinicRepository.findById(clinicId)
-                .orElseThrow(() -> new ResourceNotFoundExecption("Clinic not found with id: " + clinicId));
-
-        clinic.setAppointmentSlotDuration(slotDuration);
-
-        Clinic updatedClinic = clinicRepository.save(clinic);
-        return clinicMapper.toDto(updatedClinic);
-    }
 }

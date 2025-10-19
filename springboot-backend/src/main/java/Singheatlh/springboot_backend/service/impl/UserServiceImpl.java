@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -18,9 +19,11 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    
     @Override
     public UserDto getById(String id) {
-        User user = userRepository.findById(id)
+        UUID userId = UUID.fromString(id);
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundExecption("User not found with id: " + id));
         return userMapper.toDto(user);
     }
@@ -37,12 +40,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto updateUser(UserDto userDto) {
-        User user = userRepository.findById(userDto.getId())
-                .orElseThrow(() -> new ResourceNotFoundExecption("User not found with id: " + userDto.getId()));
+        User user = userRepository.findById(userDto.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundExecption("User not found with id: " + userDto.getUserId()));
 
         // Update only allowed fields
         user.setName(userDto.getName());
-        user.setUsername(userDto.getUsername());
         // Email and role should be updated through separate auth service
 
         User savedUser = userRepository.save(user);
@@ -51,10 +53,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteUser(String id) {
-        if (!userRepository.existsById(id)) {
+        UUID userId = UUID.fromString(id);
+        if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundExecption("User not found with id: " + id);
         }
-        userRepository.deleteById(id);
+        userRepository.deleteById(userId);
     }
 
     @Override

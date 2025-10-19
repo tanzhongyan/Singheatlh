@@ -8,8 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
-@CrossOrigin("*")
 @AllArgsConstructor
 @RestController
 @RequestMapping("/api/clinic-staff")
@@ -21,8 +21,7 @@ public class ClinicStaffController {
     @PostMapping
     public ResponseEntity<ClinicStaffDto> createClinicStaff(@RequestBody CreateClinicStaffRequest createClinicStaffRequest) {
         ClinicStaffDto clinicStaffDto = ClinicStaffDto.builder()
-                .id(createClinicStaffRequest.getId())
-                .username(createClinicStaffRequest.getUsername())
+                .userId(UUID.fromString(createClinicStaffRequest.getId()))
                 .name(createClinicStaffRequest.getName())
                 .email(createClinicStaffRequest.getEmail())
                 .clinicId(createClinicStaffRequest.getClinicId())
@@ -46,7 +45,7 @@ public class ClinicStaffController {
     @PutMapping("/{id}")
     public ResponseEntity<ClinicStaffDto> updateClinicStaff(@PathVariable String id,
                                                             @RequestBody ClinicStaffDto clinicStaffDto) {
-        clinicStaffDto.setId(id); // ensure path ID is used
+        clinicStaffDto.setUserId(UUID.fromString(id)); // ensure path ID is used
         ClinicStaffDto updatedStaff = clinicStaffService.update(clinicStaffDto);
         return ResponseEntity.ok(updatedStaff);
     }

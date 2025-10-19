@@ -4,7 +4,6 @@ import org.springframework.stereotype.Component;
 
 import Singheatlh.springboot_backend.dto.ClinicDto;
 import Singheatlh.springboot_backend.entity.Clinic;
-import org.springframework.stereotype.Component;
 
 @Component
 public class ClinicMapper {
@@ -32,13 +31,12 @@ public class ClinicMapper {
 
         return new Clinic(
                 clinicDto.getClinicId(),
+                clinicDto.getType(),
                 clinicDto.getName(),
                 clinicDto.getAddress(),
                 clinicDto.getTelephoneNumber(),
-                clinicDto.getType(),
                 clinicDto.getOpeningHours(),
                 clinicDto.getClosingHours(),
-                null, // appointmentSlotDuration
                 null  // doctors
         );
     }

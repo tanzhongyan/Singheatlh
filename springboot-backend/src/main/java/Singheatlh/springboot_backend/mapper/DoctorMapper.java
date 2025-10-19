@@ -12,12 +12,11 @@ public class DoctorMapper {
             return null;
         }
 
-        Integer clinicId = (doctor.getClinic() != null) ? doctor.getClinic().getClinicId() : null;
+        Integer clinicId = (doctor.getClinic() != null) ? doctor.getClinic().getClinicId() : doctor.getClinicId();
 
         return new DoctorDto(
                 doctor.getDoctorId(),
                 doctor.getName(),
-                doctor.getSchedule(),
                 clinicId
         );
     }
@@ -30,7 +29,7 @@ public class DoctorMapper {
         Doctor doctor = new Doctor();
         doctor.setDoctorId(doctorDto.getDoctorId());
         doctor.setName(doctorDto.getName());
-        doctor.setSchedule(doctorDto.getSchedule());
+        doctor.setClinicId(doctorDto.getClinicId());
         // The clinic entity will be set in the service layer
 
         return doctor;

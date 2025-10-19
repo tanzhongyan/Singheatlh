@@ -7,8 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
-@CrossOrigin("*")
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -36,7 +36,7 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<UserDto> updateUser(@PathVariable String id,
                                               @RequestBody UserDto userDto) {
-        userDto.setId(id); // Ensure path ID is used
+        userDto.setUserId(UUID.fromString(id)); // Ensure path ID is used
         UserDto updatedUser = userService.updateUser(userDto);
         return ResponseEntity.ok(updatedUser);
     }

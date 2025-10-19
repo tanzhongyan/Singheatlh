@@ -14,13 +14,12 @@ public class ClinicStaffMapper {
         if (clinicStaff == null) return null;
 
         ClinicStaffDto dto = new ClinicStaffDto();
-        dto.setId(clinicStaff.getSupabaseUid());
-        dto.setUsername(clinicStaff.getUsername());
+        dto.setUserId(clinicStaff.getUserId());
         dto.setName(clinicStaff.getName());
         dto.setEmail(clinicStaff.getEmail());
         dto.setRole(clinicStaff.getRole());
-
-
+        dto.setTelephoneNumber(clinicStaff.getTelephoneNumber());
+        dto.setClinicId(clinicStaff.getClinicId());
 
         return dto;
     }
@@ -29,12 +28,12 @@ public class ClinicStaffMapper {
         if (dto == null) return null;
 
         ClinicStaff clinicStaff = new ClinicStaff();
-        clinicStaff.setSupabaseUid(dto.getId());
-        clinicStaff.setUsername(dto.getUsername());
+        clinicStaff.setUserId(dto.getUserId());
         clinicStaff.setName(dto.getName());
         clinicStaff.setEmail(dto.getEmail());
         clinicStaff.setRole(dto.getRole());
-
+        clinicStaff.setTelephoneNumber(dto.getTelephoneNumber());
+        clinicStaff.setClinicId(dto.getClinicId());
 
         return clinicStaff;
     }

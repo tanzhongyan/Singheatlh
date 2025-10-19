@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -55,13 +56,13 @@ public class AuthServiceImpl implements AuthService {
             Role role = Role.valueOf(signUpRequest.getRole().toUpperCase());
 
             switch (role) {
-                case PATIENT:
+                case P:
                     userDto = createPatient(signUpRequest);
                     break;
-                case CLINIC_STAFF:
+                case C:
                     userDto = createClinicStaff(signUpRequest);
                     break;
-                case SYSTEM_ADMINISTRATOR:
+                case S:
                     userDto = createSystemAdministrator(signUpRequest);
                     break;
                 default:
@@ -96,7 +97,8 @@ public class AuthServiceImpl implements AuthService {
     public UserDto getCurrentUserProfile(String supabaseUid) {
         log.debug("Fetching profile for user ID: {}", supabaseUid);
 
-        User user = userRepository.findById(supabaseUid)
+        UUID userId = UUID.fromString(supabaseUid);
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundExecption("User not found with ID: " + supabaseUid));
 
         // Return the appropriate DTO based on user type
@@ -124,12 +126,13 @@ public class AuthServiceImpl implements AuthService {
     public void updateEmail(String userId, String newEmail, String currentPassword) {
         log.info("Updating email for user ID: {}", userId);
 
-        User user = userRepository.findById(userId)
+        UUID userUuid = UUID.fromString(userId);
+        User user = userRepository.findById(userUuid)
                 .orElseThrow(() -> new ResourceNotFoundExecption("User not found with ID: " + userId));
 
         // Check if new email is already taken
         Optional<User> existingUser = userRepository.findByEmail(newEmail);
-        if (existingUser.isPresent() && !existingUser.get().getSupabaseUid().equals(userId)) {
+        if (existingUser.isPresent() && !existingUser.get().getUserId().equals(userUuid)) {
             throw new RuntimeException("Email " + newEmail + " is already taken");
         }
 
@@ -163,7 +166,7 @@ public class AuthServiceImpl implements AuthService {
         log.info("Initiating password reset for email: {}", email);
 
         // Check if user exists
-        User user = userRepository.findByEmail(email)
+        userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundExecption("User not found with email: " + email));
 
         // Note: Password reset is handled by Supabase Auth
@@ -175,16 +178,15 @@ public class AuthServiceImpl implements AuthService {
     // Helper methods
     private UserDto createPatient(SignUpRequest request) {
         PatientDto patientDto = PatientDto.builder()
-                .id(request.getId())
-                .username(request.getUsername())
+                .userId(UUID.fromString(request.getId()))
                 .name(request.getName())
                 .email(request.getEmail())
-                .role(Role.PATIENT)
+                .role(Role.P)
                 .appointmentIds(null)
                 .build();
 
         Patient patient = patientMapper.toEntity(patientDto);
-        patient.setRole(Role.PATIENT);
+        patient.setRole(Role.P);
 
         Patient savedPatient = patientRepository.save(patient);
         return patientMapper.toDto(savedPatient);
@@ -192,16 +194,15 @@ public class AuthServiceImpl implements AuthService {
 
     private UserDto createClinicStaff(SignUpRequest request) {
         ClinicStaffDto staffDto = ClinicStaffDto.builder()
-                .id(request.getId())
-                .username(request.getUsername())
+                .userId(UUID.fromString(request.getId()))
                 .name(request.getName())
                 .email(request.getEmail())
-                .role(Role.CLINIC_STAFF)
+                .role(Role.C)
                 .clinicId(request.getClinicId())
                 .build();
 
         ClinicStaff clinicStaff = clinicStaffMapper.toEntity(staffDto);
-        clinicStaff.setRole(Role.CLINIC_STAFF);
+        clinicStaff.setRole(Role.C);
 
         // Set clinic if provided
         if (request.getClinicId() != null) {
@@ -216,15 +217,14 @@ public class AuthServiceImpl implements AuthService {
 
     private UserDto createSystemAdministrator(SignUpRequest request) {
         SystemAdministratorDto adminDto = SystemAdministratorDto.builder()
-                .id(request.getId())
-                .username(request.getUsername())
+                .userId(UUID.fromString(request.getId()))
                 .name(request.getName())
                 .email(request.getEmail())
-                .role(Role.SYSTEM_ADMINISTRATOR)
+                .role(Role.S)
                 .build();
 
         SystemAdministrator admin = systemAdministratorMapper.toEntity(adminDto);
-        admin.setRole(Role.SYSTEM_ADMINISTRATOR);
+        admin.setRole(Role.S);
 
         SystemAdministrator savedAdmin = systemAdministratorRepository.save(admin);
         return systemAdministratorMapper.toDto(savedAdmin);
