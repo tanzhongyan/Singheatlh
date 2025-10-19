@@ -24,9 +24,8 @@ public class DoctorServiceImpl implements DoctorService {
     private final DoctorMapper doctorMapper;
 
     @Override
-    public DoctorDto getById(Long id) {
-        String doctorId = String.valueOf(id);
-        Doctor doctor = doctorRepository.findById(doctorId).orElseThrow(
+    public DoctorDto getById(String id) {
+        Doctor doctor = doctorRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundExecption("Doctor does not exist with the given id " + id)
         );
         return doctorMapper.toDto(doctor);
@@ -77,9 +76,7 @@ public class DoctorServiceImpl implements DoctorService {
             Clinic clinic = clinicRepository.findById(doctorDto.getClinicId()).orElseThrow(
                     () -> new ResourceNotFoundExecption("Clinic does not exist with the given id " + doctorDto.getClinicId())
             );
-            doctor.setClinic(clinic);
-        } else {
-            doctor.setClinic(null);
+            doctor.setClinicId(doctorDto.getClinicId());
         }
 
         Doctor savedDoctor = doctorRepository.save(doctor);
@@ -88,11 +85,10 @@ public class DoctorServiceImpl implements DoctorService {
 
     @Override
     @Transactional
-    public void deleteDoctor(Long id) {
-        String doctorId = String.valueOf(id);
-        doctorRepository.findById(doctorId).orElseThrow(
+    public void deleteDoctor(String id) {
+        doctorRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundExecption("Doctor does not exist with the given id " + id)
         );
-        doctorRepository.deleteById(doctorId);
+        doctorRepository.deleteById(id);
     }
 }
