@@ -151,6 +151,20 @@ public class AppointmentController {
         }
     }
     
+    // Get available time slots for a doctor on a specific date
+    @GetMapping("/doctor/{doctorId}/available-slots")
+    public ResponseEntity<List<LocalDateTime>> getAvailableSlots(
+            @PathVariable String doctorId,
+            @RequestParam String date) {
+        try {
+            LocalDateTime targetDate = LocalDateTime.parse(date + "T00:00:00");
+            List<LocalDateTime> availableSlots = appointmentService.getAvailableSlots(doctorId, targetDate);
+            return ResponseEntity.ok(availableSlots);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
     // Get upcoming appointments by doctor ID
     @GetMapping("/doctor/{doctorId}/upcoming")
     public ResponseEntity<List<AppointmentDto>> getUpcomingAppointmentsByDoctorId(@PathVariable String doctorId) {
