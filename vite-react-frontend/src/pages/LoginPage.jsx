@@ -34,28 +34,40 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-vh-100 bg-light d-flex align-items-center">
+    <div className="min-vh-100 d-flex" style={{ backgroundColor: '#f8f9fa' }}>
       <div className="container">
-        <div className="row justify-content-center">
-          <div className="col-md-6 col-lg-4">
-            <div className="card shadow-lg border-0 rounded-3">
-              <div className="card-body p-5">
-                <div className="text-center mb-4">
-                  <h2 className="card-title fw-bold text-primary">
-                    Welcome Back
-                  </h2>
-                  <p className="text-muted">Sign in to your account</p>
+        <div className="row justify-content-center align-items-center min-vh-100">
+          <div className="col-md-10 col-lg-8">
+            <div className="row shadow-lg rounded-4 overflow-hidden bg-white">
+              {/* Left Side - Branding */}
+              <div className="col-md-6 bg-primary text-white p-5 d-flex flex-column justify-content-center">
+                <h1 className="display-4 fw-bold mb-3">
+                  <i className="bi bi-heart-pulse-fill me-3"></i>
+                  SingHealth
+                </h1>
+                <p className="lead mb-4">Your Health, Our Priority</p>
+                <p className="mb-0 opacity-75">
+                  Access your medical appointments, records, and healthcare services all in one place.
+                </p>
+              </div>
+
+              {/* Right Side - Login Form */}
+              <div className="col-md-6 p-5">
+                <div className="mb-4">
+                  <h2 className="fw-bold mb-2">Welcome Back</h2>
+                  <p className="text-muted">Please sign in to continue</p>
                 </div>
 
                 {error && (
-                  <div className="alert alert-danger" role="alert">
+                  <div className="alert alert-danger border-0" role="alert">
+                    <i className="bi bi-exclamation-circle me-2"></i>
                     {error}
                   </div>
                 )}
 
                 <form onSubmit={handleSubmit}>
                   <div className="mb-3">
-                    <label htmlFor="email" className="form-label">
+                    <label htmlFor="email" className="form-label fw-semibold">
                       Email Address
                     </label>
                     <input
@@ -64,13 +76,13 @@ const LoginPage = () => {
                       id="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Enter your email"
+                      placeholder="you@example.com"
                       required
                     />
                   </div>
 
                   <div className="mb-4">
-                    <label htmlFor="password" className="form-label">
+                    <label htmlFor="password" className="form-label fw-semibold">
                       Password
                     </label>
                     <input
@@ -86,7 +98,7 @@ const LoginPage = () => {
 
                   <button
                     type="submit"
-                    className="btn btn-primary btn-lg w-100 py-2"
+                    className="btn btn-primary btn-lg w-100 mb-3"
                     disabled={loading}
                   >
                     {loading ? (
@@ -95,19 +107,19 @@ const LoginPage = () => {
                         Signing In...
                       </>
                     ) : (
-                      "Sign In"
+                      'Sign In'
                     )}
                   </button>
                 </form>
 
-                <div className="text-center mt-4">
-                  <p className="text-muted">
+                <div className="text-center">
+                  <p className="text-muted mb-0">
                     Don't have an account?{" "}
                     <Link
                       to="/signup"
                       className="text-primary text-decoration-none fw-semibold"
                     >
-                      Sign up
+                      Create Account
                     </Link>
                   </p>
                 </div>

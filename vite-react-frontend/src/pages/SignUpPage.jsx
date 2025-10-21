@@ -37,7 +37,7 @@ const SignUpPage = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await signUp({ email, password });
+      const { error } = await signUp({ email, password });
       if (error) throw error;
 
       setMessage(
@@ -58,34 +58,47 @@ const SignUpPage = () => {
   };
 
   return (
-    <div className="min-vh-100 bg-light d-flex align-items-center">
+    <div className="min-vh-100 d-flex" style={{ backgroundColor: '#f8f9fa' }}>
       <div className="container">
-        <div className="row justify-content-center">
-          <div className="col-md-6 col-lg-4">
-            <div className="card shadow-lg border-0 rounded-3">
-              <div className="card-body p-5">
-                <div className="text-center mb-4">
-                  <h2 className="card-title fw-bold text-primary">
-                    Create Account
-                  </h2>
-                  <p className="text-muted">Join us today</p>
+        <div className="row justify-content-center align-items-center min-vh-100">
+          <div className="col-md-10 col-lg-8">
+            <div className="row shadow-lg rounded-4 overflow-hidden bg-white">
+              {/* Left Side - Branding */}
+              <div className="col-md-6 bg-primary text-white p-5 d-flex flex-column justify-content-center">
+                <h1 className="display-4 fw-bold mb-3">
+                  <i className="bi bi-heart-pulse-fill me-3"></i>
+                  SingHealth
+                </h1>
+                <p className="lead mb-4">Join Our Healthcare Community</p>
+                <p className="mb-0 opacity-75">
+                  Get started today and enjoy seamless access to quality healthcare services.
+                </p>
+              </div>
+
+              {/* Right Side - Signup Form */}
+              <div className="col-md-6 p-5">
+                <div className="mb-4">
+                  <h2 className="fw-bold mb-2">Create Account</h2>
+                  <p className="text-muted">Sign up to get started</p>
                 </div>
 
                 {error && (
-                  <div className="alert alert-danger" role="alert">
+                  <div className="alert alert-danger border-0" role="alert">
+                    <i className="bi bi-exclamation-circle me-2"></i>
                     {error}
                   </div>
                 )}
 
                 {message && (
-                  <div className="alert alert-success" role="alert">
+                  <div className="alert alert-success border-0" role="alert">
+                    <i className="bi bi-check-circle me-2"></i>
                     {message}
                   </div>
                 )}
 
                 <form onSubmit={handleSubmit}>
                   <div className="mb-3">
-                    <label htmlFor="email" className="form-label">
+                    <label htmlFor="email" className="form-label fw-semibold">
                       Email Address
                     </label>
                     <input
@@ -94,13 +107,13 @@ const SignUpPage = () => {
                       id="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Enter your email"
+                      placeholder="you@example.com"
                       required
                     />
                   </div>
 
                   <div className="mb-3">
-                    <label htmlFor="password" className="form-label">
+                    <label htmlFor="password" className="form-label fw-semibold">
                       Password
                     </label>
                     <input
@@ -109,16 +122,16 @@ const SignUpPage = () => {
                       id="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter your password"
+                      placeholder="Create a password"
                       required
                     />
                     <div className="form-text">
-                      Password must be at least 6 characters
+                      Minimum 6 characters
                     </div>
                   </div>
 
                   <div className="mb-4">
-                    <label htmlFor="confirmPassword" className="form-label">
+                    <label htmlFor="confirmPassword" className="form-label fw-semibold">
                       Confirm Password
                     </label>
                     <input
@@ -134,7 +147,7 @@ const SignUpPage = () => {
 
                   <button
                     type="submit"
-                    className="btn btn-primary btn-lg w-100 py-2"
+                    className="btn btn-primary btn-lg w-100 mb-3"
                     disabled={loading}
                   >
                     {loading ? (
@@ -143,19 +156,19 @@ const SignUpPage = () => {
                         Creating Account...
                       </>
                     ) : (
-                      "Create Account"
+                      'Create Account'
                     )}
                   </button>
                 </form>
 
-                <div className="text-center mt-4">
-                  <p className="text-muted">
+                <div className="text-center">
+                  <p className="text-muted mb-0">
                     Already have an account?{" "}
                     <Link
                       to="/login"
                       className="text-primary text-decoration-none fw-semibold"
                     >
-                      Sign in
+                      Sign In
                     </Link>
                   </p>
                 </div>

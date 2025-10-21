@@ -13,10 +13,11 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav className="navbar navbar-expand-lg navbar-light bg-white">
       <div className="container">
         <Link className="navbar-brand fw-bold" to="/">
-          MyApp
+          <i className="bi bi-heart-pulse-fill me-2"></i>
+          SingHealth
         </Link>
 
         <button
@@ -29,20 +30,27 @@ const Navbar = () => {
         </button>
 
         <div className="collapse navbar-collapse" id="navbarNav">
-          <ul className="navbar-nav ms-auto">
+          <ul className="navbar-nav ms-auto align-items-center">
             {user ? (
               <>
                 <li className="nav-item">
-                  <span className="navbar-text text-light me-3">
-                    Welcome, {user.email}
+                  <Link className="nav-link" to="/appointments">
+                    <i className="bi bi-calendar-check me-1"></i>
+                    My Appointments
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <span className="nav-link text-muted small" style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {user.email}
                   </span>
                 </li>
                 <li className="nav-item">
                   <button
-                    className="btn btn-outline-light btn-sm"
+                    className="btn btn-outline-primary btn-sm"
                     onClick={handleSignOut}
                   >
-                    Sign Out
+                    <i className="bi bi-box-arrow-right me-1"></i>
+                    Logout
                   </button>
                 </li>
               </>

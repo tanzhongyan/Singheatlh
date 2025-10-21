@@ -1,0 +1,144 @@
+import { useState } from 'react';
+
+const AppointmentList = ({ appointments, onCancel }) => {
+  const [filter, setFilter] = useState('all'); // all, upcoming, completed, cancelled
+
+  const getStatusBadge = (status) => {
+    const badges = {
+      UPCOMING: 'bg-primary',
+      ONGOING: 'bg-success',
+      COMPLETED: 'bg-secondary',
+      CANCELLED: 'bg-danger',
+      MISSED: 'bg-warning text-dark',
+    };
+    return badges[status] || 'bg-secondary';
+  };
+
+  const formatDateTime = (dateTimeString) => {
+    const date = new Date(dateTimeString);
+    return date.toLocaleString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const filteredAppointments = appointments.filter((apt) => {
+    if (filter === 'all') return true;
+    return apt.status.toLowerCase() === filter.toLowerCase();
+  });
+
+  const sortedAppointments = [...filteredAppointments].sort((a, b) => {
+    return new Date(b.startDatetime) - new Date(a.startDatetime);
+  });
+
+  return (
+    <div>
+      {/* Filter Tabs */}
+      <ul className="nav nav-tabs mb-4">
+        <li className="nav-item">
+          <button
+            className={`nav-link ${filter === 'all' ? 'active' : ''}`}
+            onClick={() => setFilter('all')}
+          >
+            All <span className="badge bg-secondary ms-1">{appointments.length}</span>
+          </button>
+        </li>
+        <li className="nav-item">
+          <button
+            className={`nav-link ${filter === 'upcoming' ? 'active' : ''}`}
+            onClick={() => setFilter('upcoming')}
+          >
+            Upcoming <span className="badge bg-primary ms-1">{appointments.filter((a) => a.status === 'UPCOMING').length}</span>
+          </button>
+        </li>
+        <li className="nav-item">
+          <button
+            className={`nav-link ${filter === 'completed' ? 'active' : ''}`}
+            onClick={() => setFilter('completed')}
+          >
+            Completed <span className="badge bg-secondary ms-1">{appointments.filter((a) => a.status === 'COMPLETED').length}</span>
+          </button>
+        </li>
+        <li className="nav-item">
+          <button
+            className={`nav-link ${filter === 'cancelled' ? 'active' : ''}`}
+            onClick={() => setFilter('cancelled')}
+          >
+            Cancelled <span className="badge bg-danger ms-1">{appointments.filter((a) => a.status === 'CANCELLED').length}</span>
+          </button>
+        </li>
+      </ul>
+
+      {/* Appointments List */}
+      {sortedAppointments.length === 0 ? (
+        <div className="empty-state">
+          <i className="bi bi-calendar-x"></i>
+          <p className="mt-3">
+            {filter === 'all'
+              ? 'No appointments found. Book your first appointment!'
+              : `No ${filter} appointments.`}
+          </p>
+        </div>
+      ) : (
+        <div className="row g-4">
+          {sortedAppointments.map((appointment) => (
+            <div key={appointment.appointmentId} className="col-md-6 col-lg-4">
+              <div className="card h-100 border">
+                <div className="card-body p-4">
+                  <div className="d-flex justify-content-between align-items-start mb-3">
+                    <h5 className="card-title mb-0 fw-bold">
+                      Dr. {appointment.doctorName || 'Unknown'}
+                    </h5>
+                    <span className={`badge ${getStatusBadge(appointment.status)}`}>
+                      {appointment.status}
+                    </span>
+                  </div>
+
+                  <div className="mb-3">
+                    <div className="d-flex align-items-center mb-2 text-muted">
+                      <i className="bi bi-hospital me-2"></i>
+                      <span className="small">{appointment.clinicName || 'Unknown Clinic'}</span>
+                    </div>
+
+                    <div className="d-flex align-items-center mb-2">
+                      <i className="bi bi-calendar-event me-2 text-primary"></i>
+                      <span className="small">{formatDateTime(appointment.startDatetime)}</span>
+                    </div>
+
+                    <div className="d-flex align-items-center text-muted">
+                      <i className="bi bi-clock me-2"></i>
+                      <span className="small">
+                        {appointment.endDatetime
+                          ? new Date(appointment.endDatetime).toLocaleTimeString('en-US', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })
+                          : 'Duration not set'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {appointment.status === 'UPCOMING' && (
+                    <button
+                      className="btn btn-outline-danger btn-sm w-100"
+                      onClick={() => onCancel(appointment.appointmentId)}
+                    >
+                      <i className="bi bi-x-circle me-1"></i>
+                      Cancel Appointment
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AppointmentList;

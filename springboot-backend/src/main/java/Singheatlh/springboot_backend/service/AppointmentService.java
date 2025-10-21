@@ -42,4 +42,7 @@ public interface AppointmentService {
     
     
     List<AppointmentDto> getAppointmentsByStatus(AppointmentStatus status);
+    
+    
+    List<LocalDateTime> getAvailableSlots(String doctorId, LocalDateTime date);
 }

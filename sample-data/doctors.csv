@@ -1,0 +1,21 @@
+doctor_id,name,clinic_id
+D000000001,Dr. Tan Wei Ming,1
+D000000002,Dr. Sarah Johnson,1
+D000000003,Dr. Rajesh Kumar,2
+D000000004,Dr. Emily Chen,2
+D000000005,Dr. Marcus Lim,3
+D000000006,Dr. Jennifer Wong,3
+D000000007,Dr. David Ng,4
+D000000008,Dr. Michelle Tan,4
+D000000009,Dr. Andrew Lee,5
+D000000010,Dr. Rachel Goh,5
+D000000011,Dr. Kevin Ong,6
+D000000012,Dr. Grace Teo,6
+D000000013,Dr. Steven Koh,7
+D000000014,Dr. Nicole Sim,7
+D000000015,Dr. Benjamin Yeo,8
+D000000016,Dr. Amanda Low,8
+D000000017,Dr. Daniel Chua,9
+D000000018,Dr. Jessica Tay,9
+D000000019,Dr. Robert Yap,10
+D000000020,Dr. Linda Ho,10

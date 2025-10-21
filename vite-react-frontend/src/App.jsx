@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import SignUpPage from './pages/SignUpPage';
+import AppointmentsPage from './pages/patient/AppointmentsPage';
 import AdminLayout from './components/admin/AdminLayout';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import UserManagementPage from './pages/admin/UserManagementPage';
@@ -20,6 +21,11 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
+
+        {/* Patient Routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/appointments" element={<AppointmentsPage />} />
+        </Route>
 
         {/* Admin Routes */}
         <Route element={<ProtectedRoute />}>

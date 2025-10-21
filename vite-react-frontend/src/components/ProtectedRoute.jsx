@@ -1,17 +1,21 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-
-// Placeholder for now. In a real app, you'd check for admin role.
-const useAuth = () => {
-    // For now, let's assume the user is an admin.
-    // In a real app, you would get this from your AuthContext.
-    const user = { role: 'SYSTEM_ADMINISTRATOR' }; 
-    return user && user.role === 'SYSTEM_ADMINISTRATOR';
-};
+import { useAuth } from '../contexts/AuthContext';
 
 const ProtectedRoute = () => {
-    const isAuth = useAuth();
-    return isAuth ? <Outlet /> : <Navigate to="/login" />;
+    const { user, loading } = useAuth();
+    
+    if (loading) {
+        return (
+            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
+                <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        );
+    }
+    
+    return user ? <Outlet /> : <Navigate to="/login" />;
 };
 
 export default ProtectedRoute;
