@@ -39,7 +39,7 @@ public class QueueServiceImpl implements QueueService {
     private NotificationService notificationService;
 
     @Override
-    public QueueTicketDto checkIn(Long appointmentId) {
+    public QueueTicketDto checkIn(String appointmentId) {
 
         Appointment appointment = appointmentRepository.findById(appointmentId)
             .orElseThrow(() -> new ResourceNotFoundExecption("Appointment not found with id: " + appointmentId));
@@ -58,14 +58,11 @@ public class QueueServiceImpl implements QueueService {
             appointment.getDoctorId(), now);
         Integer newQueueNumber = (maxQueueNumber == null) ? 1 : maxQueueNumber + 1;
         
-        // Create queue ticket
+        // Create queue ticket with simplified constructor
         QueueTicket queueTicket = new QueueTicket(
             appointmentId,
             now,
-            newQueueNumber,
-            appointment.getClinicId(),
-            appointment.getDoctorId(),
-            appointment.getPatientId()
+            newQueueNumber
         );
         
         // If patient is first in queue (queue_number = 1), automatically set to CALLED
@@ -96,7 +93,7 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public QueueTicketDto getQueueTicketByAppointmentId(Long appointmentId) {
+    public QueueTicketDto getQueueTicketByAppointmentId(String appointmentId) {
         QueueTicket queueTicket = queueTicketRepository.findByAppointmentId(appointmentId)
             .orElseThrow(() -> new ResourceNotFoundExecption("Queue ticket not found for appointment id: " + appointmentId));
         return queueTicketMapper.toDto(queueTicket);
@@ -137,7 +134,7 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public List<QueueTicketDto> getActiveQueueByDoctor(Long doctorId) {
+    public List<QueueTicketDto> getActiveQueueByDoctor(String doctorId) {
         LocalDateTime today = LocalDateTime.now();
         List<QueueTicket> activeQueue = queueTicketRepository.findActiveQueueByDoctorIdAndDate(doctorId, today);
         return activeQueue.stream()
@@ -146,7 +143,7 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public List<QueueTicketDto> getActiveQueueByClinic(Long clinicId) {
+    public List<QueueTicketDto> getActiveQueueByClinic(Integer clinicId) {
         LocalDateTime today = LocalDateTime.now();
         List<QueueTicket> activeQueue = queueTicketRepository.findActiveQueueByClinicIdAndDate(clinicId, today);
         return activeQueue.stream()
@@ -155,7 +152,7 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public QueueTicketDto callNextQueue(Long doctorId) {
+    public QueueTicketDto callNextQueue(String doctorId) {
         LocalDateTime today = LocalDateTime.now();
         
         List<QueueTicket> activeQueue = queueTicketRepository.findActiveQueueByDoctorIdAndDate(doctorId, today);
@@ -283,7 +280,7 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public List<QueueTicketDto> getQueueTicketsByPatientId(Long patientId) {
+    public List<QueueTicketDto> getQueueTicketsByPatientId(java.util.UUID patientId) {
         List<QueueTicket> queueTickets = queueTicketRepository.findByPatientId(patientId);
         return queueTickets.stream()
             .map(queueTicketMapper::toDto)
@@ -291,7 +288,7 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public void processQueueNotifications(Long doctorId) {
+    public void processQueueNotifications(String doctorId) {
         LocalDateTime today = LocalDateTime.now();
         
         // Get current serving number
@@ -325,7 +322,7 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public Integer getCurrentServingNumber(Long doctorId) {
+    public Integer getCurrentServingNumber(String doctorId) {
         LocalDateTime today = LocalDateTime.now();
         List<QueueTicket> currentlyServing = queueTicketRepository.findCurrentQueueNumberByDoctorIdAndDate(doctorId, today);
         
@@ -347,7 +344,7 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public Long getActiveQueueCount(Long doctorId) {
+    public Long getActiveQueueCount(String doctorId) {
         LocalDateTime today = LocalDateTime.now();
         return queueTicketRepository.countActiveQueueByDoctorIdAndDate(doctorId, today);
     }

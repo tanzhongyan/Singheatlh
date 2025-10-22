@@ -32,8 +32,8 @@ public class QueueTicket {
     @Column(name = "ticket_id")
     private Long ticketId;
     
-    @Column(name = "appointment_id", nullable = false, unique = true)
-    private Long appointmentId;
+    @Column(name = "appointment_id", nullable = false, unique = true, length = 10)
+    private String appointmentId;
     
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
@@ -45,35 +45,36 @@ public class QueueTicket {
     @Column(name = "queue_number", nullable = false)
     private Integer queueNumber;
     
-    @Column(name = "clinic_id", nullable = false)
-    private Long clinicId;
-    
-    @Column(name = "doctor_id", nullable = false)
-    private Long doctorId;
-    
-    @Column(name = "patient_id", nullable = false)
-    private Long patientId;
-    
     @Column(name = "is_fast_tracked")
     private Boolean isFastTracked = false;
     
     @Column(name = "fast_track_reason")
     private String fastTrackReason;
     
-    // Relationship with Appointment
-    @OneToOne(fetch = FetchType.LAZY)
+    // Relationship with Appointment (EAGER fetch to access related data)
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "appointment_id", insertable = false, updatable = false)
     private Appointment appointment;
     
-    public QueueTicket(Long appointmentId, LocalDateTime checkInTime, Integer queueNumber, 
-                       Long clinicId, Long doctorId, Long patientId) {
+    public QueueTicket(String appointmentId, LocalDateTime checkInTime, Integer queueNumber) {
         this.appointmentId = appointmentId;
         this.checkInTime = checkInTime;
         this.queueNumber = queueNumber;
-        this.clinicId = clinicId;
-        this.doctorId = doctorId;
-        this.patientId = patientId;
         this.status = QueueStatus.CHECKED_IN;
         this.isFastTracked = false;
+    }
+    
+    // Helper methods to get data from related Appointment
+    public Integer getClinicId() {
+        return appointment != null && appointment.getDoctor() != null ? 
+            appointment.getDoctor().getClinicId() : null;
+    }
+    
+    public String getDoctorId() {
+        return appointment != null ? appointment.getDoctorId() : null;
+    }
+    
+    public java.util.UUID getPatientId() {
+        return appointment != null ? appointment.getPatientId() : null;
     }
 }

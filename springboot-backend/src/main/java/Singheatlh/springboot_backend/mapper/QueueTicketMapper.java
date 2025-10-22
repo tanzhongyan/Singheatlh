@@ -20,18 +20,30 @@ public class QueueTicketMapper {
         dto.setStatus(queueTicket.getStatus());
         dto.setCheckInTime(queueTicket.getCheckInTime());
         dto.setQueueNumber(queueTicket.getQueueNumber());
-        dto.setClinicId(queueTicket.getClinicId());
-        dto.setDoctorId(queueTicket.getDoctorId());
-        dto.setPatientId(queueTicket.getPatientId());
         dto.setIsFastTracked(queueTicket.getIsFastTracked());
         dto.setFastTrackReason(queueTicket.getFastTrackReason());
         
-        // set related entity information if loaded
+        // Get data from related Appointment entity (using helper methods)
+        dto.setClinicId(queueTicket.getClinicId());
+        dto.setDoctorId(queueTicket.getDoctorId());
+        dto.setPatientId(queueTicket.getPatientId());
+        
+        // Set related entity information if loaded
         if (queueTicket.getAppointment() != null) {
-            dto.setAppointmentDatetime(queueTicket.getAppointment().getAppointmentDatetime());
+            dto.setAppointmentDatetime(queueTicket.getAppointment().getStartDatetime());
             
+            // Get patient name
             if (queueTicket.getAppointment().getPatient() != null) {
                 dto.setPatientName(queueTicket.getAppointment().getPatient().getName());
+            }
+            
+            // Get doctor and clinic information
+            if (queueTicket.getAppointment().getDoctor() != null) {
+                dto.setDoctorName(queueTicket.getAppointment().getDoctor().getName());
+                
+                if (queueTicket.getAppointment().getDoctor().getClinic() != null) {
+                    dto.setClinicName(queueTicket.getAppointment().getDoctor().getClinic().getName());
+                }
             }
         }
         
@@ -43,13 +55,11 @@ public class QueueTicketMapper {
             return null;
         }
         
+        // Use simplified constructor (no longer needs clinicId, doctorId, patientId)
         return new QueueTicket(
             dto.getAppointmentId(),
             dto.getCheckInTime(),
-            dto.getQueueNumber(),
-            dto.getClinicId(),
-            dto.getDoctorId(),
-            dto.getPatientId()
+            dto.getQueueNumber()
         );
     }
 }

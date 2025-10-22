@@ -8,19 +8,19 @@ import Singheatlh.springboot_backend.entity.enums.QueueStatus;
 
 public interface QueueService {
     
-    QueueTicketDto checkIn(Long appointmentId);
+    QueueTicketDto checkIn(String appointmentId);
     
     QueueTicketDto getQueueTicketById(Long ticketId);
     
-    QueueTicketDto getQueueTicketByAppointmentId(Long appointmentId);
+    QueueTicketDto getQueueTicketByAppointmentId(String appointmentId);
     
     QueueStatusDto getQueueStatus(Long ticketId);
     
-    List<QueueTicketDto> getActiveQueueByDoctor(Long doctorId);
+    List<QueueTicketDto> getActiveQueueByDoctor(String doctorId);
     
-    List<QueueTicketDto> getActiveQueueByClinic(Long clinicId);
+    List<QueueTicketDto> getActiveQueueByClinic(Integer clinicId);
     
-    QueueTicketDto callNextQueue(Long doctorId);
+    QueueTicketDto callNextQueue(String doctorId);
     
     QueueTicketDto updateQueueStatus(Long ticketId, QueueStatus status);
     
@@ -34,11 +34,11 @@ public interface QueueService {
     
     void cancelQueueTicket(Long ticketId);
     
-    List<QueueTicketDto> getQueueTicketsByPatientId(Long patientId);
+    List<QueueTicketDto> getQueueTicketsByPatientId(java.util.UUID patientId);
     
-    void processQueueNotifications(Long doctorId);
+    void processQueueNotifications(String doctorId);
     
-    Integer getCurrentServingNumber(Long doctorId);
+    Integer getCurrentServingNumber(String doctorId);
     
-    Long getActiveQueueCount(Long doctorId);
+    Long getActiveQueueCount(String doctorId);
 }

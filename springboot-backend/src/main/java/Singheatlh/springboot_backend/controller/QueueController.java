@@ -7,7 +7,6 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,7 +22,6 @@ import Singheatlh.springboot_backend.dto.QueueTicketDto;
 import Singheatlh.springboot_backend.entity.enums.QueueStatus;
 import Singheatlh.springboot_backend.service.QueueService;
 
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/queue")
 public class QueueController {
@@ -33,7 +31,7 @@ public class QueueController {
     private QueueService queueService;
 
     @PostMapping("/check-in/{appointmentId}")
-    public ResponseEntity<QueueTicketDto> checkIn(@PathVariable Long appointmentId) {
+    public ResponseEntity<QueueTicketDto> checkIn(@PathVariable String appointmentId) {
         try {
             QueueTicketDto queueTicket = queueService.checkIn(appointmentId);
             return ResponseEntity.status(HttpStatus.CREATED).body(queueTicket);
@@ -57,7 +55,7 @@ public class QueueController {
     
 
     @GetMapping("/appointment/{appointmentId}")
-    public ResponseEntity<QueueTicketDto> getQueueTicketByAppointmentId(@PathVariable Long appointmentId) {
+    public ResponseEntity<QueueTicketDto> getQueueTicketByAppointmentId(@PathVariable String appointmentId) {
         try {
             QueueTicketDto queueTicket = queueService.getQueueTicketByAppointmentId(appointmentId);
             return ResponseEntity.ok(queueTicket);
@@ -78,7 +76,7 @@ public class QueueController {
     }
     
     @GetMapping("/doctor/{doctorId}")
-    public ResponseEntity<List<QueueTicketDto>> getActiveQueueByDoctor(@PathVariable Long doctorId) {
+    public ResponseEntity<List<QueueTicketDto>> getActiveQueueByDoctor(@PathVariable String doctorId) {
         try {
             List<QueueTicketDto> queue = queueService.getActiveQueueByDoctor(doctorId);
             return ResponseEntity.ok(queue);
@@ -89,7 +87,7 @@ public class QueueController {
     
 
     @GetMapping("/clinic/{clinicId}")
-    public ResponseEntity<List<QueueTicketDto>> getActiveQueueByClinic(@PathVariable Long clinicId) {
+    public ResponseEntity<List<QueueTicketDto>> getActiveQueueByClinic(@PathVariable Integer clinicId) {
         try {
             List<QueueTicketDto> queue = queueService.getActiveQueueByClinic(clinicId);
             return ResponseEntity.ok(queue);
@@ -100,7 +98,7 @@ public class QueueController {
     
 
     @PostMapping("/call-next/{doctorId}")
-    public ResponseEntity<QueueTicketDto> callNextQueue(@PathVariable Long doctorId) {
+    public ResponseEntity<QueueTicketDto> callNextQueue(@PathVariable String doctorId) {
         try {
             QueueTicketDto nextTicket = queueService.callNextQueue(doctorId);
             
@@ -197,7 +195,7 @@ public class QueueController {
     
 
     @GetMapping("/patient/{patientId}")
-    public ResponseEntity<List<QueueTicketDto>> getQueueTicketsByPatientId(@PathVariable Long patientId) {
+    public ResponseEntity<List<QueueTicketDto>> getQueueTicketsByPatientId(@PathVariable java.util.UUID patientId) {
         try {
             List<QueueTicketDto> tickets = queueService.getQueueTicketsByPatientId(patientId);
             return ResponseEntity.ok(tickets);
@@ -207,7 +205,7 @@ public class QueueController {
     }
     
     @PostMapping("/notify/{doctorId}")
-    public ResponseEntity<Map<String, String>> processNotifications(@PathVariable Long doctorId) {
+    public ResponseEntity<Map<String, String>> processNotifications(@PathVariable String doctorId) {
         try {
             queueService.processQueueNotifications(doctorId);
             Map<String, String> response = new HashMap<>();
@@ -220,7 +218,7 @@ public class QueueController {
     
 
     @GetMapping("/current/{doctorId}")
-    public ResponseEntity<Map<String, Integer>> getCurrentServingNumber(@PathVariable Long doctorId) {
+    public ResponseEntity<Map<String, Integer>> getCurrentServingNumber(@PathVariable String doctorId) {
         try {
             Integer currentNumber = queueService.getCurrentServingNumber(doctorId);
             Map<String, Integer> response = new HashMap<>();
@@ -233,7 +231,7 @@ public class QueueController {
     
 
     @GetMapping("/count/{doctorId}")
-    public ResponseEntity<Map<String, Long>> getActiveQueueCount(@PathVariable Long doctorId) {
+    public ResponseEntity<Map<String, Long>> getActiveQueueCount(@PathVariable String doctorId) {
         try {
             Long count = queueService.getActiveQueueCount(doctorId);
             Map<String, Long> response = new HashMap<>();

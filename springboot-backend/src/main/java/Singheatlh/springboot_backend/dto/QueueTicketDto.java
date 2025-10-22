@@ -15,15 +15,15 @@ import lombok.Setter;
 public class QueueTicketDto {
     
     private Long ticketId;
-    private Long appointmentId;
+    private String appointmentId;
     private QueueStatus status;
     private LocalDateTime checkInTime;
     private Integer queueNumber;
-    private Long clinicId;
+    private Integer clinicId;
     private String clinicName;
-    private Long doctorId;
+    private String doctorId;
     private String doctorName;
-    private Long patientId;
+    private java.util.UUID patientId;
     private String patientName;
     private Boolean isFastTracked;
     private String fastTrackReason;
