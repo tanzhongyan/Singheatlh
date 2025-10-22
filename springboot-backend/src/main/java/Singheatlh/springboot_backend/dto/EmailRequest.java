@@ -1,12 +1,20 @@
 package Singheatlh.springboot_backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * DTO for Email request to SMU Lab Notification Service
+ * API expects: emailAddress, emailSubject, emailBody
  */
 public class EmailRequest {
     
+    @JsonProperty("emailAddress")
     private String email;
+    
+    @JsonProperty("emailSubject")
     private String subject;
+    
+    @JsonProperty("emailBody")
     private String message;
     
     public EmailRequest() {
@@ -45,9 +53,9 @@ public class EmailRequest {
     @Override
     public String toString() {
         return "EmailRequest{" +
-                "email='" + email + '\'' +
-                ", subject='" + subject + '\'' +
-                ", message='" + message + '\'' +
+                "emailAddress='" + email + '\'' +
+                ", emailSubject='" + subject + '\'' +
+                ", emailBody='" + message + '\'' +
                 '}';
     }
 }

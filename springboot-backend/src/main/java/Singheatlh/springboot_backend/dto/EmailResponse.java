@@ -1,58 +1,32 @@
 package Singheatlh.springboot_backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * DTO for Email response from SMU Lab Notification Service
+ * Uses { "status": "Email Sent" }
  */
 public class EmailResponse {
     
-    private boolean success;
-    private String message;
-    private String messageId;
+    // Field per current API: { "status": "Email Sent" }
+    @JsonProperty("status")
+    private String status;
     
     public EmailResponse() {
     }
-    
-    public EmailResponse(boolean success, String message) {
-        this.success = success;
-        this.message = message;
+
+    public String getStatus() {
+        return status;
     }
-    
-    public EmailResponse(boolean success, String message, String messageId) {
-        this.success = success;
-        this.message = message;
-        this.messageId = messageId;
-    }
-    
-    public boolean isSuccess() {
-        return success;
-    }
-    
-    public void setSuccess(boolean success) {
-        this.success = success;
-    }
-    
-    public String getMessage() {
-        return message;
-    }
-    
-    public void setMessage(String message) {
-        this.message = message;
-    }
-    
-    public String getMessageId() {
-        return messageId;
-    }
-    
-    public void setMessageId(String messageId) {
-        this.messageId = messageId;
+
+    public void setStatus(String status) {
+        this.status = status;
     }
     
     @Override
     public String toString() {
         return "EmailResponse{" +
-                "success=" + success +
-                ", message='" + message + '\'' +
-                ", messageId='" + messageId + '\'' +
+                "status='" + status + '\'' +
                 '}';
     }
 }

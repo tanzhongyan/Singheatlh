@@ -15,6 +15,10 @@ import Singheatlh.springboot_backend.entity.enums.QueueStatus;
 @Repository
 public interface QueueTicketRepository extends JpaRepository<QueueTicket, Long> {
     
+    // Find queue ticket by ID with appointment eagerly loaded
+    @Query("SELECT qt FROM QueueTicket qt LEFT JOIN FETCH qt.appointment WHERE qt.ticketId = :ticketId")
+    Optional<QueueTicket> findByIdWithAppointment(@Param("ticketId") Long ticketId);
+    
     // Find queue ticket by appointment ID (one to one)
     Optional<QueueTicket> findByAppointmentId(String appointmentId);
     

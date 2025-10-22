@@ -75,6 +75,10 @@ public class QueueServiceImpl implements QueueService {
         appointment.setStatus(AppointmentStatus.Ongoing);
         appointmentRepository.save(appointment);
         
+        // Reload the queue ticket with appointment relationship eagerly loaded
+        queueTicket = queueTicketRepository.findByIdWithAppointment(queueTicket.getTicketId())
+            .orElseThrow(() -> new ResourceNotFoundExecption("Queue ticket not found after save"));
+        
         if (newQueueNumber == 1 && notificationService != null) {
             notificationService.sendQueueCalledNotification(queueTicket);
         }
