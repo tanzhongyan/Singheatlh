@@ -13,12 +13,14 @@ public class DoctorMapper {
         }
 
         Integer clinicId = (doctor.getClinic() != null) ? doctor.getClinic().getClinicId() : doctor.getClinicId();
+        String clinicName = (doctor.getClinic() != null) ? doctor.getClinic().getName() : null;
 
-        return new DoctorDto(
-                doctor.getDoctorId(),
-                doctor.getName(),
-                clinicId
-        );
+        return DoctorDto.builder()
+                .doctorId(doctor.getDoctorId())
+                .name(doctor.getName())
+                .clinicId(clinicId)
+                .clinicName(clinicName)
+                .build();
     }
 
     public Doctor toEntity(DoctorDto doctorDto) {

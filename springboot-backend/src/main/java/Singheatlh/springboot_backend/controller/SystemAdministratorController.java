@@ -115,7 +115,7 @@ public class SystemAdministratorController {
     }
 
     @DeleteMapping("/doctors/{doctorId}")
-    public ResponseEntity<String> deleteDoctor(@PathVariable Long doctorId) {
+    public ResponseEntity<String> deleteDoctor(@PathVariable String doctorId) {
         doctorService.deleteDoctor(doctorId);
         return ResponseEntity.ok("Doctor deleted successfully!");
     }
