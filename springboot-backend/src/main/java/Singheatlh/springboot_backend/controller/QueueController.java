@@ -31,25 +31,37 @@ public class QueueController {
     private QueueService queueService;
 
     @PostMapping("/check-in/{appointmentId}")
-    public ResponseEntity<QueueTicketDto> checkIn(@PathVariable String appointmentId) {
+    public ResponseEntity<?> checkIn(@PathVariable String appointmentId) {
         try {
             QueueTicketDto queueTicket = queueService.checkIn(appointmentId);
             return ResponseEntity.status(HttpStatus.CREATED).body(queueTicket);
         } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Check-in Failed");
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("status", "BAD_REQUEST");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Internal Server Error");
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("status", "INTERNAL_SERVER_ERROR");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
     
 
     @GetMapping("/ticket/{ticketId}")
-    public ResponseEntity<QueueTicketDto> getQueueTicketById(@PathVariable Integer ticketId) {
+    public ResponseEntity<?> getQueueTicketById(@PathVariable Integer ticketId) {
         try {
             QueueTicketDto queueTicket = queueService.getQueueTicketById(ticketId);
             return ResponseEntity.ok(queueTicket);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Queue Ticket Not Found");
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("status", "NOT_FOUND");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
         }
     }
     
@@ -66,12 +78,16 @@ public class QueueController {
     
 
     @GetMapping("/status/{ticketId}")
-    public ResponseEntity<QueueStatusDto> getQueueStatus(@PathVariable Integer ticketId) {
+    public ResponseEntity<?> getQueueStatus(@PathVariable Integer ticketId) {
         try {
             QueueStatusDto status = queueService.getQueueStatus(ticketId);
             return ResponseEntity.ok(status);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Queue Status Not Found");
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("status", "NOT_FOUND");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
         }
     }
     
@@ -98,7 +114,7 @@ public class QueueController {
     
 
     @PostMapping("/call-next/{doctorId}")
-    public ResponseEntity<QueueTicketDto> callNextQueue(@PathVariable String doctorId) {
+    public ResponseEntity<?> callNextQueue(@PathVariable String doctorId) {
         try {
             QueueTicketDto nextTicket = queueService.callNextQueue(doctorId);
             
@@ -106,15 +122,28 @@ public class QueueController {
                 // q empty
                 Map<String, String> response = new HashMap<>();
                 response.put("message", "Current patient completed. No more patients in queue.");
-                return ResponseEntity.ok()
-                    .body(null);
+                return ResponseEntity.ok(response);
             }
             
             return ResponseEntity.ok(nextTicket);
         } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Call Next Failed");
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("status", "BAD_REQUEST");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        } catch (IllegalArgumentException e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Invalid Request");
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("status", "BAD_REQUEST");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Internal Server Error");
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("status", "INTERNAL_SERVER_ERROR");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
     
@@ -166,7 +195,7 @@ public class QueueController {
     
 
     @PutMapping("/ticket/{ticketId}/fast-track")
-    public ResponseEntity<QueueTicketDto> fastTrackPatient(
+    public ResponseEntity<?> fastTrackPatient(
             @PathVariable Integer ticketId,
             @RequestBody Map<String, String> request) {
         try {
@@ -174,9 +203,17 @@ public class QueueController {
             QueueTicketDto updatedTicket = queueService.fastTrackPatient(ticketId, reason);
             return ResponseEntity.ok(updatedTicket);
         } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Fast-Track Failed");
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("status", "BAD_REQUEST");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Internal Server Error");
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("status", "INTERNAL_SERVER_ERROR");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
     

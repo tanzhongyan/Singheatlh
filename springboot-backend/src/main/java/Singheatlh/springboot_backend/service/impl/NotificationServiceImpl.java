@@ -31,8 +31,6 @@ public class NotificationServiceImpl implements NotificationService {
     
     private static final Logger logger = LoggerFactory.getLogger(NotificationServiceImpl.class);
     
-    // Hardcoded email address for testing
-    private static final String HARDCODED_EMAIL_ADDRESS = "ashy.chung@gmail.com";
     
     @Autowired
     private RestTemplate restTemplate;
@@ -94,6 +92,25 @@ public class NotificationServiceImpl implements NotificationService {
         sendEmail(queueTicket, subject, message);
     }
     
+    @Override
+    public void sendFastTrackNotification(QueueTicket queueTicket) {
+        String subject = "Queue Update - You've Been Fast-Tracked!";
+        String message = String.format(
+            "Dear Patient,\n\n" +
+            "Due to your situation! You have been fast-tracked in the queue. " +
+            "Your new queue number is #%d.\n\n" +
+            "Reason: %s\n\n" +
+            "Please be ready as you will be called soon. " +
+            "Stay close to the consultation room.\n\n" +
+            "Thank you for your patience.",
+            queueTicket.getQueueNumber(),
+            queueTicket.getFastTrackReason() != null ? queueTicket.getFastTrackReason() : "Priority/Emergency"
+        );
+        
+        // Send Email via SMU Lab Notification Service
+        sendEmail(queueTicket, subject, message);
+    }
+    
     /**
      * Send Email using SMU Lab Notification Service API
      * Fetches patient email from User_Profile, falls back to hardcoded email if not found
@@ -119,8 +136,8 @@ public class NotificationServiceImpl implements NotificationService {
             }
             
             // Get patient email from database
-            String email = HARDCODED_EMAIL_ADDRESS; // Default fallback
-            String patientName = "HARDCODED_FOR_NOW";
+            String email = null;
+            String patientName = "Patient";
             
             if (patientId != null) {
                 Patient patient = patientRepository.findById(patientId).orElse(null);
@@ -129,11 +146,16 @@ public class NotificationServiceImpl implements NotificationService {
                     patientName = patient.getName() != null ? patient.getName() : "Patient";
                     logger.info("📧 Retrieved email for Patient {} ({}): {}", patientId, patientName, email);
                 } else {
-                    logger.warn("⚠️ Patient {} not found or has no email, using fallback: {}", 
-                        patientId, HARDCODED_EMAIL_ADDRESS);
+                    logger.warn("⚠️ Patient {} not found or has no email address", patientId);
                 }
             } else {
-                logger.warn("⚠️ Patient ID is still null after fetching appointment, using fallback email: {}", HARDCODED_EMAIL_ADDRESS);
+                logger.warn("⚠️ Patient ID is null, cannot retrieve email address");
+            }
+            
+            // Skip sending email if no valid email address found
+            if (email == null || email.trim().isEmpty()) {
+                logger.warn("⚠️ No valid email address found for patient {}, skipping notification", patientId);
+                return;
             }
             
             // Prepare Email request
