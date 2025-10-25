@@ -8,8 +8,8 @@
     "db:down": "cd db && docker compose down -v && cd ..",
     "db:up": "cd db && docker compose up -d && cd ..",
     "db:restart": "npm run db:down && npm run db:up",
-    "backend": "cd springboot-backend && ./mvnw spring-boot:run",
-    "backend:build": "cd springboot-backend && ./mvnw clean install -DskipTests",
+    "backend": "cd springboot-backend && .\\mvnw.cmd spring-boot:run",
+    "backend:build": "cd springboot-backend && .\\mvnw.cmd clean install -DskipTests",
     "frontend": "cd vite-react-frontend && npm install && npm run dev",
     "frontend:dev": "cd vite-react-frontend && npm run dev"
   },
