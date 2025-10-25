@@ -25,4 +25,10 @@ public interface NotificationService {
      * @param queueTicket The queue ticket of the patient to notify
      */
     void sendQueueCalledNotification(QueueTicket queueTicket);
+    
+    /**
+     * Send email notification when patient has been fast-tracked with updated queue number
+     * @param queueTicket The queue ticket of the fast-tracked patient to notify
+     */
+    void sendFastTrackNotification(QueueTicket queueTicket);
 }
