@@ -8,14 +8,36 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const { signIn, user } = useAuth();
+  const { signIn, user, userProfile } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
-      navigate("/");
+    console.log(
+      "LoginPage useEffect - user:",
+      user,
+      "userProfile:",
+      userProfile
+    );
+
+    // Redirect based on user role from user_profile table if already logged in
+    if (user && userProfile) {
+      console.log("User role:", userProfile.role);
+
+      if (userProfile.role === "S") {
+        // System Admin -> redirect to admin dashboard
+        console.log("Redirecting to /admin");
+        navigate("/admin", { replace: true });
+      } else if (userProfile.role === "P") {
+        // Patient -> redirect to patient home
+        console.log("Redirecting to /home");
+        navigate("/home", { replace: true });
+      } else if (userProfile.role === "C") {
+        // Clinic Staff -> redirect to staff dashboard
+        console.log("Redirecting to /staff");
+        navigate("/staff", { replace: true });
+      }
     }
-  }, [user, navigate]);
+  }, [user, userProfile, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,16 +47,18 @@ const LoginPage = () => {
     try {
       const { error } = await signIn({ email, password });
       if (error) throw error;
-      navigate("/");
+
+      console.log("Sign in successful, waiting for profile to load...");
+      // Note: The redirect will happen via useEffect once userProfile is loaded from user_profile table
     } catch (error) {
       setError(error.message);
-    } finally {
+      console.error("Login error:", error);
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-vh-100 d-flex" style={{ backgroundColor: '#f8f9fa' }}>
+    <div className="min-vh-100 d-flex" style={{ backgroundColor: "#f8f9fa" }}>
       <div className="container">
         <div className="row justify-content-center align-items-center min-vh-100">
           <div className="col-md-10 col-lg-8">
@@ -47,7 +71,8 @@ const LoginPage = () => {
                 </h1>
                 <p className="lead mb-4">Your Health, Our Priority</p>
                 <p className="mb-0 opacity-75">
-                  Access your medical appointments, records, and healthcare services all in one place.
+                  Access your medical appointments, records, and healthcare
+                  services all in one place.
                 </p>
               </div>
 
@@ -82,7 +107,10 @@ const LoginPage = () => {
                   </div>
 
                   <div className="mb-4">
-                    <label htmlFor="password" className="form-label fw-semibold">
+                    <label
+                      htmlFor="password"
+                      className="form-label fw-semibold"
+                    >
                       Password
                     </label>
                     <input
@@ -107,7 +135,7 @@ const LoginPage = () => {
                         Signing In...
                       </>
                     ) : (
-                      'Sign In'
+                      "Sign In"
                     )}
                   </button>
                 </form>
