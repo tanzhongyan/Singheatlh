@@ -11,7 +11,8 @@ const AppointmentList = ({ appointments, onCancel }) => {
       CANCELLED: 'bg-danger',
       MISSED: 'bg-warning text-dark',
     };
-    return badges[status] || 'bg-secondary';
+    const key = (status || '').toUpperCase();
+    return badges[key] || 'bg-secondary';
   };
 
   const formatDateTime = (dateTimeString) => {
@@ -28,7 +29,7 @@ const AppointmentList = ({ appointments, onCancel }) => {
 
   const filteredAppointments = appointments.filter((apt) => {
     if (filter === 'all') return true;
-    return apt.status.toLowerCase() === filter.toLowerCase();
+    return (apt.status || '').toLowerCase() === filter.toLowerCase();
   });
 
   const sortedAppointments = [...filteredAppointments].sort((a, b) => {
@@ -52,7 +53,7 @@ const AppointmentList = ({ appointments, onCancel }) => {
             className={`nav-link ${filter === 'upcoming' ? 'active' : ''}`}
             onClick={() => setFilter('upcoming')}
           >
-            Upcoming <span className="badge bg-primary ms-1">{appointments.filter((a) => a.status === 'UPCOMING').length}</span>
+            Upcoming <span className="badge bg-primary ms-1">{appointments.filter((a) => (a.status || '').toLowerCase() === 'upcoming').length}</span>
           </button>
         </li>
         <li className="nav-item">
@@ -60,7 +61,7 @@ const AppointmentList = ({ appointments, onCancel }) => {
             className={`nav-link ${filter === 'completed' ? 'active' : ''}`}
             onClick={() => setFilter('completed')}
           >
-            Completed <span className="badge bg-secondary ms-1">{appointments.filter((a) => a.status === 'COMPLETED').length}</span>
+            Completed <span className="badge bg-secondary ms-1">{appointments.filter((a) => (a.status || '').toLowerCase() === 'completed').length}</span>
           </button>
         </li>
         <li className="nav-item">
@@ -68,7 +69,7 @@ const AppointmentList = ({ appointments, onCancel }) => {
             className={`nav-link ${filter === 'cancelled' ? 'active' : ''}`}
             onClick={() => setFilter('cancelled')}
           >
-            Cancelled <span className="badge bg-danger ms-1">{appointments.filter((a) => a.status === 'CANCELLED').length}</span>
+            Cancelled <span className="badge bg-danger ms-1">{appointments.filter((a) => (a.status || '').toLowerCase() === 'cancelled').length}</span>
           </button>
         </li>
       </ul>
@@ -91,7 +92,10 @@ const AppointmentList = ({ appointments, onCancel }) => {
                 <div className="card-body p-4">
                   <div className="d-flex justify-content-between align-items-start mb-3">
                     <h5 className="card-title mb-0 fw-bold">
-                      Dr. {appointment.doctorName || 'Unknown'}
+                      {(() => {
+                        const doctorName = appointment?.doctor?.name || appointment?.doctorName || appointment?.doctorId || 'Unknown';
+                        return `Dr. ${doctorName}`;
+                      })()}
                     </h5>
                     <span className={`badge ${getStatusBadge(appointment.status)}`}>
                       {appointment.status}
@@ -101,7 +105,7 @@ const AppointmentList = ({ appointments, onCancel }) => {
                   <div className="mb-3">
                     <div className="d-flex align-items-center mb-2 text-muted">
                       <i className="bi bi-hospital me-2"></i>
-                      <span className="small">{appointment.clinicName || 'Unknown Clinic'}</span>
+                      <span className="small">{appointment?.clinic?.name || appointment.clinicName || 'Unknown Clinic'}</span>
                     </div>
 
                     <div className="d-flex align-items-center mb-2">
@@ -122,7 +126,7 @@ const AppointmentList = ({ appointments, onCancel }) => {
                     </div>
                   </div>
 
-                  {appointment.status === 'UPCOMING' && (
+                  {(appointment.status || '').toUpperCase() === 'UPCOMING' && (
                     <button
                       className="btn btn-outline-danger btn-sm w-100"
                       onClick={() => onCancel(appointment.appointmentId)}

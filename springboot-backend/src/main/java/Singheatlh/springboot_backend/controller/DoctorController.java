@@ -1,18 +1,20 @@
 package Singheatlh.springboot_backend.controller;
-
-import Singheatlh.springboot_backend.dto.DoctorDto;
-import Singheatlh.springboot_backend.service.DoctorService;
-import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import Singheatlh.springboot_backend.dto.DoctorDto;
+import Singheatlh.springboot_backend.service.DoctorService;
+import jakarta.validation.Valid;
+
 import java.util.List;
+
+
 
 @AllArgsConstructor
 @RestController
-@RequestMapping("/api/doctors")
+@RequestMapping("/api/doctor")
 public class DoctorController {
 
     private DoctorService doctorService;
