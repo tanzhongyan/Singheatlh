@@ -1,7 +1,6 @@
 import { useAuth } from "../../contexts/AuthContext";
 import { Link } from "react-router-dom";
-import { useEffect, useState } from 'react';
-import apiClient from '../..//api/apiClient';
+import TodayCheckIn from '../../components/patient/TodayCheckIn';
 
 const HomePage = () => {
   const { userProfile } = useAuth();
@@ -24,7 +23,7 @@ const HomePage = () => {
             {/* Today Appointment / Check-in */}
             <div className="row g-4 mt-4">
               <div className="col-12">
-                <TodayCheckIn userProfile={userProfile} />
+                <TodayCheckIn />
               </div>
             </div>
 

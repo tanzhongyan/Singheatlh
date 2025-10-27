@@ -21,7 +21,6 @@ const DoctorManagementPage = () => {
         "/api/system-administrators/doctors"
       );
       setDoctors(response.data);
-      console.log(response.data);
     } catch (error) {
       console.error("Failed to fetch doctors:", error);
     }

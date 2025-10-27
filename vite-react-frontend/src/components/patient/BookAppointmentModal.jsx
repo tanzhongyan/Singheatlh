@@ -100,7 +100,6 @@ const BookAppointmentModal = ({ show, onHide, onSuccess }) => {
         endDatetime: endDatetime,
       };
 
-      console.log('Booking appointment with payload:', payload);
       
       await apiClient.post('/api/appointments', payload);
 

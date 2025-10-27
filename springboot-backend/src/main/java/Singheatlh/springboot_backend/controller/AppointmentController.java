@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 import Singheatlh.springboot_backend.dto.AppointmentDto;
 import Singheatlh.springboot_backend.dto.CreateAppointmentRequest;
@@ -210,13 +209,14 @@ public class AppointmentController {
     
     
     @PutMapping("/{id}/cancel")
-    public ResponseEntity<Void> cancelAppointment(@PathVariable String id) {
+    public ResponseEntity<?> cancelAppointment(@PathVariable String id) {
         try {
             appointmentService.cancelAppointment(id);
             return ResponseEntity.ok().build();
         } catch (IllegalArgumentException | IllegalStateException e) {
-            // Return 400 with the service message
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+            // Return 400 with the service message in a structured error response
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
@@ -262,7 +262,7 @@ public class AppointmentController {
     }
     
     @PutMapping("/{id}/reschedule")
-    public ResponseEntity<AppointmentDto> rescheduleAppointment(
+    public ResponseEntity<?> rescheduleAppointment(
             @PathVariable String id, 
             @RequestParam LocalDateTime newDateTime) {
         try {
@@ -272,11 +272,25 @@ public class AppointmentController {
             AppointmentDto rescheduledAppointment = appointmentService.rescheduleAppointment(id, newDateTime);
             return ResponseEntity.ok(rescheduledAppointment);
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    // Simple error response class
+    private static class ErrorResponse {
+        private final String message;
+        
+        public ErrorResponse(String message) {
+            this.message = message;
+        }
+        
+        public String getMessage() {
+            return message;
         }
     }
 }
