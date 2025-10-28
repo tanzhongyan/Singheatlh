@@ -23,7 +23,7 @@ public interface ClinicManagementService {
 
     // Get clinics by type (GP or Specialist)
     List<ClinicDto> getClinicsByType(String type);
-    
+
     // Get clinic by name
     ClinicDto getClinicByName(String name);
 
@@ -32,4 +32,7 @@ public interface ClinicManagementService {
 
     // Set clinic hours
     ClinicDto setClinicHours(Integer clinicId, String openingHours, String closingHours);
+
+    // Get Clinic Count
+    int getClinicCount();
 }

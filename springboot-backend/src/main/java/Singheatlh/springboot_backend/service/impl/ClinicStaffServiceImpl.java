@@ -2,7 +2,6 @@ package Singheatlh.springboot_backend.service.impl;
 
 import Singheatlh.springboot_backend.dto.ClinicStaffDto;
 import Singheatlh.springboot_backend.entity.ClinicStaff;
-import Singheatlh.springboot_backend.entity.User;
 import Singheatlh.springboot_backend.entity.enums.Role;
 import Singheatlh.springboot_backend.exception.ResourceNotFoundExecption;
 import Singheatlh.springboot_backend.mapper.ClinicStaffMapper;
@@ -21,8 +20,6 @@ public class ClinicStaffServiceImpl implements ClinicStaffService {
 
     private final ClinicStaffRepository clinicStaffRepository;
     private final ClinicStaffMapper clinicStaffMapper;
-
-
 
     @Override
     public ClinicStaffDto getById(String id) {
@@ -43,7 +40,8 @@ public class ClinicStaffServiceImpl implements ClinicStaffService {
     @Override
     public ClinicStaffDto update(ClinicStaffDto clinicStaffDto) {
         ClinicStaff clinicStaff = clinicStaffRepository.findById(clinicStaffDto.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundExecption("Clinic staff not found with id: " + clinicStaffDto.getUserId()));
+                .orElseThrow(() -> new ResourceNotFoundExecption(
+                        "Clinic staff not found with id: " + clinicStaffDto.getUserId()));
 
         // ✅ Update fields (avoid overwriting clinic reference unless provided)
         clinicStaff.setName(clinicStaffDto.getName());
@@ -89,7 +87,8 @@ public class ClinicStaffServiceImpl implements ClinicStaffService {
 
     @Override
     public ClinicStaffDto getByEmail(String email) {
-        ClinicStaff clinicStaff = clinicStaffRepository.findByEmail(email).orElseThrow(()->new ResourceNotFoundExecption("User not found with email: " + email));
+        ClinicStaff clinicStaff = clinicStaffRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundExecption("User not found with email: " + email));
         return clinicStaffMapper.toDto(clinicStaff);
     }
 }

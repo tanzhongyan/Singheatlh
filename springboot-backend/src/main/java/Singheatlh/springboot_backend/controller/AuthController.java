@@ -1,6 +1,5 @@
 package Singheatlh.springboot_backend.controller;
 
-
 import Singheatlh.springboot_backend.dto.UserDto;
 import Singheatlh.springboot_backend.dto.request.*;
 import Singheatlh.springboot_backend.service.AuthService;
@@ -19,6 +18,12 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+
+    @GetMapping("/health")
+    public ResponseEntity<?> health() {
+        log.info("=== Health check endpoint called ===");
+        return ResponseEntity.ok(new MessageResponse("Auth API is running"));
+    }
 
     @PostMapping("/signup")
     public ResponseEntity<?> signUp(@Valid @RequestBody SignUpRequest signUpRequest) {
@@ -54,23 +59,80 @@ public class AuthController {
     }
 
     @GetMapping("/profile")
-    public ResponseEntity<?> getCurrentUserProfile(@AuthenticationPrincipal String supabaseUid) {
-        log.debug("Fetching profile for user ID: {}", supabaseUid);
+    public ResponseEntity<?> getCurrentUserProfile(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        log.info("=== GET /api/auth/profile called ===");
+        log.info("Authorization header: {}", authHeader);
 
         try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                log.error("Missing or invalid Authorization header");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ErrorResponse("Missing or invalid Authorization header"));
+            }
+
+            // Extract JWT token
+            String jwtToken = authHeader.substring(7);
+            log.info("JWT Token extracted: {}...", jwtToken.substring(0, Math.min(20, jwtToken.length())));
+
+            // TODO: Properly decode and validate JWT token
+            // For now, we'll extract the 'sub' claim which contains the user ID
+            String supabaseUid = extractUserIdFromJwt(jwtToken);
+            log.info("Extracted user ID from JWT: {}", supabaseUid);
+
+            if (supabaseUid == null) {
+                log.error("Could not extract user ID from JWT token");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ErrorResponse("Invalid JWT token"));
+            }
+
             UserDto userDto = authService.getCurrentUserProfile(supabaseUid);
+            log.info("Successfully fetched profile for user: {}", userDto.getEmail());
             return ResponseEntity.ok(userDto);
 
         } catch (RuntimeException e) {
-            log.error("Failed to fetch profile for user ID: {}", supabaseUid, e);
+            log.error("Failed to fetch profile", e);
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new ErrorResponse(e.getMessage()));
         }
     }
 
+    // Helper method to extract user ID from JWT token
+    private String extractUserIdFromJwt(String jwtToken) {
+        try {
+            // JWT format: header.payload.signature
+            String[] parts = jwtToken.split("\\.");
+            if (parts.length != 3) {
+                log.error("Invalid JWT format");
+                return null;
+            }
+
+            // Decode the payload (base64url encoded)
+            String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
+            log.debug("JWT Payload: {}", payload);
+
+            // Extract 'sub' claim (user ID) from JSON
+            // Simple JSON parsing - in production use a proper JWT library
+            int subIndex = payload.indexOf("\"sub\":\"");
+            if (subIndex == -1) {
+                log.error("'sub' claim not found in JWT");
+                return null;
+            }
+
+            int startIndex = subIndex + 7; // length of "\"sub\":\""
+            int endIndex = payload.indexOf("\"", startIndex);
+            String userId = payload.substring(startIndex, endIndex);
+
+            return userId;
+        } catch (Exception e) {
+            log.error("Error extracting user ID from JWT", e);
+            return null;
+        }
+    }
+
     @PutMapping("/email")
     public ResponseEntity<?> updateEmail(@AuthenticationPrincipal String supabaseUid,
-                                         @RequestBody UpdateEmailRequest updateRequest) {
+            @RequestBody UpdateEmailRequest updateRequest) {
         log.info("Updating email for user ID: {}", supabaseUid);
 
         try {
@@ -85,7 +147,7 @@ public class AuthController {
 
     @PutMapping("/password")
     public ResponseEntity<?> changePassword(@AuthenticationPrincipal String supabaseUid,
-                                            @RequestBody ChangePasswordRequest changeRequest) {
+            @RequestBody ChangePasswordRequest changeRequest) {
         log.info("Changing password for user ID: {}", supabaseUid);
 
         try {
@@ -141,8 +203,13 @@ public class AuthController {
             this.error = error;
         }
 
-        public String getError() { return error; }
-        public void setError(String error) { this.error = error; }
+        public String getError() {
+            return error;
+        }
+
+        public void setError(String error) {
+            this.error = error;
+        }
     }
 
     public static class MessageResponse {
@@ -152,8 +219,13 @@ public class AuthController {
             this.message = message;
         }
 
-        public String getMessage() { return message; }
-        public void setMessage(String message) { this.message = message; }
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
+        }
     }
 
     public static class TokenValidationResponse {
@@ -165,9 +237,20 @@ public class AuthController {
             this.userId = userId;
         }
 
-        public boolean isValid() { return valid; }
-        public void setValid(boolean valid) { this.valid = valid; }
-        public String getUserId() { return userId; }
-        public void setUserId(String userId) { this.userId = userId; }
+        public boolean isValid() {
+            return valid;
+        }
+
+        public void setValid(boolean valid) {
+            this.valid = valid;
+        }
+
+        public String getUserId() {
+            return userId;
+        }
+
+        public void setUserId(String userId) {
+            this.userId = userId;
+        }
     }
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const AppointmentList = ({ appointments, onCancel }) => {
+const AppointmentList = ({ appointments, onCancel, onRequestReschedule }) => {
   const [filter, setFilter] = useState('all'); // all, upcoming, completed, cancelled
 
   const getStatusBadge = (status) => {
@@ -11,7 +11,8 @@ const AppointmentList = ({ appointments, onCancel }) => {
       CANCELLED: 'bg-danger',
       MISSED: 'bg-warning text-dark',
     };
-    return badges[status] || 'bg-secondary';
+    const key = (status || '').toUpperCase();
+    return badges[key] || 'bg-secondary';
   };
 
   const formatDateTime = (dateTimeString) => {
@@ -28,7 +29,7 @@ const AppointmentList = ({ appointments, onCancel }) => {
 
   const filteredAppointments = appointments.filter((apt) => {
     if (filter === 'all') return true;
-    return apt.status.toLowerCase() === filter.toLowerCase();
+    return (apt.status || '').toLowerCase() === filter.toLowerCase();
   });
 
   const sortedAppointments = [...filteredAppointments].sort((a, b) => {
@@ -52,7 +53,7 @@ const AppointmentList = ({ appointments, onCancel }) => {
             className={`nav-link ${filter === 'upcoming' ? 'active' : ''}`}
             onClick={() => setFilter('upcoming')}
           >
-            Upcoming <span className="badge bg-primary ms-1">{appointments.filter((a) => a.status === 'UPCOMING').length}</span>
+            Upcoming <span className="badge bg-primary ms-1">{appointments.filter((a) => (a.status || '').toLowerCase() === 'upcoming').length}</span>
           </button>
         </li>
         <li className="nav-item">
@@ -60,7 +61,7 @@ const AppointmentList = ({ appointments, onCancel }) => {
             className={`nav-link ${filter === 'completed' ? 'active' : ''}`}
             onClick={() => setFilter('completed')}
           >
-            Completed <span className="badge bg-secondary ms-1">{appointments.filter((a) => a.status === 'COMPLETED').length}</span>
+            Completed <span className="badge bg-secondary ms-1">{appointments.filter((a) => (a.status || '').toLowerCase() === 'completed').length}</span>
           </button>
         </li>
         <li className="nav-item">
@@ -68,7 +69,7 @@ const AppointmentList = ({ appointments, onCancel }) => {
             className={`nav-link ${filter === 'cancelled' ? 'active' : ''}`}
             onClick={() => setFilter('cancelled')}
           >
-            Cancelled <span className="badge bg-danger ms-1">{appointments.filter((a) => a.status === 'CANCELLED').length}</span>
+            Cancelled <span className="badge bg-danger ms-1">{appointments.filter((a) => (a.status || '').toLowerCase() === 'cancelled').length}</span>
           </button>
         </li>
       </ul>
@@ -91,7 +92,10 @@ const AppointmentList = ({ appointments, onCancel }) => {
                 <div className="card-body p-4">
                   <div className="d-flex justify-content-between align-items-start mb-3">
                     <h5 className="card-title mb-0 fw-bold">
-                      Dr. {appointment.doctorName || 'Unknown'}
+                      {(() => {
+                        const doctorName = appointment?.doctor?.name || appointment?.doctorName || appointment?.doctorId || 'Unknown';
+                        return `${doctorName}`;
+                      })()}
                     </h5>
                     <span className={`badge ${getStatusBadge(appointment.status)}`}>
                       {appointment.status}
@@ -101,7 +105,7 @@ const AppointmentList = ({ appointments, onCancel }) => {
                   <div className="mb-3">
                     <div className="d-flex align-items-center mb-2 text-muted">
                       <i className="bi bi-hospital me-2"></i>
-                      <span className="small">{appointment.clinicName || 'Unknown Clinic'}</span>
+                      <span className="small">{appointment?.clinic?.name || appointment.clinicName || 'Unknown Clinic'}</span>
                     </div>
 
                     <div className="d-flex align-items-center mb-2">
@@ -122,15 +126,34 @@ const AppointmentList = ({ appointments, onCancel }) => {
                     </div>
                   </div>
 
-                  {appointment.status === 'UPCOMING' && (
-                    <button
-                      className="btn btn-outline-danger btn-sm w-100"
-                      onClick={() => onCancel(appointment.appointmentId)}
-                    >
-                      <i className="bi bi-x-circle me-1"></i>
-                      Cancel Appointment
-                    </button>
-                  )}
+                  {(appointment.status || '').toUpperCase() === 'UPCOMING' && (() => {
+                    // Check if appointment is at least 24 hours away
+                    const appointmentTime = new Date(appointment.startDatetime);
+                    const now = new Date();
+                    const hoursDiff = (appointmentTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+                    const canReschedule = hoursDiff >= 24;
+
+                    return (
+                      <div className="d-grid gap-2">
+                        <button
+                          className="btn btn-outline-danger btn-sm"
+                          onClick={() => onCancel(appointment.appointmentId)}
+                        >
+                          <i className="bi bi-x-circle me-1"></i>
+                          Cancel Appointment
+                        </button>
+                        {canReschedule && (
+                          <button
+                            className="btn btn-outline-primary btn-sm"
+                            onClick={() => onRequestReschedule && onRequestReschedule(appointment)}
+                          >
+                            <i className="bi bi-arrow-repeat me-1"></i>
+                            Reschedule
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </div>

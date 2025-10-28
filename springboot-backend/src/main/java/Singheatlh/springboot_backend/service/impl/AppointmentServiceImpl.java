@@ -147,7 +147,11 @@ public class AppointmentServiceImpl implements AppointmentService {
         // Check if appointment is at least 24 hours away
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime appointmentTime = appointment.getStartDatetime();
-        
+        // If appointment already in the past, disallow cancellation with a clear message
+        if (appointmentTime.isBefore(now)) {
+            throw new IllegalStateException("Cannot cancel past appointments");
+        }
+
         if (appointmentTime.isBefore(now.plusHours(24))) {
             throw new IllegalArgumentException("Cannot cancel appointments less than 24 hours in advance");
         }

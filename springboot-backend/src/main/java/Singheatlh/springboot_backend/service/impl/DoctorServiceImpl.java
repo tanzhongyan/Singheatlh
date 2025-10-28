@@ -26,8 +26,7 @@ public class DoctorServiceImpl implements DoctorService {
     @Override
     public DoctorDto getById(String id) {
         Doctor doctor = doctorRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundExecption("Doctor does not exist with the given id " + id)
-        );
+                () -> new ResourceNotFoundExecption("Doctor does not exist with the given id " + id));
         return doctorMapper.toDto(doctor);
     }
 
@@ -38,8 +37,8 @@ public class DoctorServiceImpl implements DoctorService {
 
         if (doctorDto.getClinicId() != null) {
             Clinic clinic = clinicRepository.findById(doctorDto.getClinicId()).orElseThrow(
-                    () -> new ResourceNotFoundExecption("Clinic does not exist with the given id " + doctorDto.getClinicId())
-            );
+                    () -> new ResourceNotFoundExecption(
+                            "Clinic does not exist with the given id " + doctorDto.getClinicId()));
             doctor.setClinic(clinic);
         }
 
@@ -67,15 +66,15 @@ public class DoctorServiceImpl implements DoctorService {
     @Transactional
     public DoctorDto updateDoctor(DoctorDto doctorDto) {
         Doctor doctor = doctorRepository.findById(doctorDto.getDoctorId()).orElseThrow(
-                () -> new ResourceNotFoundExecption("Doctor does not exist with the given id " + doctorDto.getDoctorId())
-        );
+                () -> new ResourceNotFoundExecption(
+                        "Doctor does not exist with the given id " + doctorDto.getDoctorId()));
 
         doctor.setName(doctorDto.getName());
 
         if (doctorDto.getClinicId() != null) {
             Clinic clinic = clinicRepository.findById(doctorDto.getClinicId()).orElseThrow(
-                    () -> new ResourceNotFoundExecption("Clinic does not exist with the given id " + doctorDto.getClinicId())
-            );
+                    () -> new ResourceNotFoundExecption(
+                            "Clinic does not exist with the given id " + doctorDto.getClinicId()));
             doctor.setClinicId(doctorDto.getClinicId());
         }
 
@@ -87,8 +86,12 @@ public class DoctorServiceImpl implements DoctorService {
     @Transactional
     public void deleteDoctor(String id) {
         doctorRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundExecption("Doctor does not exist with the given id " + id)
-        );
+                () -> new ResourceNotFoundExecption("Doctor does not exist with the given id " + id));
         doctorRepository.deleteById(id);
+    }
+
+    @Override
+    public int getDoctorCount() {
+        return (int) doctorRepository.count();
     }
 }

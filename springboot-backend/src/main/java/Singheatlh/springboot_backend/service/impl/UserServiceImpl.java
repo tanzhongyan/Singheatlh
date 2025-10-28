@@ -19,7 +19,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
-    
+
     @Override
     public UserDto getById(String id) {
         UUID userId = UUID.fromString(id);
@@ -28,7 +28,6 @@ public class UserServiceImpl implements UserService {
         return userMapper.toDto(user);
     }
 
-
     @Override
     public List<UserDto> getAllUsers() {
         List<User> users = userRepository.findAll();
@@ -36,7 +35,6 @@ public class UserServiceImpl implements UserService {
                 .map(userMapper::toDto)
                 .collect(Collectors.toList());
     }
-
 
     @Override
     public UserDto updateUser(UserDto userDto) {
@@ -62,9 +60,15 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto getByEmail(String email) {
-        User user = userRepository.findByEmail(email).orElseThrow(()->new ResourceNotFoundExecption("User not found with email: " + email));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundExecption("User not found with email: " + email));
         return userMapper.toDto(user);
 
+    }
+
+    @Override
+    public int getUserCount() {
+        return (int) userRepository.count();
     }
 
 }

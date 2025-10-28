@@ -10,14 +10,24 @@ const SignUpPage = () => {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
-  const { signUp, user } = useAuth();
+  const { signUp, user, userProfile } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
-      navigate("/");
+    // Redirect authenticated users to their respective dashboards
+    if (user && userProfile) {
+      if (userProfile.role === "S") {
+        // System Admin -> redirect to admin dashboard
+        navigate("/admin", { replace: true });
+      } else if (userProfile.role === "P") {
+        // Patient -> redirect to patient home
+        navigate("/home", { replace: true });
+      } else if (userProfile.role === "C") {
+        // Clinic Staff -> redirect to staff dashboard
+        navigate("/staff", { replace: true });
+      }
     }
-  }, [user, navigate]);
+  }, [user, userProfile, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -58,7 +68,7 @@ const SignUpPage = () => {
   };
 
   return (
-    <div className="min-vh-100 d-flex" style={{ backgroundColor: '#f8f9fa' }}>
+    <div className="min-vh-100 d-flex" style={{ backgroundColor: "#f8f9fa" }}>
       <div className="container">
         <div className="row justify-content-center align-items-center min-vh-100">
           <div className="col-md-10 col-lg-8">
@@ -71,7 +81,8 @@ const SignUpPage = () => {
                 </h1>
                 <p className="lead mb-4">Join Our Healthcare Community</p>
                 <p className="mb-0 opacity-75">
-                  Get started today and enjoy seamless access to quality healthcare services.
+                  Get started today and enjoy seamless access to quality
+                  healthcare services.
                 </p>
               </div>
 
@@ -113,7 +124,10 @@ const SignUpPage = () => {
                   </div>
 
                   <div className="mb-3">
-                    <label htmlFor="password" className="form-label fw-semibold">
+                    <label
+                      htmlFor="password"
+                      className="form-label fw-semibold"
+                    >
                       Password
                     </label>
                     <input
@@ -125,13 +139,14 @@ const SignUpPage = () => {
                       placeholder="Create a password"
                       required
                     />
-                    <div className="form-text">
-                      Minimum 6 characters
-                    </div>
+                    <div className="form-text">Minimum 6 characters</div>
                   </div>
 
                   <div className="mb-4">
-                    <label htmlFor="confirmPassword" className="form-label fw-semibold">
+                    <label
+                      htmlFor="confirmPassword"
+                      className="form-label fw-semibold"
+                    >
                       Confirm Password
                     </label>
                     <input
@@ -156,7 +171,7 @@ const SignUpPage = () => {
                         Creating Account...
                       </>
                     ) : (
-                      'Create Account'
+                      "Create Account"
                     )}
                   </button>
                 </form>

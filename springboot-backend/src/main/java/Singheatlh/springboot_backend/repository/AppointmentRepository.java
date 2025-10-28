@@ -15,14 +15,36 @@ import Singheatlh.springboot_backend.entity.enums.AppointmentStatus;
 @Repository
 public interface AppointmentRepository extends JpaRepository<Appointment, String> {  // Changed to String (CHAR(10))
     
-    // Find all appointments for a specific patient
-    List<Appointment> findByPatientId(UUID patientId);  // Changed to UUID
+    // Override findAll to include related entities
+    @Query("SELECT a FROM Appointment a " +
+           "LEFT JOIN FETCH a.patient " +
+           "LEFT JOIN FETCH a.doctor d " +
+           "LEFT JOIN FETCH d.clinic")
+    List<Appointment> findAll();
     
-    // Find all appointments for a specific doctor
-    List<Appointment> findByDoctorId(String doctorId);  // Changed to String
+    // Find all appointments for a specific patient with doctor and clinic details
+    @Query("SELECT a FROM Appointment a " +
+           "LEFT JOIN FETCH a.patient " +
+           "LEFT JOIN FETCH a.doctor d " +
+           "LEFT JOIN FETCH d.clinic " +
+           "WHERE a.patientId = :patientId")
+    List<Appointment> findByPatientId(@Param("patientId") UUID patientId);
     
-    // Find appointments by status
-    List<Appointment> findByStatus(AppointmentStatus status);  // Changed to enum
+    // Find all appointments for a specific doctor with patient and clinic details
+    @Query("SELECT a FROM Appointment a " +
+           "LEFT JOIN FETCH a.patient " +
+           "LEFT JOIN FETCH a.doctor d " +
+           "LEFT JOIN FETCH d.clinic " +
+           "WHERE a.doctorId = :doctorId")
+    List<Appointment> findByDoctorId(@Param("doctorId") String doctorId);
+    
+    // Find appointments by status with related entities
+    @Query("SELECT a FROM Appointment a " +
+           "LEFT JOIN FETCH a.patient " +
+           "LEFT JOIN FETCH a.doctor d " +
+           "LEFT JOIN FETCH d.clinic " +
+           "WHERE a.status = :status")
+    List<Appointment> findByStatus(@Param("status") AppointmentStatus status);
     
     // Find appointments for a patient with specific status
     List<Appointment> findByPatientIdAndStatus(UUID patientId, AppointmentStatus status);
@@ -38,7 +60,11 @@ public interface AppointmentRepository extends JpaRepository<Appointment, String
         String doctorId, LocalDateTime startDate, LocalDateTime endDate);
     
     // Find upcoming appointments for a patient
-    @Query("SELECT a FROM Appointment a WHERE a.patientId = :patientId " +
+    @Query("SELECT a FROM Appointment a " +
+           "LEFT JOIN FETCH a.patient " +
+           "LEFT JOIN FETCH a.doctor d " +
+           "LEFT JOIN FETCH d.clinic " +
+           "WHERE a.patientId = :patientId " +
            "AND a.startDatetime > :currentTime " +
            "AND a.status = 'Upcoming' " +
            "ORDER BY a.startDatetime ASC")
@@ -47,7 +73,11 @@ public interface AppointmentRepository extends JpaRepository<Appointment, String
         @Param("currentTime") LocalDateTime currentTime);
     
     // Find upcoming appointments for a doctor
-    @Query("SELECT a FROM Appointment a WHERE a.doctorId = :doctorId " +
+    @Query("SELECT a FROM Appointment a " +
+           "LEFT JOIN FETCH a.patient " +
+           "LEFT JOIN FETCH a.doctor d " +
+           "LEFT JOIN FETCH d.clinic " +
+           "WHERE a.doctorId = :doctorId " +
            "AND a.startDatetime > :currentTime " +
            "AND a.status = 'Upcoming' " +
            "ORDER BY a.startDatetime ASC")

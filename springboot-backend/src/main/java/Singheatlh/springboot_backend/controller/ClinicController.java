@@ -36,10 +36,16 @@ public class ClinicController {
         List<ClinicDto> clinics = clinicManagementService.getClinicsByType(type);
         return ResponseEntity.ok(clinics);
     }
-    
+
     @GetMapping("/name/{name}")
     public ResponseEntity<ClinicDto> getClinicByName(@PathVariable("name") String name) {
         ClinicDto clinic = clinicManagementService.getClinicByName(name);
         return ResponseEntity.ok(clinic);
+    }
+
+    @GetMapping("/count")
+    public ResponseEntity<Integer> getClinicCount() {
+        int count = clinicManagementService.getClinicCount();
+        return ResponseEntity.ok(count);
     }
 }

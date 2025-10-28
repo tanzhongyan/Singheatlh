@@ -49,7 +49,7 @@ public interface QueueTicketRepository extends JpaRepository<QueueTicket, Intege
     @Query("SELECT qt FROM QueueTicket qt JOIN qt.appointment a WHERE a.doctorId = :doctorId " +
            "AND DATE(qt.checkInTime) = DATE(:date) " +
            "AND qt.status NOT IN ('COMPLETED', 'NO_SHOW') " +
-           "ORDER BY CASE WHEN qt.isFastTracked = true THEN 0 ELSE 1 END, qt.queueNumber ASC")
+           "ORDER BY qt.queueNumber ASC")
     List<QueueTicket> findActiveQueueByDoctorIdAndDate(
         @Param("doctorId") String doctorId, 
         @Param("date") LocalDateTime date);
@@ -58,15 +58,16 @@ public interface QueueTicketRepository extends JpaRepository<QueueTicket, Intege
     @Query("SELECT qt FROM QueueTicket qt JOIN qt.appointment a JOIN a.doctor d WHERE d.clinicId = :clinicId " +
            "AND DATE(qt.checkInTime) = DATE(:date) " +
            "AND qt.status NOT IN ('COMPLETED', 'NO_SHOW') " +
-           "ORDER BY CASE WHEN qt.isFastTracked = true THEN 0 ELSE 1 END, qt.queueNumber ASC")
+           "ORDER BY qt.queueNumber ASC")
     List<QueueTicket> findActiveQueueByClinicIdAndDate(
         @Param("clinicId") Integer clinicId, 
         @Param("date") LocalDateTime date);
     
-    // Get the maximum queue number for a doctor on a specific date
+    // Get the maximum queue number for a doctor on a specific date (excluding completed patients)
     @Query("SELECT MAX(qt.queueNumber) FROM QueueTicket qt JOIN qt.appointment a " +
            "WHERE a.doctorId = :doctorId " +
-           "AND DATE(qt.checkInTime) = DATE(:date)")
+           "AND DATE(qt.checkInTime) = DATE(:date) " +
+           "AND qt.queueNumber > 0")
     Integer findMaxQueueNumberByDoctorIdAndDate(
         @Param("doctorId") String doctorId, 
         @Param("date") LocalDateTime date);
@@ -80,13 +81,12 @@ public interface QueueTicketRepository extends JpaRepository<QueueTicket, Intege
         @Param("doctorId") String doctorId, 
         @Param("date") LocalDateTime date);
     
-    // Find queue tickets that need to be notified (3 away from current)
+    // Find queue ticket that needs to be notified (exactly 3 away from current)
     @Query("SELECT qt FROM QueueTicket qt JOIN qt.appointment a WHERE a.doctorId = :doctorId " +
            "AND DATE(qt.checkInTime) = DATE(:date) " +
            "AND qt.status = 'CHECKED_IN' " +
-           "AND qt.queueNumber <= :targetQueueNumber " +
-           "ORDER BY qt.queueNumber ASC")
-    List<QueueTicket> findTicketsToNotify3Away(
+           "AND qt.queueNumber = :targetQueueNumber")
+    Optional<QueueTicket> findTicketToNotify3Away(
         @Param("doctorId") String doctorId, 
         @Param("date") LocalDateTime date,
         @Param("targetQueueNumber") Integer targetQueueNumber);
@@ -115,7 +115,7 @@ public interface QueueTicketRepository extends JpaRepository<QueueTicket, Intege
            "AND qt.status NOT IN ('COMPLETED', 'NO_SHOW') " +
            "AND (qt.queueNumber < :queueNumber " +
            "     OR (qt.queueNumber = :queueNumber AND qt.ticketId < :ticketId)) " +
-           "ORDER BY CASE WHEN qt.isFastTracked = true THEN 0 ELSE 1 END, qt.queueNumber ASC")
+           "ORDER BY qt.queueNumber ASC")
     Long countQueuePositionBefore(
         @Param("doctorId") String doctorId, 
         @Param("date") LocalDateTime date,

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import apiClient from "../api/apiClient";
 import { supabase } from "../lib/supabaseClient";
 
 const AuthContext = createContext({});
@@ -8,6 +9,7 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState(null);
 
   useEffect(() => {
     const getSession = async () => {
@@ -22,8 +24,17 @@ export const AuthProvider = ({ children }) => {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user ?? null);
+      if (session?.user) {
+        // Fetch user profile from backend
+        try {
+          const response = await apiClient.get(`/api/users/${session.user.id}`);
+          setUserProfile(response.data);
+        } catch (error) {
+          console.error("Failed to fetch user profile:", error);
+        }
+      }
       setLoading(false);
     });
 
@@ -36,6 +47,7 @@ export const AuthProvider = ({ children }) => {
     signOut: () => supabase.auth.signOut(),
     user,
     loading,
+    userProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

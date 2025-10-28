@@ -34,13 +34,15 @@ Refer to [development.md](./development.md) for API endpoints and database migra
 Before running the app for the first time, copy the configuration files:
 
 **Windows (PowerShell):**
+
 ```powershell
-Copy-Item db\.env.example db\.env ; Copy-Item springboot-backend\src\main\resources\application.properties.example springboot-backend\src\main\resources\application.properties
+Copy-Item db\.env.example db\.env ; Copy-Item springboot-backend\src\main\resources\application.properties.example springboot-backend\src\main\resources\application.properties ; Copy-Item vite-react-frontend\.env.example vite-react-frontend\.env
 ```
 
 **macOS/Linux:**
+
 ```bash
-cp db/.env.example db/.env && cp springboot-backend/src/main/resources/application.properties.example springboot-backend/src/main/resources/application.properties
+cp db/.env.example db/.env && cp springboot-backend/src/main/resources/application.properties.example springboot-backend/src/main/resources/application.properties && cp vite-react-frontend/.env.example vite-react-frontend/.env
 ```
 
 > **Note**: Default values work for local development. Update passwords before production!
@@ -56,6 +58,7 @@ npm run dev:setup
 ```
 
 **That's it!** Your app will be running at:
+
 - **Frontend**: <http://localhost:5173>
 - **Backend**: <http://localhost:8080>
 - **Database Studio**: <http://localhost:8000> (login: `supabase` / `postgres`)
@@ -64,31 +67,34 @@ npm run dev:setup
 
 ## 📋 Available Commands
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev:setup` | **First-time setup**: Start database, build backend, run everything |
-| `npm run dev` | **Daily use**: Start backend + frontend (assumes DB is running) |
-| `npm run db:up` | Start database containers |
-| `npm run db:down` | Stop database and remove all data |
-| `npm run db:restart` | Restart database (useful for resets) |
-| `npm run backend` | Start Spring Boot backend only |
-| `npm run frontend` | Start React frontend only |
+| Command              | Description                                                         |
+| -------------------- | ------------------------------------------------------------------- |
+| `npm run dev:setup`  | **First-time setup**: Start database, build backend, run everything |
+| `npm run dev`        | **Daily use**: Start backend + frontend (assumes DB is running)     |
+| `npm run db:up`      | Start database containers                                           |
+| `npm run db:down`    | Stop database and remove all data                                   |
+| `npm run db:restart` | Restart database (useful for resets)                                |
+| `npm run backend`    | Start Spring Boot backend only                                      |
+| `npm run frontend`   | Start React frontend only                                           |
 
 ### Common Workflows
 
 **Starting Fresh (First Time):**
+
 ```bash
 npm install
 npm run dev:setup
 ```
 
 **Daily Development:**
+
 ```bash
 npm run db:up        # Start database
 npm run dev          # Start backend + frontend
 ```
 
 **Reset Everything:**
+
 ```bash
 npm run db:down      # Stop and clear database
 npm run dev:setup    # Restart from scratch
@@ -167,6 +173,7 @@ When you run `npm run dev:setup`, here's what happens automatically:
 4. ✅ **Ready**: All services running and connected
 
 **Database tables created by Flyway:**
+
 - `Clinic`, `User_Profile`, `Doctor`, `Schedule`, `Appointment`, `Queue_Ticket`, `Medical_Summary`
 - Authentication trigger for auto-creating user profiles on Supabase signup
 
@@ -189,21 +196,23 @@ npm run db:restart
 
 ### Port Conflicts
 
-| Port | Service | Solution |
-|------|---------|----------|
-| 5434 | PostgreSQL | Change `POSTGRES_EXTERNAL_PORT` in `db/.env` |
-| 8080 | Spring Boot | Change `server.port` in `application.properties` |
-| 8000 | Supabase Kong | Change port mapping in `docker-compose.yml` |
-| 5173 | Vite | Change port in `vite.config.js` |
+| Port | Service       | Solution                                         |
+| ---- | ------------- | ------------------------------------------------ |
+| 5434 | PostgreSQL    | Change `POSTGRES_EXTERNAL_PORT` in `db/.env`     |
+| 8080 | Spring Boot   | Change `server.port` in `application.properties` |
+| 8000 | Supabase Kong | Change port mapping in `docker-compose.yml`      |
+| 5173 | Vite          | Change port in `vite.config.js`                  |
 
 ### Backend Won't Start
 
 **Error: "Connection refused to database"**
+
 ```bash
 npm run db:up  # Make sure database is running
 ```
 
 **Error: "Flyway migration failed"**
+
 ```bash
 npm run db:restart  # Reset database and migrations
 ```
@@ -236,6 +245,7 @@ npm run dev
 ### CORS Errors
 
 CORS is configured for `http://localhost:5173` only. If you change the frontend port, update:
+
 - `springboot-backend/src/main/java/Singheatlh/springboot_backend/config/SecurityConfig.java`
 - Change `allowedOrigins` to match your new port
 
@@ -252,6 +262,7 @@ CORS is configured for `http://localhost:5173` only. If you change the frontend 
 ## 🛠️ Tech Stack
 
 **Frontend:**
+
 - React 19 + Vite
 - React Router v6
 - Bootstrap 5
@@ -259,12 +270,14 @@ CORS is configured for `http://localhost:5173` only. If you change the frontend 
 - Supabase JS Client
 
 **Backend:**
+
 - Spring Boot 4.0.0-M3
 - Hibernate 7.1.1
 - Flyway 11.13.1
 - PostgreSQL 15
 
 **Infrastructure:**
+
 - Docker + Docker Compose
 - Supabase (local)
 - Maven Wrapper

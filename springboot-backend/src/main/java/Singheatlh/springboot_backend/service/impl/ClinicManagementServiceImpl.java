@@ -74,7 +74,7 @@ public class ClinicManagementServiceImpl implements ClinicManagementService {
         List<Clinic> clinics = clinicRepository.findByType(type);
         return clinics.stream().map(clinicMapper::toDto).collect(Collectors.toList());
     }
-    
+
     @Override
     public ClinicDto getClinicByName(String name) {
         Clinic clinic = clinicRepository.findByName(name)
@@ -108,5 +108,10 @@ public class ClinicManagementServiceImpl implements ClinicManagementService {
 
         Clinic updatedClinic = clinicRepository.save(clinic);
         return clinicMapper.toDto(updatedClinic);
+    }
+
+    @Override
+    public int getClinicCount() {
+        return (int) clinicRepository.count();
     }
 }

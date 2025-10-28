@@ -3,6 +3,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../api/apiClient';
 import AppointmentList from '../../components/patient/AppointmentList';
 import BookAppointmentModal from '../../components/patient/BookAppointmentModal';
+import CancelAppointmentModal from '../../components/patient/CancelAppointmentModal';
+import RescheduleAppointmentModal from '../../components/patient/RescheduleAppointmentModal';
 
 const AppointmentsPage = () => {
   const { user } = useAuth();
@@ -10,6 +12,10 @@ const AppointmentsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showBookModal, setShowBookModal] = useState(false);
+  const [pendingCancelId, setPendingCancelId] = useState(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [pendingRescheduleAppointment, setPendingRescheduleAppointment] = useState(null);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
 
   const fetchAppointments = useCallback(async () => {
     try {
@@ -41,18 +47,26 @@ const AppointmentsPage = () => {
     fetchAppointments(); // Refresh the list
   };
 
-  const handleCancelAppointment = async (appointmentId) => {
-    if (!window.confirm('Are you sure you want to cancel this appointment?')) {
-      return;
-    }
+  const handleCancelAppointment = (appointmentId) => {
+    // open modal instead of immediate confirm
+    setPendingCancelId(appointmentId);
+    setShowCancelModal(true);
+  };
 
-    try {
-      await apiClient.delete(`/api/appointments/${appointmentId}`);
-      fetchAppointments(); // Refresh the list
-    } catch (err) {
-      console.error('Error cancelling appointment:', err);
-      alert('Failed to cancel appointment. Please try again.');
-    }
+  const handleCancelModalHide = () => {
+    setShowCancelModal(false);
+    setPendingCancelId(null);
+  };
+
+  const handleRequestReschedule = (appointment) => {
+    setPendingRescheduleAppointment(appointment);
+    setShowRescheduleModal(true);
+  };
+
+  const handleRescheduleSuccess = () => {
+    setShowRescheduleModal(false);
+    setPendingRescheduleAppointment(null);
+    fetchAppointments();
   };
 
   if (loading) {
@@ -98,7 +112,30 @@ const AppointmentsPage = () => {
         <AppointmentList
           appointments={appointments}
           onCancel={handleCancelAppointment}
+          onRequestReschedule={handleRequestReschedule}
         />
+
+        {showCancelModal && (
+          <CancelAppointmentModal
+            show={showCancelModal}
+            onHide={handleCancelModalHide}
+            appointmentId={pendingCancelId}
+            onSuccess={() => {
+              setShowCancelModal(false);
+              setPendingCancelId(null);
+              fetchAppointments();
+            }}
+          />
+        )}
+
+        {showRescheduleModal && pendingRescheduleAppointment && (
+          <RescheduleAppointmentModal
+            show={showRescheduleModal}
+            onHide={() => setShowRescheduleModal(false)}
+            appointment={pendingRescheduleAppointment}
+            onSuccess={handleRescheduleSuccess}
+          />
+        )}
 
         {showBookModal && (
           <BookAppointmentModal

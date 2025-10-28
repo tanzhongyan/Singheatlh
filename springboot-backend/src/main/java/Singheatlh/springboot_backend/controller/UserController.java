@@ -35,7 +35,7 @@ public class UserController {
 
     @PutMapping("/{id}")
     public ResponseEntity<UserDto> updateUser(@PathVariable String id,
-                                              @RequestBody UserDto userDto) {
+            @RequestBody UserDto userDto) {
         userDto.setUserId(UUID.fromString(id)); // Ensure path ID is used
         UserDto updatedUser = userService.updateUser(userDto);
         return ResponseEntity.ok(updatedUser);
@@ -45,6 +45,12 @@ public class UserController {
     public ResponseEntity<String> deleteUser(@PathVariable String id) {
         userService.deleteUser(id);
         return ResponseEntity.ok("User deleted successfully!");
+    }
+
+    @GetMapping("/count")
+    public ResponseEntity<Integer> getUserCount() {
+        int count = userService.getUserCount();
+        return ResponseEntity.ok(count);
     }
 
 }

@@ -209,10 +209,14 @@ public class AppointmentController {
     
     
     @PutMapping("/{id}/cancel")
-    public ResponseEntity<Void> cancelAppointment(@PathVariable String id) {
+    public ResponseEntity<?> cancelAppointment(@PathVariable String id) {
         try {
             appointmentService.cancelAppointment(id);
             return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            // Return 400 with the service message in a structured error response
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
@@ -258,7 +262,7 @@ public class AppointmentController {
     }
     
     @PutMapping("/{id}/reschedule")
-    public ResponseEntity<AppointmentDto> rescheduleAppointment(
+    public ResponseEntity<?> rescheduleAppointment(
             @PathVariable String id, 
             @RequestParam LocalDateTime newDateTime) {
         try {
@@ -268,11 +272,25 @@ public class AppointmentController {
             AppointmentDto rescheduledAppointment = appointmentService.rescheduleAppointment(id, newDateTime);
             return ResponseEntity.ok(rescheduledAppointment);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    // Simple error response class
+    private static class ErrorResponse {
+        private final String message;
+        
+        public ErrorResponse(String message) {
+            this.message = message;
+        }
+        
+        public String getMessage() {
+            return message;
         }
     }
 }
