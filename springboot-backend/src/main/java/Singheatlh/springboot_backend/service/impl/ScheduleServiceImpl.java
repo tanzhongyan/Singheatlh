@@ -86,12 +86,21 @@ public class ScheduleServiceImpl implements ScheduleService {
             throw new IllegalArgumentException("End datetime must be after start datetime");
         }
 
-        // 3. Update fields
+        // 3. Check for overlapping schedules (excluding current schedule)
+        if (scheduleRepository.existsOverlappingScheduleExcluding(
+                scheduleDto.getDoctorId(),
+                scheduleDto.getStartDatetime(),
+                scheduleDto.getEndDatetime(),
+                scheduleDto.getScheduleId())) {
+            throw new IllegalArgumentException("Doctor already has overlapping schedule at this time");
+        }
+
+        // 4. Update fields
         schedule.setStartDatetime(scheduleDto.getStartDatetime());
         schedule.setEndDatetime(scheduleDto.getEndDatetime());
         schedule.setType(scheduleDto.getType());
 
-        // 4. Save and return
+        // 5. Save and return
         Schedule savedSchedule = scheduleRepository.save(schedule);
         return scheduleMapper.toDto(savedSchedule);
     }
