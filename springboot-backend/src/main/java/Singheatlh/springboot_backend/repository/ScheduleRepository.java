@@ -52,6 +52,19 @@ public interface ScheduleRepository extends JpaRepository<Schedule, String> {
             @Param("endTime") LocalDateTime endTime
     );
 
+    // Check for overlapping schedules excluding a specific schedule (for updates)
+    @Query("SELECT COUNT(s) > 0 FROM Schedule s WHERE s.doctorId = :doctorId " +
+           "AND s.scheduleId != :excludeScheduleId " +
+           "AND ((s.startDatetime <= :startTime AND s.endDatetime > :startTime) " +
+           "OR (s.startDatetime < :endTime AND s.endDatetime >= :endTime) " +
+           "OR (s.startDatetime >= :startTime AND s.endDatetime <= :endTime))")
+    boolean existsOverlappingScheduleExcluding(
+            @Param("doctorId") String doctorId,
+            @Param("startTime") LocalDateTime startTime,
+            @Param("endTime") LocalDateTime endTime,
+            @Param("excludeScheduleId") String excludeScheduleId
+    );
+
     // Find upcoming available schedules for a doctor
     @Query("SELECT s FROM Schedule s WHERE s.doctorId = :doctorId " +
            "AND s.type = 'AVAILABLE' " +
