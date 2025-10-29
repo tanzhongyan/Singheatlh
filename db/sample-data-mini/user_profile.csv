@@ -1,0 +1,5 @@
+user_id,name,role,email,telephone_number,clinic_id
+e47e937a-febe-4b4f-8518-ec0e01222ae3,System Admin,S,admin@system.com,+6512345678,
+22550f10-4178-48aa-ae84-e5caf89ea67e,Marcus Rahman,C,marcus.rahman+1@example.com,+6597648472,1
+be8218cd-0ca8-4112-896c-4ed96e80595e,Goh Teo,C,goh.teo+2@example.com,+6599185077,1
+dd661aad-4b3d-465c-b0c1-fc1406290c63,Ng Chng,P,ng.chng+2722@example.com,+6599233746,

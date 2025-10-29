@@ -11,6 +11,13 @@ spring.datasource.url=jdbc:postgresql://localhost:5434/postgres
 spring.datasource.username=postgres
 spring.datasource.password=your-super-secret-and-long-postgres-password
 spring.datasource.driver-class-name=org.postgresql.Driver
+supabase.anon.key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzYxNzQ3NjAxLCJleHAiOjE3OTMyODM2MDF9.piCGR7X9nMsFtoP9QGtsAQhkIqonuU-NfjoUmnt3xMo 
+supabase.url=http://localhost:8000
+
+# ====================================================
+# DEMO Version
+# ====================================================
+# supabase.anon.key.demo=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE
 
 # =====================================================
 # Hibernate / JPA Configuration

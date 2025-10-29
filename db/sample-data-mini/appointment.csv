@@ -1,0 +1,2 @@
+appointment_id,patient_id,doctor_id,start_datetime,end_datetime,status
+A000000001,dd661aad-4b3d-465c-b0c1-fc1406290c63,D000000001,2025-11-10 11:00:00,2025-11-10 11:15:00,Completed
