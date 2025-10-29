@@ -55,6 +55,9 @@ npm install
 
 # 2. Start everything (database + backend + frontend)
 npm run dev:setup
+
+# 3. Insert seed data (inserts liness into db, to be ran only after confirming the tables are created in the db studio)
+npm run dev: seed
 ```
 
 **That's it!** Your app will be running at:
@@ -69,27 +72,27 @@ npm run dev:setup
 
 ### Windows Users
 
-| Command              | Description                                                         |
-| -------------------- | ------------------------------------------------------------------- |
-| `npm run dev:setup`  | **First-time setup**: Start database, build backend, run everything |
-| `npm run dev`        | **Daily use**: Start backend + frontend (assumes DB is running)     |
-| `npm run db:up`      | Start database containers                                           |
-| `npm run db:down`    | Stop database and remove all data                                   |
-| `npm run db:restart` | Restart database (useful for resets)                                |
-| `npm run db:seed`    | Load ~600K sample records (run after backend starts)                |
-| `npm run backend`    | Start Spring Boot backend only                                      |
-| `npm run backend:build` | Build Spring Boot JAR                                            |
-| `npm run frontend`   | Start React frontend only                                           |
+| Command                 | Description                                                         |
+| ----------------------- | ------------------------------------------------------------------- |
+| `npm run dev:setup`     | **First-time setup**: Start database, build backend, run everything |
+| `npm run dev`           | **Daily use**: Start backend + frontend (assumes DB is running)     |
+| `npm run db:up`         | Start database containers                                           |
+| `npm run db:down`       | Stop database and remove all data                                   |
+| `npm run db:restart`    | Restart database (useful for resets)                                |
+| `npm run db:seed`       | Load ~600K sample records (run after backend starts)                |
+| `npm run backend`       | Start Spring Boot backend only                                      |
+| `npm run backend:build` | Build Spring Boot JAR                                               |
+| `npm run frontend`      | Start React frontend only                                           |
 
 ### Linux/Mac Users
 
 Use the same commands as Windows, **except** for Maven-related commands - use the `:unix` suffix:
 
-| Command                    | Description                                                         |
-| -------------------------- | ------------------------------------------------------------------- |
-| `npm run dev:setup:unix`   | **First-time setup**: Start database, build backend, run everything |
-| `npm run backend:unix`     | Start Spring Boot backend only                                      |
-| `npm run backend:build:unix` | Build Spring Boot JAR                                            |
+| Command                      | Description                                                         |
+| ---------------------------- | ------------------------------------------------------------------- |
+| `npm run dev:setup:unix`     | **First-time setup**: Start database, build backend, run everything |
+| `npm run backend:unix`       | Start Spring Boot backend only                                      |
+| `npm run backend:build:unix` | Build Spring Boot JAR                                               |
 
 **Note:** This is due to Windows using `mvnw.cmd` and Unix using `./mvnw`. All other commands work cross-platform.
 
@@ -153,7 +156,16 @@ Copy-Item src/main/resources/application.properties.example src/main/resources/a
 
 **First run**: Flyway automatically creates all database tables.
 
-### 3. Frontend Setup
+### 3. Inserting Seed Data (To be done only once)
+
+```bash
+cd db
+bash seed-data.sh
+```
+
+Ensure that the tables have been set up through flyway before running this script
+
+### 4. Frontend Setup
 
 ```bash
 cd vite-react-frontend

@@ -1,0 +1,2 @@
+appointment_id,status,check_in_time,queue_number,is_fast_tracked
+A000000001,COMPLETED,2025-10-29 07:58:00,1001,FALSE
