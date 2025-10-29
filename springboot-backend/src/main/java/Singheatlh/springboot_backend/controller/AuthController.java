@@ -2,6 +2,7 @@ package Singheatlh.springboot_backend.controller;
 
 import Singheatlh.springboot_backend.dto.UserDto;
 import Singheatlh.springboot_backend.dto.request.*;
+import Singheatlh.springboot_backend.dto.response.JwtResponse;
 import Singheatlh.springboot_backend.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,10 +31,10 @@ public class AuthController {
         log.info("Received signup request for email: {}", signUpRequest.getEmail());
 
         try {
-            UserDto userDto = authService.signUp(signUpRequest);
-            log.info("User successfully registered with ID: {}", userDto.getUserId());
+            JwtResponse jwtResponse = authService.signUp(signUpRequest);
+            log.info("User successfully registered with ID: {}", jwtResponse.getId());
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(userDto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(jwtResponse);
 
         } catch (RuntimeException e) {
             log.error("Signup failed for email: {}", signUpRequest.getEmail(), e);
@@ -46,10 +47,10 @@ public class AuthController {
         log.info("Received login request for email: {}", loginRequest.getEmail());
 
         try {
-            UserDto userDto = authService.login(loginRequest);
+            JwtResponse jwtResponse = authService.login(loginRequest);
             log.info("User successfully logged in: {}", loginRequest.getEmail());
 
-            return ResponseEntity.ok(userDto);
+            return ResponseEntity.ok(jwtResponse);
 
         } catch (RuntimeException e) {
             log.error("Login failed for email: {}", loginRequest.getEmail(), e);

@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 
 # =====================================================
 # PostgreSQL Database Seeding Script
@@ -25,6 +25,11 @@ DB_CONTAINER="supabase-db"
 # Function to execute SQL command via docker
 execute_sql() {
     docker exec -e PGPASSWORD="$DB_PASSWORD" "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -c "$1"
+}
+
+# Function to execute SQL and return plain value (no formatting)
+execute_sql_plain() {
+    docker exec -e PGPASSWORD="$DB_PASSWORD" "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -A -t -c "$1"
 }
 
 echo -e "${BLUE}========================================${NC}"
@@ -75,6 +80,38 @@ while ! execute_sql "SELECT 1 FROM Clinic LIMIT 1;" > /dev/null 2>&1; do
 done
 echo -e "${GREEN} Tables found${NC}"
 
+# Verify migrations have run
+echo ""
+echo -e "${BLUE}Verifying Flyway migrations...${NC}"
+MIGRATIONS=$(execute_sql "SELECT version, description FROM flyway_schema_history ORDER BY installed_rank;" -t 2>/dev/null || echo "")
+if [ -z "$MIGRATIONS" ]; then
+    echo -e "${RED} Error: No Flyway migrations found${NC}"
+    echo -e "${YELLOW}Please ensure the Spring Boot backend has started and run migrations${NC}"
+    exit 1
+fi
+echo -e "${GREEN} Migrations verified:${NC}"
+echo "$MIGRATIONS"
+
+# Verify auth trigger exists (from V2 migration)
+echo ""
+echo -e "${BLUE}Verifying auth trigger...${NC}"
+
+# Check if function exists in public schema
+FUNCTION_EXISTS=$(execute_sql_plain "SELECT EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid WHERE p.proname = 'handle_new_user' AND n.nspname = 'public');")
+
+# Check if trigger exists on auth.users table
+TRIGGER_EXISTS=$(execute_sql_plain "SELECT EXISTS(SELECT 1 FROM pg_trigger WHERE tgname = 'on_auth_user_created');")
+
+if [ "$FUNCTION_EXISTS" = "t" ] && [ "$TRIGGER_EXISTS" = "t" ]; then
+    echo -e "${GREEN} Auth trigger function and trigger on auth.users exist${NC}"
+elif [ "$FUNCTION_EXISTS" = "t" ]; then
+    echo -e "${YELLOW} Warning: Function exists but trigger on auth.users not found (insufficient privileges)${NC}"
+elif [ "$TRIGGER_EXISTS" = "t" ]; then
+    echo -e "${YELLOW} Warning: Trigger exists but function not found${NC}"
+else
+    echo -e "${YELLOW} Warning: Neither function nor trigger found. V2 migration may not have run successfully.${NC}"
+fi
+
 # Copy CSV files to container
 echo ""
 echo -e "${BLUE}[2/9]${NC} Copying CSV files to container..."
@@ -88,7 +125,7 @@ echo -e "${BLUE}[3/9]${NC} Loading Clinic data..."
 docker exec -i -e PGPASSWORD="$DB_PASSWORD" "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" << 'EOF'
 \copy Clinic(name, address, telephone_number, type, opening_hours, closing_hours) FROM '/tmp/seed-data/clinics.csv' CSV HEADER
 EOF
-CLINIC_COUNT=$(execute_sql "SELECT COUNT(*) FROM Clinic;" -t | tr -d ' ')
+CLINIC_COUNT=$(execute_sql_plain "SELECT COUNT(*) FROM Clinic;")
 echo -e "${GREEN} Loaded $CLINIC_COUNT clinics${NC}"
 
 # 2. Load User_Profile data
@@ -97,7 +134,7 @@ echo -e "${BLUE}[4/9]${NC} Loading User_Profile data..."
 docker exec -i -e PGPASSWORD="$DB_PASSWORD" "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" << 'EOF'
 \copy User_Profile(user_id, name, role, email, telephone_number, clinic_id) FROM '/tmp/seed-data/user_profile.csv' CSV HEADER
 EOF
-USER_COUNT=$(execute_sql "SELECT COUNT(*) FROM User_Profile;" -t | tr -d ' ')
+USER_COUNT=$(execute_sql_plain "SELECT COUNT(*) FROM User_Profile;")
 echo -e "${GREEN} Loaded $USER_COUNT users${NC}"
 
 # 3. Load Doctor data
@@ -106,7 +143,7 @@ echo -e "${BLUE}[5/9]${NC} Loading Doctor data..."
 docker exec -i -e PGPASSWORD="$DB_PASSWORD" "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" << 'EOF'
 \copy Doctor(doctor_id, name, clinic_id) FROM '/tmp/seed-data/doctor.csv' CSV HEADER
 EOF
-DOCTOR_COUNT=$(execute_sql "SELECT COUNT(*) FROM Doctor;" -t | tr -d ' ')
+DOCTOR_COUNT=$(execute_sql_plain "SELECT COUNT(*) FROM Doctor;")
 echo -e "${GREEN} Loaded $DOCTOR_COUNT doctors${NC}"
 
 # 4. Load Schedule data
@@ -115,7 +152,7 @@ echo -e "${BLUE}[6/9]${NC} Loading Schedule data..."
 docker exec -i -e PGPASSWORD="$DB_PASSWORD" "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" << 'EOF'
 \copy Schedule(schedule_id, doctor_id, start_datetime, end_datetime, type) FROM '/tmp/seed-data/schedule.csv' CSV HEADER
 EOF
-SCHEDULE_COUNT=$(execute_sql "SELECT COUNT(*) FROM Schedule;" -t | tr -d ' ')
+SCHEDULE_COUNT=$(execute_sql_plain "SELECT COUNT(*) FROM Schedule;")
 echo -e "${GREEN} Loaded $SCHEDULE_COUNT schedules${NC}"
 
 # 5. Load Appointment data
@@ -124,7 +161,7 @@ echo -e "${BLUE}[7/9]${NC} Loading Appointment data..."
 docker exec -i -e PGPASSWORD="$DB_PASSWORD" "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" << 'EOF'
 \copy Appointment(appointment_id, patient_id, doctor_id, start_datetime, end_datetime, status) FROM '/tmp/seed-data/appointment.csv' CSV HEADER
 EOF
-APPOINTMENT_COUNT=$(execute_sql "SELECT COUNT(*) FROM Appointment;" -t | tr -d ' ')
+APPOINTMENT_COUNT=$(execute_sql_plain "SELECT COUNT(*) FROM Appointment;")
 echo -e "${GREEN} Loaded $APPOINTMENT_COUNT appointments${NC}"
 
 # 6. Load Medical_Summary data
@@ -133,7 +170,7 @@ echo -e "${BLUE}[8/9]${NC} Loading Medical_Summary data..."
 docker exec -i -e PGPASSWORD="$DB_PASSWORD" "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" << 'EOF'
 \copy Medical_Summary(summary_id, appointment_id, treatment_summary) FROM '/tmp/seed-data/medical_summary.csv' CSV HEADER
 EOF
-MEDICAL_COUNT=$(execute_sql "SELECT COUNT(*) FROM Medical_Summary;" -t | tr -d ' ')
+MEDICAL_COUNT=$(execute_sql_plain "SELECT COUNT(*) FROM Medical_Summary;")
 echo -e "${GREEN} Loaded $MEDICAL_COUNT medical summaries${NC}"
 
 # 7. Load Queue_Ticket data
@@ -142,7 +179,7 @@ echo -e "${BLUE}[9/9]${NC} Loading Queue_Ticket data..."
 docker exec -i -e PGPASSWORD="$DB_PASSWORD" "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" << 'EOF'
 \copy Queue_Ticket(appointment_id, status, check_in_time, queue_number, is_fast_tracked) FROM '/tmp/seed-data/queue_ticket.csv' CSV HEADER
 EOF
-QUEUE_COUNT=$(execute_sql "SELECT COUNT(*) FROM Queue_Ticket;" -t | tr -d ' ')
+QUEUE_COUNT=$(execute_sql_plain "SELECT COUNT(*) FROM Queue_Ticket;")
 echo -e "${GREEN} Loaded $QUEUE_COUNT queue tickets${NC}"
 
 # Cleanup

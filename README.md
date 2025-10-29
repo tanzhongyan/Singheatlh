@@ -67,6 +67,8 @@ npm run dev:setup
 
 ## 📋 Available Commands
 
+### Windows Users
+
 | Command              | Description                                                         |
 | -------------------- | ------------------------------------------------------------------- |
 | `npm run dev:setup`  | **First-time setup**: Start database, build backend, run everything |
@@ -74,8 +76,22 @@ npm run dev:setup
 | `npm run db:up`      | Start database containers                                           |
 | `npm run db:down`    | Stop database and remove all data                                   |
 | `npm run db:restart` | Restart database (useful for resets)                                |
+| `npm run db:seed`    | Load ~600K sample records (run after backend starts)                |
 | `npm run backend`    | Start Spring Boot backend only                                      |
+| `npm run backend:build` | Build Spring Boot JAR                                            |
 | `npm run frontend`   | Start React frontend only                                           |
+
+### Linux/Mac Users
+
+Use the same commands as Windows, **except** for Maven-related commands - use the `:unix` suffix:
+
+| Command                    | Description                                                         |
+| -------------------------- | ------------------------------------------------------------------- |
+| `npm run dev:setup:unix`   | **First-time setup**: Start database, build backend, run everything |
+| `npm run backend:unix`     | Start Spring Boot backend only                                      |
+| `npm run backend:build:unix` | Build Spring Boot JAR                                            |
+
+**Note:** This is due to Windows using `mvnw.cmd` and Unix using `./mvnw`. All other commands work cross-platform.
 
 ### Common Workflows
 

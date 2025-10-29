@@ -3,17 +3,21 @@ package Singheatlh.springboot_backend.service.impl;
 import Singheatlh.springboot_backend.dto.*;
 import Singheatlh.springboot_backend.dto.request.SignUpRequest;
 import Singheatlh.springboot_backend.dto.request.LoginRequest;
+import Singheatlh.springboot_backend.dto.response.JwtResponse;
 import Singheatlh.springboot_backend.entity.*;
 import Singheatlh.springboot_backend.entity.enums.Role;
 import Singheatlh.springboot_backend.exception.ResourceNotFoundExecption;
 import Singheatlh.springboot_backend.mapper.*;
 import Singheatlh.springboot_backend.repository.*;
 import Singheatlh.springboot_backend.service.AuthService;
+import Singheatlh.springboot_backend.service.SupabaseAuthClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -33,9 +37,11 @@ public class AuthServiceImpl implements AuthService {
     private final ClinicStaffMapper clinicStaffMapper;
     private final SystemAdministratorMapper systemAdministratorMapper;
 
+    private final SupabaseAuthClient supabaseAuthClient;
+
     @Override
     @Transactional
-    public UserDto signUp(SignUpRequest signUpRequest) {
+    public JwtResponse signUp(SignUpRequest signUpRequest) {
         log.info("Attempting to sign up user with email: {}", signUpRequest.getEmail());
 
         // Check if user already exists in our database
@@ -44,16 +50,55 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("User with email " + signUpRequest.getEmail() + " already exists");
         }
 
-        // Note: Supabase Auth creation happens in the frontend
-        // The frontend should provide the supabaseUid from the auth response
-        if (signUpRequest.getId() == null || signUpRequest.getId().trim().isEmpty()) {
-            throw new RuntimeException("Supabase UID is required for user creation");
+        // Validate password is provided
+        if (signUpRequest.getPassword() == null || signUpRequest.getPassword().trim().isEmpty()) {
+            throw new RuntimeException("Password is required for user creation");
         }
 
-        // Create the appropriate user type based on role
+        // Create user in Supabase Auth - this will trigger handle_new_user() which creates User_Profile
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("name", signUpRequest.getName());
+        metadata.put("role", signUpRequest.getRole());
+        if (signUpRequest.getClinicId() != null) {
+            metadata.put("clinic_id", signUpRequest.getClinicId());
+        }
+
+        SupabaseAuthClient.SupabaseAuthResponse authResponse;
+        try {
+            authResponse = supabaseAuthClient.signUp(
+                signUpRequest.getEmail(),
+                signUpRequest.getPassword(),
+                metadata
+            );
+        } catch (Exception e) {
+            log.error("Failed to create user in Supabase Auth", e);
+            throw new RuntimeException("Failed to create user account: " + e.getMessage());
+        }
+
+        String supabaseUid = authResponse.getUser().getId();
+        String accessToken = authResponse.getAccessToken();
+        String refreshToken = authResponse.getRefreshToken();
+        log.info("Created Supabase Auth user with ID: {}", supabaseUid);
+
+        // Wait briefly for trigger to create User_Profile
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        // Verify User_Profile was created by trigger
+        UUID userId = UUID.fromString(supabaseUid);
+        User baseUser = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User_Profile was not created by auth trigger"));
+
+        log.info("User_Profile created successfully via trigger for user: {}", supabaseUid);
+
+        // Create role-specific record (Patient, ClinicStaff, or SystemAdministrator)
         UserDto userDto;
         try {
             Role role = Role.valueOf(signUpRequest.getRole().toUpperCase());
+            signUpRequest.setId(supabaseUid); // Set the ID from Supabase
 
             switch (role) {
                 case P:
@@ -69,8 +114,18 @@ public class AuthServiceImpl implements AuthService {
                     throw new RuntimeException("Invalid role: " + signUpRequest.getRole());
             }
 
-            log.info("Successfully created user with ID: {} and role: {}", signUpRequest.getId(), role);
-            return userDto;
+            log.info("Successfully created user with ID: {} and role: {}", supabaseUid, role);
+
+            // Return JwtResponse with tokens and user info using builder
+            return JwtResponse.builder()
+                .token(accessToken)
+                .refreshToken(refreshToken)
+                .id(userDto.getUserId().toString())
+                .username(userDto.getEmail())
+                .email(userDto.getEmail())
+                .name(userDto.getName())
+                .role(userDto.getRole().toString())
+                .build();
 
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Invalid role: " + signUpRequest.getRole());
@@ -78,19 +133,43 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public UserDto login(LoginRequest loginRequest) {
+    public JwtResponse login(LoginRequest loginRequest) {
         log.info("Attempting login for email: {}", loginRequest.getEmail());
 
-        // Note: Actual authentication happens in Supabase Auth (frontend)
-        // This method just retrieves the user profile after successful auth
+        // Authenticate with Supabase Auth
+        SupabaseAuthClient.SupabaseAuthResponse authResponse;
+        try {
+            authResponse = supabaseAuthClient.signIn(
+                loginRequest.getEmail(),
+                loginRequest.getPassword()
+            );
+        } catch (Exception e) {
+            log.error("Authentication failed for email: {}", loginRequest.getEmail());
+            throw new RuntimeException("Invalid email or password");
+        }
 
+        String userId = authResponse.getUser().getId();
+        String accessToken = authResponse.getAccessToken();
+        String refreshToken = authResponse.getRefreshToken();
+        log.info("Supabase authentication successful for user: {}", userId);
+
+        // Retrieve user profile from database
         User user = userRepository.findByEmail(loginRequest.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundExecption("User not found with email: " + loginRequest.getEmail()));
 
-        UserDto userDto = userMapper.toDto(user);
+        UserDto userDto = getUserSpecificDto(user);
         log.info("Login successful for user: {}", user.getEmail());
 
-        return userDto;
+        // Return JwtResponse with tokens and user info using builder
+        return JwtResponse.builder()
+            .token(accessToken)
+            .refreshToken(refreshToken)
+            .id(userDto.getUserId().toString())
+            .username(userDto.getEmail())
+            .email(userDto.getEmail())
+            .name(userDto.getName())
+            .role(userDto.getRole().toString())
+            .build();
     }
 
     @Override

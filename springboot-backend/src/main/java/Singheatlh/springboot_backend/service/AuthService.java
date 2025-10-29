@@ -2,11 +2,12 @@ package Singheatlh.springboot_backend.service;
 
 import Singheatlh.springboot_backend.dto.request.LoginRequest;
 import Singheatlh.springboot_backend.dto.request.SignUpRequest;
+import Singheatlh.springboot_backend.dto.response.JwtResponse;
 import Singheatlh.springboot_backend.dto.UserDto;
 
 public interface AuthService {
-    UserDto signUp(SignUpRequest signUpRequest);
-    UserDto login(LoginRequest loginRequest);
+    JwtResponse signUp(SignUpRequest signUpRequest);
+    JwtResponse login(LoginRequest loginRequest);
     UserDto getCurrentUserProfile(String supabaseUid);
     boolean validateSupabaseJwt(String jwtToken);
     String extractUserIdFromToken(String jwtToken);

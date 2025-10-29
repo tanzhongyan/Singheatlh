@@ -4,6 +4,7 @@
   "description": "SingHealth Clinic Management System",
   "scripts": {
     "dev:setup": "npm install && npm run db:down && npm run db:up && npm run backend:build && concurrently \"npm run backend\" \"npm run frontend\"",
+    "dev:setup:unix": "npm install && npm run db:down && npm run db:up && npm run backend:build:unix && concurrently \"npm run backend:unix\" \"npm run frontend\"",
     "dev:seed": "cd db && bash seed-data.sh",
     "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
     "db:down": "cd db && docker compose down -v && cd ..",
@@ -12,6 +13,8 @@
     "db:seed": "cd db && bash seed-data.sh",
     "backend": "cd springboot-backend && .\\mvnw.cmd spring-boot:run",
     "backend:build": "cd springboot-backend && .\\mvnw.cmd clean install -DskipTests",
+    "backend:unix": "cd springboot-backend && ./mvnw spring-boot:run",
+    "backend:build:unix": "cd springboot-backend && ./mvnw clean install -DskipTests",
     "frontend": "cd vite-react-frontend && npm install && npm run dev",
     "frontend:dev": "cd vite-react-frontend && npm run dev"
   },
