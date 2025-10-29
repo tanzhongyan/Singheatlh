@@ -116,27 +116,55 @@ def generate_user_profiles(num_clinics: int) -> List[Dict]:
     })
 
     # 2. Clinic Staff (1-2 per clinic)
+    # Generate all possible unique name permutations
+    name_permutations = [f"{fn} {ln}" for fn in FIRST_NAMES for ln in LAST_NAMES]
+    random.shuffle(name_permutations)
+
+    users = []
+    used_emails = set(["admin@system.com"])
+    name_idx = 0
+
+    # 1. System Admin
+    admin_id = str(uuid.uuid4())
+    users.append({
+        "user_id": admin_id,
+        "name": "System Admin",
+        "role": "S",
+        "email": "admin@system.com",
+        "telephone_number": "+6512345678",
+        "clinic_id": ""
+    })
+
+    email_counter = 1
+
+    # 2. Clinic Staff (1-2 per clinic)
     for clinic_id in range(1, num_clinics + 1):
         num_staff = random.randint(1, 2)
         for _ in range(num_staff):
-            name = generate_name()
+            name = name_permutations[name_idx % len(name_permutations)]
+            name_idx += 1
+            email = f"{name.lower().replace(' ', '.')}+{email_counter}@example.com"
+            email_counter += 1
             users.append({
                 "user_id": str(uuid.uuid4()),
                 "name": name,
                 "role": "C",
-                "email": generate_email(name),
+                "email": email,
                 "telephone_number": generate_phone(),
                 "clinic_id": str(clinic_id)
             })
 
     # 3. Patients
     for _ in range(NUM_PATIENTS):
-        name = generate_name()
+        name = name_permutations[name_idx % len(name_permutations)]
+        name_idx += 1
+        email = f"{name.lower().replace(' ', '.')}+{email_counter}@example.com"
+        email_counter += 1
         users.append({
             "user_id": str(uuid.uuid4()),
             "name": name,
             "role": "P",
-            "email": generate_email(name),
+            "email": email,
             "telephone_number": generate_phone(),
             "clinic_id": ""
         })
@@ -468,9 +496,12 @@ def main():
         write_csv("appointment.csv", appointments,
                   ["appointment_id", "patient_id", "doctor_id", "start_datetime", "end_datetime", "status"])
 
-    write_csv("queue_ticket.csv", tickets,
-              ["ticket_id", "appointment_id", "status", "check_in_time", "queue_number",
-               "is_fast_tracked", "fast_track_reason"])
+    # Only output columns matching the table
+    queue_ticket_table_fields = ["appointment_id", "status", "check_in_time", "queue_number", "is_fast_tracked"]
+    queue_ticket_table_data = [
+        {k: t[k] for k in queue_ticket_table_fields} for t in tickets
+    ]
+    write_csv("queue_ticket.csv", queue_ticket_table_data, queue_ticket_table_fields)
 
     # Calculate statistics
     ticket_status_counts = {}

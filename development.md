@@ -41,7 +41,7 @@ spring.datasource.password=your-super-secret-and-long-postgres-password
 psql -h localhost -p 5434 -U postgres -d postgres
 ```
 
-### Quick Start (with Auto-seeding)
+### Quick Start
 
 Run this single command to set up everything:
 
@@ -50,17 +50,25 @@ npm run dev:setup
 ```
 
 **What happens automatically:**
+
 1. ✅ Installs npm dependencies
-2. ✅ Starts Docker database (PostgreSQL + Supabase services)
-3. ✅ Builds Spring Boot backend
-4. ✅ **Backend starts → Flyway runs migrations:**
+2. ✅ **Resets the database** (removes all existing data and containers)
+3. ✅ Starts Docker database (PostgreSQL + Supabase services)
+4. ✅ Builds Spring Boot backend
+5. ✅ **Backend starts → Flyway runs migrations:**
    - V1: Creates database schema
    - V2: Creates auth trigger
-   - **V3: Auto-loads ~600K records from CSV files** (no manual seeding needed!)
-5. ✅ Starts React frontend
-6. ✅ Opens both backend (port 8080) and frontend (port 5173)
+6. ✅ Starts React frontend
+7. ✅ Opens both backend (port 8080) and frontend (port 5173)
+8. ✅ **Automatically seeds database with ~600K records** (waits 10 seconds for backend to start)
 
 **Result:** Fully populated database with realistic test data ready to use!
+
+**To manually re-seed data** (if you reset the database):
+
+```bash
+npm run db:seed
+```
 
 ---
 
@@ -174,15 +182,41 @@ ORDER BY installed_rank;
 - **Purpose:** Auto-create User_Profile when users sign up via Supabase
 - **Behavior:** New users get default role 'P' (Patient)
 
-### V3: Sample Data Population (CSV-based) - **Auto-seeding**
-- **Purpose:** Automatically populate database with sample data when backend starts
-- **Method:** Flyway migration uses PostgreSQL `COPY` command to bulk-load CSV files
-- **When it runs:** Automatically on first backend startup after database reset
-- **Tables Populated:** Clinic (~1700), User_Profile (~3300), Doctor (~6000), Schedule (~600K), Appointment (5000), Medical_Summary (~1200), Queue_Ticket (~200)
-- **Requirements:**
-  - CSV files must exist in `db/sample-data/` directory (pre-generated)
-  - Docker volume mount: `./sample-data:/sample-data:ro` (configured in `db/docker-compose.yml`)
-  - No manual seeding needed - runs automatically via Flyway
+---
+
+## Sample Data Population
+
+Sample data is **automatically loaded** during `npm run dev:setup`.
+
+**Automatic seeding workflow:**
+
+1. `npm run dev:setup` starts the database
+2. Waits for database to be ready
+3. Runs `npm run db:seed` automatically
+4. Loads all CSV files using psql's `\copy` command
+5. Then builds and starts backend (Flyway creates schema)
+6. Finally starts frontend
+
+**What gets loaded:**
+- Clinic: ~1,700 records
+- User_Profile: ~3,300 records (1 admin, 2,552 staff, 800 patients)
+- Doctor: ~5,896 records (2-5 per clinic)
+- Schedule: ~601,170 records (Oct 22 - Nov 15, 2025)
+- Appointment: 5,000 records
+- Medical_Summary: ~1,243 records (only completed appointments)
+- Queue_Ticket: ~199 records (only today's appointments)
+
+**To manually re-seed** (after database reset):
+
+```bash
+npm run db:seed
+```
+
+**Technical Details:**
+- Uses psql's `\copy` command (doesn't require superuser privileges)
+- CSV files are pre-generated using `db/generate_mock_data.py`
+- Script location: `db/seed-data.sh`
+- Requirements: PostgreSQL container must be running
 
 ---
 
