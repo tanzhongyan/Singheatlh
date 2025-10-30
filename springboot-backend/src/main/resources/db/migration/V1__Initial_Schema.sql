@@ -43,6 +43,7 @@ CREATE TABLE Doctor (
     doctor_id CHAR(10) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     clinic_id INT NOT NULL,
+    appointment_duration_in_minutes INT NOT NULL,
     CONSTRAINT fk_doctor_clinic FOREIGN KEY (clinic_id) 
         REFERENCES Clinic(clinic_id) 
         ON DELETE CASCADE

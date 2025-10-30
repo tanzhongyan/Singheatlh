@@ -1,4 +1,6 @@
-doctor_id,name,clinic_id
-D000000001,Dr. Goh Sim,1
-D000000002,Dr. Lee Ng,1
-D000000003,Dr. John Ong,1
+doctor_id,name,clinic_id,appointment_duration_in_minutes
+D000000001,Dr. Sarah Tan,1,15
+D000000002,Dr. Michael Wong,1,15
+D000000003,Dr. Jennifer Lim,2,20
+D000000004,Dr. David Kumar,2,20
+D000000005,Dr. Emily Chen,3,30

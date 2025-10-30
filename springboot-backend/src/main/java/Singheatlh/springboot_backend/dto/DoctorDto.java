@@ -23,4 +23,6 @@ public class DoctorDto {
     private Integer clinicId;
 
     private String clinicName; // For response convenience
+
+    private Integer appointmentDurationInMinutes;
 }

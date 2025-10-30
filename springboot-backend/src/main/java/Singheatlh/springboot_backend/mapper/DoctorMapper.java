@@ -20,6 +20,7 @@ public class DoctorMapper {
                 .name(doctor.getName())
                 .clinicId(clinicId)
                 .clinicName(clinicName)
+                .appointmentDurationInMinutes(doctor.getAppointmentDurationInMinutes())
                 .build();
     }
 
@@ -32,6 +33,7 @@ public class DoctorMapper {
         doctor.setDoctorId(doctorDto.getDoctorId());
         doctor.setName(doctorDto.getName());
         doctor.setClinicId(doctorDto.getClinicId());
+        doctor.setAppointmentDurationInMinutes(doctorDto.getAppointmentDurationInMinutes());
         // The clinic entity will be set in the service layer
 
         return doctor;

@@ -1,10 +1,13 @@
 package Singheatlh.springboot_backend.service.impl;
 
 import Singheatlh.springboot_backend.dto.ScheduleDto;
+import Singheatlh.springboot_backend.dto.SlotDto;
+import Singheatlh.springboot_backend.entity.Doctor;
 import Singheatlh.springboot_backend.entity.Schedule;
 import Singheatlh.springboot_backend.entity.enums.ScheduleType;
 import Singheatlh.springboot_backend.exception.ResourceNotFoundExecption;
 import Singheatlh.springboot_backend.mapper.ScheduleMapper;
+import Singheatlh.springboot_backend.repository.DoctorRepository;
 import Singheatlh.springboot_backend.repository.ScheduleRepository;
 import Singheatlh.springboot_backend.service.*;
 import Singheatlh.springboot_backend.util.EntityDtoConverter;
@@ -16,7 +19,7 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
 
 /**
  * Implementation of all Schedule service interfaces
@@ -41,6 +44,7 @@ public class ScheduleServiceImpl implements
     private final ScheduleValidator scheduleValidator;
     private final EntityDtoConverter converter;
     private final TimeProvider timeProvider;
+    private final DoctorRepository doctorRepository;
 
     // ========== Helper Methods ==========
 
@@ -169,4 +173,47 @@ public class ScheduleServiceImpl implements
                 scheduleRepository.findSchedulesInDateRange(startDate, endDate)
         );
     }
+
+    // ========= Slot Service Methods ========
+    @Override
+    public Map<Date, List<SlotDto>> generateDoctorSlots(String id) {
+
+        Doctor doctor = doctorRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundExecption(
+                        "Doctor does not exist with id: " + id));;
+
+        List<ScheduleDto> scheduleDtos = getAvailableSchedulesByDoctor(id);
+        Map<Date, List<SlotDto>> slotsByDate = new HashMap<>();
+
+        int slotDurationMinutes = doctor.getAppointmentDurationInMinutes();
+
+        for (ScheduleDto schedule : scheduleDtos) {
+            LocalDateTime currentSlotStart = schedule.getStartDatetime();
+            LocalDateTime scheduleEnd = schedule.getEndDatetime();
+
+            // Generate slots until we can't fit another full slot
+            while (currentSlotStart.plusMinutes(slotDurationMinutes).isBefore(scheduleEnd) ||
+                    currentSlotStart.plusMinutes(slotDurationMinutes).isEqual(scheduleEnd)) {
+
+                LocalDateTime currentSlotEnd = currentSlotStart.plusMinutes(slotDurationMinutes);
+
+                // Create slot
+                SlotDto slot = new SlotDto();
+                slot.setStartDatetime(currentSlotStart);
+                slot.setEndDatetime(currentSlotEnd);
+
+                // Convert to Date for grouping (using SQL Date or java.util.Date)
+                Date date = java.sql.Date.valueOf(currentSlotStart.toLocalDate());
+
+                // Add to map
+                slotsByDate.computeIfAbsent(date, k -> new ArrayList<>()).add(slot);
+
+                // Move to next slot
+                currentSlotStart = currentSlotEnd;
+            }
+        }
+
+        return slotsByDate;
+    }
+
 }

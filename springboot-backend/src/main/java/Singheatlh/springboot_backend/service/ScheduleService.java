@@ -1,10 +1,13 @@
 package Singheatlh.springboot_backend.service;
 
 import Singheatlh.springboot_backend.dto.ScheduleDto;
+import Singheatlh.springboot_backend.dto.SlotDto;
 import Singheatlh.springboot_backend.entity.enums.ScheduleType;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 public interface ScheduleService {
 
@@ -29,4 +32,9 @@ public interface ScheduleService {
 
     // Validation
     boolean hasOverlappingSchedule(String doctorId, LocalDateTime startTime, LocalDateTime endTime);
+
+    /*
+     * Get schedules in slots
+     * */
+    Map<Date, List<SlotDto>> generateDoctorSlots(String id);
 }

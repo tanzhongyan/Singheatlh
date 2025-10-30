@@ -30,4 +30,7 @@ public class Doctor {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "clinic_id", insertable = false, updatable = false)
     private Clinic clinic;
+
+    @Column
+    private Integer appointmentDurationInMinutes = 15;
 }

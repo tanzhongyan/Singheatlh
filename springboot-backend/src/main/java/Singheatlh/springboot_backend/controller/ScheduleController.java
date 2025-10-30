@@ -1,6 +1,7 @@
 package Singheatlh.springboot_backend.controller;
 
 import Singheatlh.springboot_backend.dto.ScheduleDto;
+import Singheatlh.springboot_backend.dto.SlotDto;
 import Singheatlh.springboot_backend.entity.enums.ScheduleType;
 import Singheatlh.springboot_backend.service.ScheduleService;
 import jakarta.validation.Valid;
@@ -11,7 +12,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/schedules")
@@ -107,5 +110,11 @@ public class ScheduleController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
         boolean hasOverlap = scheduleService.hasOverlappingSchedule(doctorId, startTime, endTime);
         return ResponseEntity.ok(hasOverlap);
+    }
+
+    @GetMapping("/doctor/{doctorId}/slot")
+    public ResponseEntity<Map<Date, List<SlotDto>>> getSlotsByDoctor(@PathVariable("doctorId") String doctorId) {
+        Map<Date, List<SlotDto>> slotMap = scheduleService.generateDoctorSlots(doctorId);
+        return ResponseEntity.ok(slotMap);
     }
 }

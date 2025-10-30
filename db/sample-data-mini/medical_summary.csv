@@ -1,2 +1,7 @@
 summary_id,appointment_id,treatment_summary
-M000000001,A000000001,Minor injury treated and bandaged. Advised to return if condition worsens.
+M000000001,A000000001,Patient presented with acute upper respiratory tract infection. Prescribed antibiotics (Amoxicillin 500mg TDS x 5 days) and rest for 3 days. Advised to stay hydrated and return if symptoms persist after 5 days.
+M000000002,A000000002,Annual health screening completed. Blood pressure: 120/80 mmHg. BMI: 22.5. All vital signs within normal range. Advised to maintain healthy diet and regular exercise.
+M000000003,A000000003,Follow-up consultation for Type 2 Diabetes. HbA1c: 6.8%. Blood sugar levels improving. Continue with Metformin 500mg BD. Next review in 3 months with fasting blood test.
+M000000004,A000000004,Patient complained of lower back pain after lifting heavy objects. Physical examination shows muscle strain. Prescribed NSAIDs (Ibuprofen 400mg TDS x 5 days) and muscle relaxant. Referred to physiotherapy. Advised bed rest for 2 days.
+M000000005,A000000005,Child presented with fever and sore throat. Diagnosed with acute tonsillitis. Temperature: 38.5°C. Prescribed paracetamol for fever and antibiotics. Parents advised to monitor temperature and ensure adequate fluid intake.
+M000000006,A000000006,Skin rash examination - diagnosed with contact dermatitis. Prescribed topical corticosteroid cream (Hydrocortisone 1%) BD x 7 days. Advised to avoid allergen triggers and keep skin moisturized. Return if no improvement in 1 week.

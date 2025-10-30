@@ -1,5 +1,14 @@
 user_id,name,role,email,telephone_number,clinic_id
 e47e937a-febe-4b4f-8518-ec0e01222ae3,System Admin,S,admin@system.com,+6512345678,
-22550f10-4178-48aa-ae84-e5caf89ea67e,Marcus Rahman,C,marcus.rahman+1@example.com,+6597648472,1
-be8218cd-0ca8-4112-896c-4ed96e80595e,Goh Teo,C,goh.teo+2@example.com,+6599185077,1
-dd661aad-4b3d-465c-b0c1-fc1406290c63,Ng Chng,P,ng.chng+2722@example.com,+6599233746,
+22550f10-4178-48aa-ae84-e5caf89ea67e,Rachel Ng,C,rachel.ng@healthfirst.sg,+6591234567,1
+be8218cd-0ca8-4112-896c-4ed96e80595e,Benjamin Low,C,benjamin.low@healthfirst.sg,+6591234568,1
+cdf0e660-becc-4ce3-9a84-960881259578,Amanda Tan,C,amanda.tan@carewell.sg,+6591234569,2
+f6f8c5c3-26bf-4fc3-8819-3aae20953a2e,James Lee,C,james.lee@wellness.sg,+6591234570,3
+dd661aad-4b3d-465c-b0c1-fc1406290c63,Jessica Koh,P,jessica.koh@email.com,+6598765432,
+a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d,Daniel Lim,P,daniel.lim@email.com,+6598765433,
+b2c3d4e5-f6a7-4b5c-9d0e-1f2a3b4c5d6e,Michelle Tan,P,michelle.tan@email.com,+6598765434,
+c3d4e5f6-a7b8-4c5d-0e1f-2a3b4c5d6e7f,Robert Chen,P,robert.chen@email.com,+6598765435,
+d4e5f6a7-b8c9-4d5e-1f2a-3b4c5d6e7f8a,Sarah Wong,P,sarah.wong@email.com,+6598765436,
+e5f6a7b8-c9d0-4e5f-2a3b-4c5d6e7f8a9b,Kevin Goh,P,kevin.goh@email.com,+6598765437,
+f6a7b8c9-d0e1-4f5a-3b4c-5d6e7f8a9b0c,Linda Sim,P,linda.sim@email.com,+6598765438,
+a7b8c9d0-e1f2-4a5b-4c5d-6e7f8a9b0c1d,Andrew Yap,P,andrew.yap@email.com,+6598765439,

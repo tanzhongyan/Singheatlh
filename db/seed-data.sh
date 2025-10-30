@@ -141,7 +141,7 @@ echo -e "${GREEN} Loaded $CLINIC_COUNT clinics${NC}"
 echo ""
 echo -e "${BLUE}[4/10]${NC} Loading Doctor data..."
 docker exec -i -e PGPASSWORD="$DB_PASSWORD" "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" << 'EOF'
-\copy Doctor(doctor_id, name, clinic_id) FROM '/tmp/seed-data/doctor.csv' CSV HEADER
+\copy Doctor(doctor_id, name, clinic_id, appointment_duration_in_minutes) FROM '/tmp/seed-data/doctor.csv' CSV HEADER
 EOF
 DOCTOR_COUNT=$(execute_sql_plain "SELECT COUNT(*) FROM Doctor;")
 echo -e "${GREEN} Loaded $DOCTOR_COUNT doctors${NC}"
