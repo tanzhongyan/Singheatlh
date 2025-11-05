@@ -18,7 +18,10 @@ const BookAppointmentModal = ({ show, onHide, onSuccess }) => {
   const [success, setSuccess] = useState(false);
   const [hasFetched, setHasFetched] = useState(false);
   const [toasts, setToasts] = useState([]);
-  const [clinicTypeFilter, setClinicTypeFilter] = useState('all'); // 'all', 'G', 'S'
+  const [clinicTypeFilter, setClinicTypeFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const clinicsPerPage = 6; // 'all', 'G', 'S'
 
   const useVersion = "v2"; // switch to v1 to use DateTimeSelector
   const TOAST_LIFETIME = 5000; // ms
@@ -335,34 +338,67 @@ const BookAppointmentModal = ({ show, onHide, onSuccess }) => {
             {/* Step 1: Select Clinic */}
             {step === 1 && !success && (
               <div>
-                {/* Clinic Type Filter */}
-                <div className="mb-3">
-                  <div className="btn-group w-100" role="group">
-                    <button
-                      type="button"
-                      className={`btn ${clinicTypeFilter === 'all' ? 'btn-primary' : 'btn-outline-primary'}`}
-                      onClick={() => setClinicTypeFilter('all')}
+                <h6 className="mb-4">Select a Clinic</h6>
+                
+                {/* Search and Filter Section */}
+                <div className="row g-3 mb-4">
+                  {/* Search Bar */}
+                  <div className="col-md-8">
+                    <div className="input-group" style={{ border: '1px solid #dee2e6', borderRadius: '0.375rem', overflow: 'hidden' }}>
+                      <span className="input-group-text bg-white border-0">
+                        <i className="bi bi-search text-muted"></i>
+                      </span>
+                      <input
+                        type="text"
+                        className="form-control border-0"
+                        placeholder="Search clinics by name..."
+                        value={searchQuery}
+                        onChange={(e) => {
+                          setSearchQuery(e.target.value);
+                          setCurrentPage(1); // Reset to first page on search
+                        }}
+                        style={{ 
+                          boxShadow: 'none',
+                          outline: 'none'
+                        }}
+                      />
+                      {searchQuery && (
+                        <button
+                          className="btn border-0"
+                          type="button"
+                          onClick={() => {
+                            setSearchQuery('');
+                            setCurrentPage(1);
+                          }}
+                          style={{ backgroundColor: 'transparent' }}
+                        >
+                          <i className="bi bi-x-lg text-secondary"></i>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Clinic Type Dropdown Filter */}
+                  <div className="col-md-4">
+                    <select
+                      className="form-select"
+                      value={clinicTypeFilter}
+                      onChange={(e) => {
+                        setClinicTypeFilter(e.target.value);
+                        setCurrentPage(1); // Reset to first page on filter change
+                      }}
+                      style={{ 
+                        cursor: 'pointer',
+                        boxShadow: 'none'
+                      }}
                     >
-                      All Clinics
-                    </button>
-                    <button
-                      type="button"
-                      className={`btn ${clinicTypeFilter === 'G' ? 'btn-primary' : 'btn-outline-primary'}`}
-                      onClick={() => setClinicTypeFilter('G')}
-                    >
-                      General Practitioner
-                    </button>
-                    <button
-                      type="button"
-                      className={`btn ${clinicTypeFilter === 'S' ? 'btn-primary' : 'btn-outline-primary'}`}
-                      onClick={() => setClinicTypeFilter('S')}
-                    >
-                      Specialist
-                    </button>
+                      <option value="all">All Types</option>
+                      <option value="G">General Practitioner</option>
+                      <option value="S">Specialist</option>
+                    </select>
                   </div>
                 </div>
 
-                <h6 className="mb-3">Select a Clinic</h6>
                 {loading ? (
                   <div className="text-center py-5">
                     <div className="spinner-border text-primary" role="status">
@@ -370,33 +406,168 @@ const BookAppointmentModal = ({ show, onHide, onSuccess }) => {
                     </div>
                   </div>
                 ) : (
-                  <div className="row g-3">
-                    {clinics
-                      .filter(clinic => clinicTypeFilter === 'all' || clinic.type === clinicTypeFilter)
-                      .map((clinic) => (
-                      <div key={clinic.clinicId} className="col-12">
-                        <div
-                          className="card border hover-shadow h-100"
-                          onClick={() => handleClinicSelect(clinic)}
-                          style={{ cursor: "pointer", transition: "all 0.2s" }}
-                        >
-                          <div className="card-body">
-                            <div className="d-flex justify-content-between align-items-start">
-                              <div>
-                                <h6 className="mb-1">{clinic.name}</h6>
-                                <p className="text-muted small mb-0">
-                                  {clinic.address}
-                                </p>
+                  <>
+                    {/* Clinic Cards Grid */}
+                    <div className="row g-3" style={{ minHeight: '300px' }}>
+                      {(() => {
+                        // Filter and search logic
+                        const filteredClinics = clinics
+                          .filter(clinic => clinicTypeFilter === 'all' || clinic.type === clinicTypeFilter)
+                          .filter(clinic => 
+                            searchQuery === '' || 
+                            clinic.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            clinic.address.toLowerCase().includes(searchQuery.toLowerCase())
+                          );
+                        
+                        // Pagination logic
+                        const indexOfLastClinic = currentPage * clinicsPerPage;
+                        const indexOfFirstClinic = indexOfLastClinic - clinicsPerPage;
+                        const currentClinics = filteredClinics.slice(indexOfFirstClinic, indexOfLastClinic);
+                        const totalPages = Math.ceil(filteredClinics.length / clinicsPerPage);
+                        
+                        if (filteredClinics.length === 0) {
+                          return (
+                            <div className="col-12">
+                              <div className="text-center py-5 text-muted">
+                                <i className="bi bi-search" style={{ fontSize: '3rem' }}></i>
+                                <p className="mt-3 mb-0">No clinics found matching your search.</p>
+                                {(searchQuery || clinicTypeFilter !== 'all') && (
+                                  <button 
+                                    className="btn btn-sm btn-outline-primary mt-2"
+                                    onClick={() => {
+                                      setSearchQuery('');
+                                      setClinicTypeFilter('all');
+                                      setCurrentPage(1);
+                                    }}
+                                  >
+                                    Clear Filters
+                                  </button>
+                                )}
                               </div>
-                              <span className="badge bg-light text-dark border">
-                                {clinic.type === 'G' ? 'General Practitioner' : 'Specialist'}
-                              </span>
                             </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                          );
+                        }
+                        
+                        return (
+                          <>
+                            {currentClinics.map((clinic) => (
+                              <div key={clinic.clinicId} className="col-12">
+                                <div
+                                  className="card border hover-shadow h-100"
+                                  onClick={() => handleClinicSelect(clinic)}
+                                  style={{ 
+                                    cursor: "pointer", 
+                                    transition: "all 0.2s",
+                                    borderRadius: '8px'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '';
+                                  }}
+                                >
+                                  <div className="card-body p-3">
+                                    <div className="d-flex justify-content-between align-items-start">
+                                      <div className="flex-grow-1 me-3">
+                                        <h6 className="mb-1 fw-semibold">{clinic.name}</h6>
+                                        <p className="text-muted small mb-2" style={{ lineHeight: '1.4' }}>
+                                          <i className="bi bi-geo-alt me-1"></i>
+                                          {clinic.address}
+                                        </p>
+                                        <p className="text-muted small mb-0">
+                                          <i className="bi bi-telephone me-1"></i>
+                                          {clinic.telephoneNumber || 'N/A'}
+                                        </p>
+                                      </div>
+                                      <span 
+                                        className="badge rounded-pill"
+                                        style={{
+                                          backgroundColor: clinic.type === 'G' ? '#e3f2fd' : '#f3e5f5',
+                                          color: clinic.type === 'G' ? '#1976d2' : '#7b1fa2',
+                                          padding: '6px 12px',
+                                          fontSize: '0.75rem',
+                                          fontWeight: '500'
+                                        }}
+                                      >
+                                        {clinic.type === 'G' ? 'GP' : 'Specialist'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                            
+                            {/* Pagination Controls */}
+                            {totalPages > 1 && (
+                              <div className="col-12">
+                                <nav aria-label="Clinic pagination">
+                                  <ul className="pagination pagination-sm justify-content-center mb-0">
+                                    <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                                      <button
+                                        className="page-link"
+                                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                        disabled={currentPage === 1}
+                                      >
+                                        <i className="bi bi-chevron-left"></i>
+                                      </button>
+                                    </li>
+                                    
+                                    {[...Array(totalPages)].map((_, index) => {
+                                      const pageNumber = index + 1;
+                                      // Show first page, last page, current page, and pages around current
+                                      if (
+                                        pageNumber === 1 ||
+                                        pageNumber === totalPages ||
+                                        (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+                                      ) {
+                                        return (
+                                          <li 
+                                            key={pageNumber} 
+                                            className={`page-item ${currentPage === pageNumber ? 'active' : ''}`}
+                                          >
+                                            <button
+                                              className="page-link"
+                                              onClick={() => setCurrentPage(pageNumber)}
+                                            >
+                                              {pageNumber}
+                                            </button>
+                                          </li>
+                                        );
+                                      } else if (
+                                        pageNumber === currentPage - 2 ||
+                                        pageNumber === currentPage + 2
+                                      ) {
+                                        return <li key={pageNumber} className="page-item disabled"><span className="page-link">...</span></li>;
+                                      }
+                                      return null;
+                                    })}
+                                    
+                                    <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                                      <button
+                                        className="page-link"
+                                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                        disabled={currentPage === totalPages}
+                                      >
+                                        <i className="bi bi-chevron-right"></i>
+                                      </button>
+                                    </li>
+                                  </ul>
+                                </nav>
+                                
+                                {/* Results count */}
+                                <div className="text-center mt-2 small text-muted">
+                                  Showing {indexOfFirstClinic + 1}-{Math.min(indexOfLastClinic, filteredClinics.length)} of {filteredClinics.length} clinics
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </>
                 )}
               </div>
             )}
