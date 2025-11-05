@@ -46,8 +46,8 @@ public class QueueServiceImpl implements QueueService {
             
             LocalDateTime now = LocalDateTime.now();
 
-            // ENFORCEMENT OF GRACE PERIOD TIMINT (5 MINUTES) AND DATE OF APPOINTMENT, REMOVED FROM FLOW FOR EASY TESTING
-            int test = 0;
+            // ENFORCEMENT OF CHECK FOR DATE OF APPOINTMENT
+            int test = 1;
             if(test == 1){
                 LocalDateTime appointmentDate = appointment.getStartDatetime().toLocalDate().atStartOfDay();
                 LocalDateTime currentDate = now.toLocalDate().atStartOfDay();
@@ -56,16 +56,6 @@ public class QueueServiceImpl implements QueueService {
                     throw new IllegalStateException("Check-in failed: Appointment date has passed. " +
                         "Appointment was scheduled for " + appointment.getStartDatetime().toLocalDate() + 
                         " but today is " + now.toLocalDate() + ". Please contact the clinic to reschedule.");
-                }
-
-                LocalDateTime appointmentStartTime = appointment.getStartDatetime();
-                LocalDateTime gracePeriodEnd = appointmentStartTime.plusMinutes(5);
-                
-                if (now.isAfter(gracePeriodEnd)) {
-                    throw new IllegalStateException("Check-in failed: You have missed the check-in window. " +
-                        "Appointment was scheduled for " + appointmentStartTime.toLocalTime() + 
-                        " with a 5-minute grace period until " + gracePeriodEnd.toLocalTime() + 
-                        ". Current time is " + now.toLocalTime() + ". Please contact the clinic to reschedule.");
                 }
             }
             
@@ -341,8 +331,8 @@ public class QueueServiceImpl implements QueueService {
         QueueTicket queueTicket = queueTicketRepository.findById(ticketId)
             .orElseThrow(() -> new ResourceNotFoundExecption("Queue ticket not found with id: " + ticketId));
         
-        // Validate status
-        if (queueTicket.getStatus() != QueueStatus.CHECKED_IN) {
+        // Validate status: allow fast-track when CHECKED_IN or already FAST_TRACKED (reordering)
+        if (queueTicket.getStatus() != QueueStatus.CHECKED_IN && queueTicket.getStatus() != QueueStatus.FAST_TRACKED) {
             throw new IllegalStateException("Cannot fast-track patient with status: " + queueTicket.getStatus());
         }
         
@@ -350,8 +340,8 @@ public class QueueServiceImpl implements QueueService {
         LocalDateTime today = LocalDateTime.now();
 
         List<QueueTicket> activeQueue = queueTicketRepository.findActiveQueueByDoctorIdAndDate(doctorId, today);
-        
-        // check if there are pre-existing fast track personnel as well
+
+        // Build list of existing fast-tracked tickets (excluding current)
         List<QueueTicket> existingFastTracked = activeQueue.stream()
             .filter(ticket -> ticket.getIsFastTracked() != null && ticket.getIsFastTracked())
             .filter(ticket -> !ticket.getTicketId().equals(ticketId)) // Exclude current ticket
@@ -361,31 +351,42 @@ public class QueueServiceImpl implements QueueService {
         boolean hasCurrentlyServed = activeQueue.stream()
             .anyMatch(ticket -> ticket.getStatus() == QueueStatus.CALLED);
         
+        Integer desiredFront = hasCurrentlyServed ? 2 : 1;
+
+        Integer currentNumber = queueTicket.getQueueNumber();
+        boolean isAlreadyFastTracked = Boolean.TRUE.equals(queueTicket.getIsFastTracked());
+
         Integer newQueueNumber;
-        if (existingFastTracked.isEmpty()) {
-            if (hasCurrentlyServed) {
-                // cannot override currently served patient
-                newQueueNumber = 2;
+        if (isAlreadyFastTracked) {
+            // If already fast-tracked, only move to front of fast-tracked block if not already there
+            if (currentNumber != null && currentNumber.equals(desiredFront)) {
+                newQueueNumber = currentNumber; // No reordering needed
             } else {
-                newQueueNumber = 1;
+                newQueueNumber = desiredFront;
+                // Shift ONLY other fast-tracked tickets between the target and the old position back by 1
+                for (QueueTicket ticket : existingFastTracked) {
+                    Integer num = ticket.getQueueNumber();
+                    if (num != null && num >= newQueueNumber && (currentNumber == null || num < currentNumber)) {
+                        ticket.setQueueNumber(num + 1);
+                        queueTicketRepository.save(ticket);
+                    }
+                }
             }
         } else {
-            // Subsequent fast-tracked patients go after the last fast-tracked patient
-            Integer lastFastTrackNumber = existingFastTracked.get(existingFastTracked.size() - 1).getQueueNumber();
-            newQueueNumber = lastFastTrackNumber + 1;
-
-            // ensure no conflict w currently serving
-            if (hasCurrentlyServed && newQueueNumber == 1) {
-                newQueueNumber = 2;
-            }
-        }
-        
-        // Shift all other paitents
-        for (QueueTicket ticket : activeQueue) {
-            if (ticket.getQueueNumber() >= newQueueNumber 
-                && !ticket.getTicketId().equals(ticketId)) {
-                ticket.setQueueNumber(ticket.getQueueNumber() + 1);
-                queueTicketRepository.save(ticket);
+            // Not yet fast-tracked: insert at the front of the fast-tracked block
+            // Shift ALL tickets at or after the insertion point (including non-fast-tracked)
+            newQueueNumber = desiredFront;
+            for (QueueTicket ticket : activeQueue) {
+                if (ticket.getTicketId().equals(ticketId)) {
+                    continue; // skip current ticket
+                }
+                Integer num = ticket.getQueueNumber();
+                if (num != null && num >= newQueueNumber
+                    && ticket.getStatus() != QueueStatus.COMPLETED
+                    && ticket.getStatus() != QueueStatus.NO_SHOW) {
+                    ticket.setQueueNumber(num + 1);
+                    queueTicketRepository.save(ticket);
+                }
             }
         }
         
