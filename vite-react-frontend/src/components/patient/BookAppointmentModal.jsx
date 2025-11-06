@@ -267,12 +267,18 @@ const BookAppointmentModal = ({ show, onHide, onSuccess }) => {
           <div className="modal-header border-0 pb-0">
             <div>
               <h4 className="modal-title mb-1">Book Appointment</h4>
-              <p className="text-muted small mb-0">Step {step} of 3</p>
+              <p className="text-muted small mb-0">
+                Step {step} of 3
+                {step === 1 && ' - Choose a Clinic'}
+                {step === 2 && ' - Select a Doctor'}
+                {step === 3 && ' - Pick Your Time'}
+              </p>
             </div>
             <button
               type="button"
               className="btn-close"
               onClick={handleClose}
+              aria-label="Close booking form"
             ></button>
           </div>
 
@@ -608,7 +614,7 @@ const BookAppointmentModal = ({ show, onHide, onSuccess }) => {
                                 ></i>
                               </div>
                               <div>
-                                <h6 className="mb-0">Dr. {doctor.name}</h6>
+                                <h6 className="mb-0">{doctor.name}</h6>
                               </div>
                             </div>
                           </div>

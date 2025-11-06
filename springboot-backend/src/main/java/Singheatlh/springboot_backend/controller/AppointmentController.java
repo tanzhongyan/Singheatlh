@@ -18,18 +18,22 @@ import org.springframework.web.bind.annotation.RestController;
 
 import Singheatlh.springboot_backend.dto.AppointmentDto;
 import Singheatlh.springboot_backend.dto.CreateAppointmentRequest;
+import Singheatlh.springboot_backend.dto.MedicalSummaryDto;
 import Singheatlh.springboot_backend.entity.enums.AppointmentStatus;
 import Singheatlh.springboot_backend.service.AppointmentService;
+import Singheatlh.springboot_backend.service.MedicalSummaryService;
 
 @RestController
 @RequestMapping("/api/appointments")
 public class AppointmentController {
     
     private final AppointmentService appointmentService;
+    private final MedicalSummaryService medicalSummaryService;
     
     @Autowired
-    public AppointmentController(AppointmentService appointmentService) {
+    public AppointmentController(AppointmentService appointmentService, MedicalSummaryService medicalSummaryService) {
         this.appointmentService = appointmentService;
+        this.medicalSummaryService = medicalSummaryService;
     }
     
     @PostMapping
@@ -181,6 +185,25 @@ public class AppointmentController {
             return ResponseEntity.ok(appointments);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Get medical summary for a specific appointment
+     * Returns the treatment summary if available
+     */
+    @GetMapping("/{appointmentId}/medical-summary")
+    public ResponseEntity<?> getMedicalSummary(@PathVariable String appointmentId) {
+        try {
+            MedicalSummaryDto summary = medicalSummaryService.getMedicalSummaryByAppointmentId(appointmentId);
+            if (summary == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ErrorResponse("No medical summary found for this appointment"));
+            }
+            return ResponseEntity.ok(summary);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Failed to retrieve medical summary"));
         }
     }
 
