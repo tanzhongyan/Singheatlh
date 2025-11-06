@@ -41,7 +41,7 @@ const WalkInAppointmentModal = ({ show, onHide, onSuccess, clinicId }) => {
 
   const fetchPatients = async () => {
     try {
-      const response = await apiClient.get('/api/users?role=P');
+      const response = await apiClient.get('/api/users/role/P');
       setPatients(response.data);
     } catch (err) {
       console.error('Error fetching patients:', err);
@@ -51,8 +51,8 @@ const WalkInAppointmentModal = ({ show, onHide, onSuccess, clinicId }) => {
 
   const fetchDoctors = async () => {
     try {
-      // Assuming you have an endpoint to get doctors by clinic
-      const response = await apiClient.get(`/api/users?role=S&clinicId=${clinicId}`);
+      // Fetch doctors from the doctor table filtered by clinicId
+      const response = await apiClient.get(`/api/doctor/clinic/${clinicId}`);
       setDoctors(response.data);
     } catch (err) {
       console.error('Error fetching doctors:', err);
@@ -150,7 +150,7 @@ const WalkInAppointmentModal = ({ show, onHide, onSuccess, clinicId }) => {
             >
               <option value="">Select a doctor...</option>
               {doctors.map(doctor => (
-                <option key={doctor.userId} value={doctor.userId}>
+                <option key={doctor.doctorId} value={doctor.doctorId}>
                   {doctor.name}
                 </option>
               ))}

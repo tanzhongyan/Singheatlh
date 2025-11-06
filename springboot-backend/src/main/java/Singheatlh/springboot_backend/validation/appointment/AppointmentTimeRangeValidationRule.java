@@ -4,10 +4,10 @@ import Singheatlh.springboot_backend.dto.CreateAppointmentRequest;
 import org.springframework.stereotype.Component;
 
 /**
- * Validates that end datetime is after start datetime.
+ * Validates that end datetime is after start datetime for appointments.
  */
 @Component
-public class TimeRangeValidationRule implements AppointmentValidationRule {
+public class AppointmentTimeRangeValidationRule implements AppointmentValidationRule {
 
     @Override
     public void validate(CreateAppointmentRequest request) {
