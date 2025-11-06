@@ -9,5 +9,6 @@ public class CreateClinicStaffRequest {
     private String password;
     private String name;
     private String username;
+    private String telephoneNumber;
     private int clinicId;
 }

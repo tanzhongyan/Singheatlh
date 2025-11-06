@@ -10,6 +10,8 @@ import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import UserManagementPage from "./pages/admin/UserManagementPage";
 import DoctorManagementPage from "./pages/admin/DoctorManagementPage";
 import ClinicManagementPage from "./pages/admin/ClinicManagementPage";
+import AdminMonitoringPage from "./pages/admin/AdminMonitoringPage";
+import AdminBackupPage from "./pages/admin/AdminBackupPage";
 import StaffDashboardPage from "./pages/clinicStaff/StaffDashboardPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
@@ -38,6 +40,8 @@ function App() {
             <Route path="users" element={<UserManagementPage />} />
             <Route path="doctors" element={<DoctorManagementPage />} />
             <Route path="clinics" element={<ClinicManagementPage />} />
+            <Route path="monitoring" element={<AdminMonitoringPage />} />
+            <Route path="backup" element={<AdminBackupPage />} />
           </Route>
         </Route>
 

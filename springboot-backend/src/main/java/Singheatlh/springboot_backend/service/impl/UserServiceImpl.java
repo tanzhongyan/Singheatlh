@@ -43,6 +43,7 @@ public class UserServiceImpl implements UserService {
 
         // Update only allowed fields
         user.setName(userDto.getName());
+        user.setTelephoneNumber(userDto.getTelephoneNumber());
         // Email and role should be updated through separate auth service
 
         User savedUser = userRepository.save(user);

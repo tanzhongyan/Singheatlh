@@ -41,8 +41,31 @@ export const AuthProvider = ({ children }) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  const signUpAsAdmin = async (data) => {
+    // Get current session to restore later
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+
+    // Create the new user (this will auto-login as the new user)
+    const result = await supabase.auth.signUp(data);
+
+    // If we had a session before, restore it
+    if (currentSession) {
+      // Sign out the newly created user
+      await supabase.auth.signOut();
+
+      // Restore the admin session
+      await supabase.auth.setSession({
+        access_token: currentSession.access_token,
+        refresh_token: currentSession.refresh_token,
+      });
+    }
+
+    return result;
+  };
+
   const value = {
     signUp: (data) => supabase.auth.signUp(data),
+    signUpAsAdmin,
     signIn: (data) => supabase.auth.signInWithPassword(data),
     signOut: () => supabase.auth.signOut(),
     user,

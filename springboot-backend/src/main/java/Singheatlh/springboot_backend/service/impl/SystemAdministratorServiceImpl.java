@@ -13,10 +13,13 @@ import Singheatlh.springboot_backend.mapper.PatientMapper;
 import Singheatlh.springboot_backend.mapper.SystemAdministratorMapper;
 import Singheatlh.springboot_backend.repository.*;
 import Singheatlh.springboot_backend.service.SystemAdministratorService;
+import Singheatlh.springboot_backend.service.SupabaseAuthClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -32,6 +35,7 @@ public class SystemAdministratorServiceImpl implements SystemAdministratorServic
     private final ClinicRepository clinicRepository;
     private final PatientMapper patientMapper;
     private final ClinicStaffMapper clinicStaffMapper;
+    private final SupabaseAuthClient supabaseAuthClient;
 
     @Override
     public SystemAdministratorDto getById(String id) {
@@ -92,14 +96,29 @@ public class SystemAdministratorServiceImpl implements SystemAdministratorServic
             throw new RuntimeException("User with email " + request.getEmail() + " already exists");
         }
 
-        if (request.getId() == null || request.getId().trim().isEmpty()) {
-            throw new RuntimeException("Supabase UID is required for user creation");
+        // Create user in Supabase Auth if ID is not provided
+        String userId = request.getId();
+        if (userId == null || userId.trim().isEmpty()) {
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("name", request.getName());
+
+            try {
+                SupabaseAuthClient.SupabaseAuthResponse response = supabaseAuthClient.signUp(
+                    request.getEmail(),
+                    request.getPassword(),
+                    metadata
+                );
+                userId = response.getUser().getId();
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to create user in Supabase Auth: " + e.getMessage());
+            }
         }
 
         PatientDto patientDto = PatientDto.builder()
-                .userId(UUID.fromString(request.getId()))
+                .userId(UUID.fromString(userId))
                 .name(request.getName())
                 .email(request.getEmail())
+                .telephoneNumber(request.getTelephoneNumber())
                 .role(Role.P)
                 .build();
 
@@ -117,14 +136,29 @@ public class SystemAdministratorServiceImpl implements SystemAdministratorServic
             throw new RuntimeException("User with email " + request.getEmail() + " already exists");
         }
 
-        if (request.getId() == null || request.getId().trim().isEmpty()) {
-            throw new RuntimeException("Supabase UID is required for user creation");
+        // Create user in Supabase Auth if ID is not provided
+        String userId = request.getId();
+        if (userId == null || userId.trim().isEmpty()) {
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("name", request.getName());
+
+            try {
+                SupabaseAuthClient.SupabaseAuthResponse response = supabaseAuthClient.signUp(
+                    request.getEmail(),
+                    request.getPassword(),
+                    metadata
+                );
+                userId = response.getUser().getId();
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to create user in Supabase Auth: " + e.getMessage());
+            }
         }
 
         ClinicStaffDto staffDto = ClinicStaffDto.builder()
-                .userId(UUID.fromString(request.getId()))
+                .userId(UUID.fromString(userId))
                 .name(request.getName())
                 .email(request.getEmail())
+                .telephoneNumber(request.getTelephoneNumber())
                 .role(Role.C)
                 .clinicId(request.getClinicId())
                 .build();

@@ -4,6 +4,7 @@ import Singheatlh.springboot_backend.dto.ScheduleDto;
 import Singheatlh.springboot_backend.dto.SlotDto;
 import Singheatlh.springboot_backend.entity.enums.ScheduleType;
 import Singheatlh.springboot_backend.service.ScheduleService;
+import Singheatlh.springboot_backend.validation.ScheduleOverlapValidationRule.ScheduleOverlapException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -113,8 +115,19 @@ public class ScheduleController {
     }
 
     @GetMapping("/doctor/{doctorId}/slot")
-    public ResponseEntity<Map<Date, List<SlotDto>>> getSlotsByDoctor(@PathVariable("doctorId") String doctorId) {
+    public ResponseEntity<Map<Date, List<SlotDto>>> getSlotsByDoctor(@PathVariable String doctorId) {
         Map<Date, List<SlotDto>> slotMap = scheduleService.generateDoctorSlots(doctorId);
         return ResponseEntity.ok(slotMap);
+    }
+
+    // Exception Handlers
+
+    @ExceptionHandler(ScheduleOverlapException.class)
+    public ResponseEntity<Map<String, String>> handleScheduleOverlapException(
+            ScheduleOverlapException e) {
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", "Schedule Conflict");
+        errorResponse.put("message", e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 }
