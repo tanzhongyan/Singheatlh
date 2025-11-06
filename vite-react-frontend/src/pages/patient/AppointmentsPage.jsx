@@ -5,6 +5,7 @@ import AppointmentList from '../../components/patient/AppointmentList';
 import BookAppointmentModal from '../../components/patient/BookAppointmentModal';
 import CancelAppointmentModal from '../../components/patient/CancelAppointmentModal';
 import RescheduleAppointmentModal from '../../components/patient/RescheduleAppointmentModal';
+import ViewMedicalSummaryModal from '../../components/patient/ViewMedicalSummaryModal';
 
 const AppointmentsPage = () => {
   const { user } = useAuth();
@@ -16,6 +17,10 @@ const AppointmentsPage = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [pendingRescheduleAppointment, setPendingRescheduleAppointment] = useState(null);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [selectedAppointmentForSummary, setSelectedAppointmentForSummary] = useState(null);
+  const [medicalSummary, setMedicalSummary] = useState(null);
+  const [loadingSummary, setLoadingSummary] = useState(false);
 
   const fetchAppointments = useCallback(async () => {
     try {
@@ -69,6 +74,29 @@ const AppointmentsPage = () => {
     fetchAppointments();
   };
 
+  const handleViewSummary = async (appointment) => {
+    setSelectedAppointmentForSummary(appointment);
+    setShowSummaryModal(true);
+    setLoadingSummary(true);
+    setMedicalSummary(null);
+
+    try {
+      const response = await apiClient.get(`/api/appointments/${appointment.appointmentId}/medical-summary`);
+      setMedicalSummary(response.data);
+    } catch (err) {
+      console.error('Error fetching medical summary:', err);
+      // Show modal anyway, it will display "No summary available"
+    } finally {
+      setLoadingSummary(false);
+    }
+  };
+
+  const handleCloseSummaryModal = () => {
+    setShowSummaryModal(false);
+    setSelectedAppointmentForSummary(null);
+    setMedicalSummary(null);
+  };
+
   if (loading) {
     return (
       <div className="container py-5 text-center">
@@ -113,6 +141,7 @@ const AppointmentsPage = () => {
           appointments={appointments}
           onCancel={handleCancelAppointment}
           onRequestReschedule={handleRequestReschedule}
+          onViewSummary={handleViewSummary}
         />
 
         {showCancelModal && (
@@ -142,6 +171,16 @@ const AppointmentsPage = () => {
             show={showBookModal}
             onHide={() => setShowBookModal(false)}
             onSuccess={handleAppointmentBooked}
+          />
+        )}
+
+        {showSummaryModal && (
+          <ViewMedicalSummaryModal
+            show={showSummaryModal}
+            onHide={handleCloseSummaryModal}
+            appointment={selectedAppointmentForSummary}
+            summary={loadingSummary ? null : medicalSummary}
+            loading={loadingSummary}
           />
         )}
       </div>

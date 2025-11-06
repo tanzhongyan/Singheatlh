@@ -167,7 +167,7 @@ export default function SelectSlot({
               Selected Doctor
             </div>
             <div style={{ fontWeight: 600, color: "#111827" }}>
-              Dr. {selectedDoctor?.name}
+              {selectedDoctor?.name}
             </div>
             <div style={{ fontSize: 12, color: "#4b5563" }}>
               {selectedClinic?.name}
@@ -341,7 +341,7 @@ export default function SelectSlot({
               </div>
               <div className="summary-meta">
                 <div style={{ fontWeight: 600 }}>{selectedClinic?.name}</div>
-                <div>Dr. {selectedDoctor?.name}</div>
+                <div>{selectedDoctor?.name}</div>
                 <div style={{ marginTop: 8 }}>
                   {new Date(`${selectedDate}T${selectedTime}`).toLocaleString(
                     "en-US",

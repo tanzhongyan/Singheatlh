@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const AppointmentList = ({ appointments, onCancel, onRequestReschedule }) => {
+const AppointmentList = ({ appointments, onCancel, onRequestReschedule, onViewSummary }) => {
   const [filter, setFilter] = useState('all'); // all, upcoming, completed, cancelled
 
   const getStatusBadge = (status) => {
@@ -154,6 +154,38 @@ const AppointmentList = ({ appointments, onCancel, onRequestReschedule }) => {
                       </div>
                     );
                   })()}
+
+                  {/* View Summary button for COMPLETED appointments */}
+                  {(appointment.status || '').toUpperCase() === 'COMPLETED' && (
+                    <div className="d-grid">
+                      <button
+                        className="btn btn-outline-success btn-sm"
+                        onClick={() => onViewSummary && onViewSummary(appointment)}
+                        style={{
+                          borderColor: '#10b981',
+                          color: '#10b981',
+                          fontWeight: '500',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = '#10b981';
+                          e.currentTarget.style.color = 'white';
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                          e.currentTarget.style.boxShadow = '0 4px 8px rgba(16, 185, 129, 0.2)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                          e.currentTarget.style.color = '#10b981';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = 'none';
+                        }}
+                        aria-label={`View medical summary for appointment with Dr. ${appointment?.doctorName}`}
+                      >
+                        <i className="bi bi-file-medical me-1"></i>
+                        View Medical Summary
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

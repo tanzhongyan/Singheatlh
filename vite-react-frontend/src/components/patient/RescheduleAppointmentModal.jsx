@@ -317,7 +317,7 @@ const RescheduleAppointmentModal = ({ show, onHide, appointment, onSuccess }) =>
                       <div className="d-flex justify-content-between align-items-start">
                         <div>
                           <div className="fw-semibold">{appointment?.clinicName || 'Unknown Clinic'}</div>
-                          <div className="small">Dr. {appointment?.doctorName || 'Unknown Doctor'}</div>
+                          <div className="small">{appointment?.doctorName || 'Unknown Doctor'}</div>
                         </div>
                         <div className="text-end">
                           <div className="fw-semibold">
@@ -370,7 +370,7 @@ const RescheduleAppointmentModal = ({ show, onHide, appointment, onSuccess }) =>
                                   <div className="flex-grow-1">
                                     <h6 className="mb-1">Keep Same Doctor</h6>
                                     <p className="text-muted small mb-0">
-                                      Reschedule with Dr. {appointment?.doctorName} at a different time
+                                      Reschedule with {appointment?.doctorName} at a different time
                                     </p>
                                   </div>
                                   <i className="bi bi-chevron-right text-muted"></i>
@@ -688,7 +688,7 @@ const RescheduleAppointmentModal = ({ show, onHide, appointment, onSuccess }) =>
                                           <i className="bi bi-person-fill text-primary"></i>
                                         </div>
                                         <div>
-                                          <h6 className="mb-0 fw-semibold">Dr. {doctor.name}</h6>
+                                          <h6 className="mb-0 fw-semibold">{doctor.name}</h6>
                                           <small className="text-muted">
                                             {doctor.appointmentDurationInMinutes} min appointments
                                           </small>

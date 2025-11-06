@@ -325,7 +325,7 @@ const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => 
                     <div className="d-flex align-items-center mb-2 text-muted">
                       <i className="bi bi-person-badge me-2"></i>
                       <span className="small">
-                        Dr. {appointment?.doctor?.name || appointment?.doctorName || 'Unknown'}
+                        {appointment?.doctor?.name || appointment?.doctorName || 'Unknown'}
                       </span>
                     </div>
                   </div>
