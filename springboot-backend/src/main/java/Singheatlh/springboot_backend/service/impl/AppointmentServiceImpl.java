@@ -17,6 +17,7 @@ import Singheatlh.springboot_backend.entity.enums.AppointmentStatus;
 import Singheatlh.springboot_backend.mapper.AppointmentMapper;
 import Singheatlh.springboot_backend.repository.AppointmentRepository;
 import Singheatlh.springboot_backend.service.AppointmentService;
+import Singheatlh.springboot_backend.strategy.AppointmentStrategyFactory;
 
 @Service
 @Transactional
@@ -24,12 +25,15 @@ public class AppointmentServiceImpl implements AppointmentService {
     
     private final AppointmentRepository appointmentRepository;
     private final AppointmentMapper appointmentMapper;
-    
+    private final AppointmentStrategyFactory strategyFactory;
+
     @Autowired
-    public AppointmentServiceImpl(AppointmentRepository appointmentRepository, 
-                                 AppointmentMapper appointmentMapper) {
+    public AppointmentServiceImpl(AppointmentRepository appointmentRepository,
+                                 AppointmentMapper appointmentMapper,
+                                 AppointmentStrategyFactory strategyFactory) {
         this.appointmentRepository = appointmentRepository;
         this.appointmentMapper = appointmentMapper;
+        this.strategyFactory = strategyFactory;
     }
     
     @Override
