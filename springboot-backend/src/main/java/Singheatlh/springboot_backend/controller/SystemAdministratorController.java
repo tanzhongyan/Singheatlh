@@ -10,7 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -215,5 +217,25 @@ public class SystemAdministratorController {
     public ResponseEntity<String> deleteBackup(@PathVariable String backupId) {
         systemBackupService.deleteBackup(backupId);
         return ResponseEntity.ok("Backup deleted successfully!");
+    }
+
+    // Exception Handlers
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException e) {
+        Map<String, String> errorResponse = new HashMap<>();
+        String message = e.getMessage();
+
+        // Handle duplicate email errors
+        if (message != null && message.contains("already exists")) {
+            errorResponse.put("error", "Duplicate Email");
+            errorResponse.put("message", "This email address is already registered in the system. Please use a different email.");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+        }
+
+        // Handle other runtime errors
+        errorResponse.put("error", "Request Failed");
+        errorResponse.put("message", message != null ? message : "An error occurred while processing your request");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 }

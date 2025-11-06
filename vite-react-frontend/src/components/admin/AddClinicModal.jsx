@@ -61,10 +61,14 @@ const AddClinicModal = ({ show, onHide, onClinicAdded }) => {
                         <Form.Control
                             type="text"
                             value={name}
-                            onChange={e => setName(e.target.value)}
+                            onChange={e => setName(e.target.value.slice(0, 255))}
                             placeholder="Enter clinic name"
+                            maxLength="255"
                             required
                         />
+                        <Form.Text className="text-muted">
+                            {name.length}/255 characters
+                        </Form.Text>
                     </Form.Group>
 
                     <Form.Group className="mb-3">
@@ -72,10 +76,14 @@ const AddClinicModal = ({ show, onHide, onClinicAdded }) => {
                         <Form.Control
                             type="text"
                             value={address}
-                            onChange={e => setAddress(e.target.value)}
+                            onChange={e => setAddress(e.target.value.slice(0, 255))}
                             placeholder="Enter clinic address"
+                            maxLength="255"
                             required
                         />
+                        <Form.Text className="text-muted">
+                            {address.length}/255 characters
+                        </Form.Text>
                     </Form.Group>
 
                     <Form.Group className="mb-3">
@@ -83,9 +91,13 @@ const AddClinicModal = ({ show, onHide, onClinicAdded }) => {
                         <Form.Control
                             type="tel"
                             value={telephoneNumber}
-                            onChange={e => setTelephoneNumber(e.target.value)}
+                            onChange={e => setTelephoneNumber(e.target.value.slice(0, 20))}
                             placeholder="Enter telephone number"
+                            maxLength="20"
                         />
+                        <Form.Text className="text-muted">
+                            {telephoneNumber.length}/20 characters
+                        </Form.Text>
                     </Form.Group>
 
                     <Form.Group className="mb-3">

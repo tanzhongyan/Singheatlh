@@ -117,10 +117,14 @@ const EditUserModal = ({ show, onHide, onUserUpdated, user }) => {
                         <Form.Control
                             type="text"
                             value={name}
-                            onChange={e => setName(e.target.value)}
+                            onChange={e => setName(e.target.value.slice(0, 255))}
                             placeholder="Enter full name"
+                            maxLength="255"
                             required
                         />
+                        <Form.Text className="text-muted">
+                            {name.length}/255 characters
+                        </Form.Text>
                     </Form.Group>
 
                     <Form.Group className="mb-3">

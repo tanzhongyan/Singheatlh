@@ -70,7 +70,9 @@ const AddUserModal = ({ show, onHide, onUserAdded }) => {
             onHide();
         } catch (error) {
             console.error('Failed to add user:', error);
-            setError(error.response?.data?.message || error.message || 'Failed to add user. Please try again.');
+            // Use backend message which is more descriptive
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to add user. Please try again.';
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -90,10 +92,14 @@ const AddUserModal = ({ show, onHide, onUserAdded }) => {
                         <Form.Control
                             type="text"
                             value={name}
-                            onChange={e => setName(e.target.value)}
+                            onChange={e => setName(e.target.value.slice(0, 255))}
                             placeholder="Enter full name"
+                            maxLength="255"
                             required
                         />
+                        <Form.Text className="text-muted">
+                            {name.length}/255 characters
+                        </Form.Text>
                     </Form.Group>
 
                     <Form.Group className="mb-3">
@@ -101,10 +107,14 @@ const AddUserModal = ({ show, onHide, onUserAdded }) => {
                         <Form.Control
                             type="text"
                             value={username}
-                            onChange={e => setUsername(e.target.value)}
+                            onChange={e => setUsername(e.target.value.slice(0, 100))}
                             placeholder="Enter username"
+                            maxLength="100"
                             required
                         />
+                        <Form.Text className="text-muted">
+                            {username.length}/100 characters
+                        </Form.Text>
                     </Form.Group>
 
                     <Form.Group className="mb-3">
@@ -112,10 +122,14 @@ const AddUserModal = ({ show, onHide, onUserAdded }) => {
                         <Form.Control
                             type="email"
                             value={email}
-                            onChange={e => setEmail(e.target.value)}
+                            onChange={e => setEmail(e.target.value.slice(0, 255))}
                             placeholder="user@example.com"
+                            maxLength="255"
                             required
                         />
+                        <Form.Text className="text-muted">
+                            {email.length}/255 characters
+                        </Form.Text>
                     </Form.Group>
 
                     <Form.Group className="mb-3">
@@ -123,13 +137,14 @@ const AddUserModal = ({ show, onHide, onUserAdded }) => {
                         <Form.Control
                             type="password"
                             value={password}
-                            onChange={e => setPassword(e.target.value)}
+                            onChange={e => setPassword(e.target.value.slice(0, 72))}
                             placeholder="Enter password"
                             minLength="6"
+                            maxLength="72"
                             required
                         />
                         <Form.Text className="text-muted">
-                            Password must be at least 6 characters long
+                            {password.length}/72 characters (6-72 required)
                         </Form.Text>
                     </Form.Group>
 
@@ -138,9 +153,13 @@ const AddUserModal = ({ show, onHide, onUserAdded }) => {
                         <Form.Control
                             type="tel"
                             value={telephoneNumber}
-                            onChange={e => setTelephoneNumber(e.target.value)}
+                            onChange={e => setTelephoneNumber(e.target.value.slice(0, 20))}
                             placeholder="Enter telephone number"
+                            maxLength="20"
                         />
+                        <Form.Text className="text-muted">
+                            {telephoneNumber.length}/20 characters
+                        </Form.Text>
                     </Form.Group>
 
                     <Form.Group className="mb-3">
