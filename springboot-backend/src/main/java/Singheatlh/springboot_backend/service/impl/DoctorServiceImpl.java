@@ -113,7 +113,7 @@ public class DoctorServiceImpl implements DoctorService {
                 .map(Doctor::getDoctorId)
                 .max(String::compareTo)
                 .orElse("D000000000");
-        int currentNumber = Integer.parseInt(maxId.substring(1));
+        int currentNumber = Integer.parseInt(maxId.trim().substring(1));
         int nextNumber = currentNumber + 1;
         return String.format("D%08d", nextNumber);
     }

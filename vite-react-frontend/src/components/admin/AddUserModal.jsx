@@ -56,7 +56,7 @@ const AddUserModal = ({ show, onHide, onUserAdded }) => {
 
             // Add clinicId for clinic staff
             if (role === 'C') {
-                userData.clinicId = parseInt(clinicId);
+                userData.clinicId = parseInt(clinicId.trim());
             }
 
             // Backend will handle both Supabase auth user creation AND database record creation

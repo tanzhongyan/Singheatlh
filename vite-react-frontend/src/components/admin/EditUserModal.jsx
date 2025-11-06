@@ -54,7 +54,7 @@ const EditUserModal = ({ show, onHide, onUserUpdated, user }) => {
 
             // Add clinicId for clinic staff
             if (user.role === 'C') {
-                userData.clinicId = clinicId ? parseInt(clinicId) : null;
+                userData.clinicId = clinicId ? parseInt(clinicId.trim()) : null;
             }
 
             await apiClient.put(`/api/system-administrators/users/${user.userId}`, userData);

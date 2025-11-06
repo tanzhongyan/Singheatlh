@@ -41,8 +41,8 @@ const EditDoctorModal = ({ show, onHide, onDoctorUpdated, doctor }) => {
 
         const updatedDoctorData = {
             name,
-            clinicId: parseInt(clinicId),
-            appointmentDurationInMinutes: parseInt(appointmentDuration)
+            clinicId: parseInt(clinicId.trim()),
+            appointmentDurationInMinutes: parseInt(appointmentDuration.trim())
         };
 
         try {

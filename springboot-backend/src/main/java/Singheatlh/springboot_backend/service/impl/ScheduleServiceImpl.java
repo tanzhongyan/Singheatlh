@@ -113,7 +113,7 @@ public class ScheduleServiceImpl implements
                 .orElse("S000000000");
 
         // Extract number and increment
-        int currentNumber = Integer.parseInt(maxId.substring(1));
+        int currentNumber = Integer.parseInt(maxId.trim().substring(1));
         int nextNumber = currentNumber + 1;
 
         // Format with leading zeros

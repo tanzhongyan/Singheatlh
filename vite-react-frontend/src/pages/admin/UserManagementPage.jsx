@@ -177,24 +177,22 @@ const UserManagementPage = () => {
                 </Row>
             </div>
 
-            <Table striped bordered hover>
+            <Table striped bordered hover style={{ tableLayout: 'auto' }}>
                 <thead>
                     <tr>
-                        <th>ID</th>
                         <th>Name</th>
                         <th>Email</th>
                         <th>Role</th>
-                        <th>Actions</th>
+                        <th style={{ width: '140px' }}>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {filteredUsers.length > 0 ? (
                         filteredUsers.map(user => (
                             <tr key={user.userId}>
-                                <td>{user.userId}</td>
-                                <td>{user.name}</td>
-                                <td>{user.email}</td>
-                                <td>{user.role}</td>
+                                <td style={{ wordBreak: 'break-word' }}>{user.name}</td>
+                                <td style={{ wordBreak: 'break-word' }}>{user.email}</td>
+                                <td>{user.role === 'P' ? 'Patient' : user.role === 'C' ? 'Clinic Staff' : 'System Admin'}</td>
                                 <td>
                                     <Button variant="primary" size="sm" className="me-2" onClick={() => handleEditClick(user)}>Edit</Button>
                                     <Button
@@ -211,7 +209,7 @@ const UserManagementPage = () => {
                         ))
                     ) : (
                         <tr>
-                            <td colSpan="5" className="text-center text-muted py-4">
+                            <td colSpan="4" className="text-center text-muted py-4">
                                 No users found matching your filters.
                             </td>
                         </tr>

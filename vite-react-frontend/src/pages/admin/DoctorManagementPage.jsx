@@ -160,23 +160,21 @@ const DoctorManagementPage = () => {
         </Row>
       </div>
 
-      <Table striped bordered hover>
+      <Table striped bordered hover style={{ tableLayout: 'auto' }}>
         <thead>
           <tr>
-            <th>Doctor ID</th>
             <th>Name</th>
             <th>Clinic</th>
-            <th>Appointment Duration (min)</th>
-            <th>Actions</th>
+            <th style={{ width: '100px' }}>Duration (min)</th>
+            <th style={{ width: '200px' }}>Actions</th>
           </tr>
         </thead>
         <tbody>
           {filteredDoctors.length > 0 ? (
             filteredDoctors.map((doctor) => (
               <tr key={doctor.doctorId}>
-                <td>{doctor.doctorId}</td>
-                <td>{doctor.name}</td>
-                <td>{doctor.clinicName || `Clinic #${doctor.clinicId}`}</td>
+                <td style={{ wordBreak: 'break-word' }}>{doctor.name}</td>
+                <td style={{ wordBreak: 'break-word' }}>{doctor.clinicName || `Clinic #${doctor.clinicId}`}</td>
                 <td>{doctor.appointmentDurationInMinutes}</td>
                 <td>
                   <Button
@@ -185,7 +183,7 @@ const DoctorManagementPage = () => {
                     className="me-2"
                     onClick={() => handleScheduleClick(doctor)}
                   >
-                    Manage Schedule
+                    Schedule
                   </Button>
                   <Button
                     variant="primary"
@@ -207,7 +205,7 @@ const DoctorManagementPage = () => {
             ))
           ) : (
             <tr>
-              <td colSpan="5" className="text-center text-muted py-4">
+              <td colSpan="4" className="text-center text-muted py-4">
                 No doctors found matching your filters.
               </td>
             </tr>
