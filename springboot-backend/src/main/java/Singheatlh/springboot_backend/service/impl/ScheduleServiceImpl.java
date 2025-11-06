@@ -89,8 +89,35 @@ public class ScheduleServiceImpl implements
 
         // Convert and save
         Schedule schedule = scheduleMapper.toEntity(scheduleDto);
+
+        // Generate schedule ID if not provided
+        if (schedule.getScheduleId() == null || schedule.getScheduleId().isEmpty()) {
+            schedule.setScheduleId(generateScheduleId());
+        }
+
         Schedule savedSchedule = scheduleRepository.save(schedule);
         return scheduleMapper.toDto(savedSchedule);
+    }
+
+    private String generateScheduleId() {
+        // Get the latest schedule ID and increment
+        List<Schedule> allSchedules = scheduleRepository.findAll();
+        if (allSchedules.isEmpty()) {
+            return "S000000001";
+        }
+
+        // Find the maximum ID
+        String maxId = allSchedules.stream()
+                .map(Schedule::getScheduleId)
+                .max(String::compareTo)
+                .orElse("S000000000");
+
+        // Extract number and increment
+        int currentNumber = Integer.parseInt(maxId.trim().substring(1));
+        int nextNumber = currentNumber + 1;
+
+        // Format with leading zeros
+        return String.format("S%09d", nextNumber);
     }
 
     @Override

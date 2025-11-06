@@ -35,7 +35,10 @@ const AdminDashboardPage = () => {
                   </p>
                   <h3 className="fw-bold mb-0">{userCount ? userCount : ""}</h3>
                 </div>
-                <div className="rounded-circle bg-primary bg-opacity-10 p-3">
+                <div
+                  className="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center"
+                  style={{ width: "60px", height: "60px" }}
+                >
                   <i
                     className="bi bi-people text-primary"
                     style={{ fontSize: "1.5rem" }}
@@ -58,7 +61,10 @@ const AdminDashboardPage = () => {
                     {doctorCount ? doctorCount : ""}
                   </h3>
                 </div>
-                <div className="rounded-circle bg-success bg-opacity-10 p-3">
+                <div
+                  className="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center"
+                  style={{ width: "60px", height: "60px" }}
+                >
                   <i
                     className="bi bi-heart-pulse text-success"
                     style={{ fontSize: "1.5rem" }}
@@ -81,7 +87,10 @@ const AdminDashboardPage = () => {
                     {clinicCount ? clinicCount : ""}
                   </h3>
                 </div>
-                <div className="rounded-circle bg-info bg-opacity-10 p-3">
+                <div
+                  className="rounded-circle bg-info bg-opacity-10 d-flex align-items-center justify-content-center"
+                  style={{ width: "60px", height: "60px" }}
+                >
                   <i
                     className="bi bi-hospital text-info"
                     style={{ fontSize: "1.5rem" }}
@@ -100,7 +109,10 @@ const AdminDashboardPage = () => {
             <div className="card border-0 shadow-sm h-100 hover-card">
               <div className="card-body p-4">
                 <div className="d-flex align-items-center mb-3">
-                  <div className="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+                  <div
+                    className="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center me-3"
+                    style={{ width: "70px", height: "70px", flexShrink: 0 }}
+                  >
                     <i
                       className="bi bi-people text-primary"
                       style={{ fontSize: "2rem" }}
@@ -128,7 +140,10 @@ const AdminDashboardPage = () => {
             <div className="card border-0 shadow-sm h-100 hover-card">
               <div className="card-body p-4">
                 <div className="d-flex align-items-center mb-3">
-                  <div className="rounded-circle bg-success bg-opacity-10 p-3 me-3">
+                  <div
+                    className="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center me-3"
+                    style={{ width: "70px", height: "70px", flexShrink: 0 }}
+                  >
                     <i
                       className="bi bi-heart-pulse text-success"
                       style={{ fontSize: "2rem" }}
@@ -156,7 +171,10 @@ const AdminDashboardPage = () => {
             <div className="card border-0 shadow-sm h-100 hover-card">
               <div className="card-body p-4">
                 <div className="d-flex align-items-center mb-3">
-                  <div className="rounded-circle bg-info bg-opacity-10 p-3 me-3">
+                  <div
+                    className="rounded-circle bg-info bg-opacity-10 d-flex align-items-center justify-content-center me-3"
+                    style={{ width: "70px", height: "70px", flexShrink: 0 }}
+                  >
                     <i
                       className="bi bi-hospital text-info"
                       style={{ fontSize: "2rem" }}
@@ -178,58 +196,70 @@ const AdminDashboardPage = () => {
             </div>
           </Link>
         </div>
-      </div>
 
-      {/* Recent Activity Section */}
-      <div className="row mt-4">
-        <div className="col-12">
-          <div className="card border-0 shadow-sm">
-            <div className="card-header bg-white py-3">
-              <h5 className="mb-0 fw-bold">
-                <i className="bi bi-clock-history me-2 text-muted"></i>
-                Recent Activity
-              </h5>
-            </div>
-            <div className="card-body">
-              <div className="list-group list-group-flush">
-                <div className="list-group-item border-0 px-0">
-                  <div className="d-flex align-items-center">
-                    <div className="rounded-circle bg-success bg-opacity-10 p-2 me-3">
-                      <i className="bi bi-person-plus text-success"></i>
-                    </div>
-                    <div className="flex-grow-1">
-                      <p className="mb-0 fw-semibold">New user registered</p>
-                      <small className="text-muted">2 hours ago</small>
-                    </div>
+        <div className="col-lg-4 col-md-6">
+          <Link to="/admin/monitoring" className="text-decoration-none">
+            <div className="card border-0 shadow-sm h-100 hover-card">
+              <div className="card-body p-4">
+                <div className="d-flex align-items-center mb-3">
+                  <div
+                    className="rounded-circle bg-warning bg-opacity-10 d-flex align-items-center justify-content-center me-3"
+                    style={{ width: "70px", height: "70px", flexShrink: 0 }}
+                  >
+                    <i
+                      className="bi bi-graph-up text-warning"
+                      style={{ fontSize: "2rem" }}
+                    ></i>
                   </div>
+                  <h4 className="card-title mb-0 fw-bold text-dark">
+                    System Monitoring
+                  </h4>
                 </div>
-                <div className="list-group-item border-0 px-0">
-                  <div className="d-flex align-items-center">
-                    <div className="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
-                      <i className="bi bi-pencil text-primary"></i>
-                    </div>
-                    <div className="flex-grow-1">
-                      <p className="mb-0 fw-semibold">Doctor profile updated</p>
-                      <small className="text-muted">5 hours ago</small>
-                    </div>
-                  </div>
-                </div>
-                <div className="list-group-item border-0 px-0">
-                  <div className="d-flex align-items-center">
-                    <div className="rounded-circle bg-info bg-opacity-10 p-2 me-3">
-                      <i className="bi bi-building text-info"></i>
-                    </div>
-                    <div className="flex-grow-1">
-                      <p className="mb-0 fw-semibold">New clinic added</p>
-                      <small className="text-muted">1 day ago</small>
-                    </div>
-                  </div>
+                <p className="card-text text-muted mb-3">
+                  View real-time system statistics, usage metrics, and
+                  performance overview. Monitor active users and system health.
+                </p>
+                <div className="d-flex align-items-center text-warning">
+                  <span className="fw-semibold">View Statistics</span>
+                  <i className="bi bi-arrow-right ms-2"></i>
                 </div>
               </div>
             </div>
-          </div>
+          </Link>
+        </div>
+
+        <div className="col-lg-4 col-md-6">
+          <Link to="/admin/backup" className="text-decoration-none">
+            <div className="card border-0 shadow-sm h-100 hover-card">
+              <div className="card-body p-4">
+                <div className="d-flex align-items-center mb-3">
+                  <div
+                    className="rounded-circle bg-danger bg-opacity-10 d-flex align-items-center justify-content-center me-3"
+                    style={{ width: "70px", height: "70px", flexShrink: 0 }}
+                  >
+                    <i
+                      className="bi bi-cloud-arrow-down text-danger"
+                      style={{ fontSize: "2rem" }}
+                    ></i>
+                  </div>
+                  <h4 className="card-title mb-0 fw-bold text-dark">
+                    Backup & Restore
+                  </h4>
+                </div>
+                <p className="card-text text-muted mb-3">
+                  Create system backups, manage backup history, download backups,
+                  and restore data from previous backup points.
+                </p>
+                <div className="d-flex align-items-center text-danger">
+                  <span className="fw-semibold">Manage Backups</span>
+                  <i className="bi bi-arrow-right ms-2"></i>
+                </div>
+              </div>
+            </div>
+          </Link>
         </div>
       </div>
+
     </div>
   );
 };

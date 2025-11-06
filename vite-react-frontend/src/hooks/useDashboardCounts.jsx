@@ -8,9 +8,9 @@ export const useDashboardCounts = () => {
   useEffect(() => {
     const fetchCounts = async () => {
       try {
-        const userResponse = await apiClient.get("/api/users/count");
-        const clinicResponse = await apiClient.get("/api/clinic/count");
-        const doctorResponse = await apiClient.get("/api/doctors/count");
+        const userResponse = await apiClient.get("/api/system-administrators/users/count");
+        const clinicResponse = await apiClient.get("/api/system-administrators/clinics/count");
+        const doctorResponse = await apiClient.get("/api/system-administrators/doctors/count");
         setUserCount(userResponse.data);
         setClinicCount(clinicResponse.data);
         setDoctorCount(doctorResponse.data);

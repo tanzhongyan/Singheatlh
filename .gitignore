@@ -90,3 +90,8 @@ dist-ssr/
 # Local Database Volumes
 # ----------------------------------
 db/volumes/
+
+# ----------------------------------
+# Backup directories
+# ----------------------------------
+/springboot-backend/backups

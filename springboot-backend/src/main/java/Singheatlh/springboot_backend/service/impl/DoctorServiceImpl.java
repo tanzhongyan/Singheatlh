@@ -35,6 +35,11 @@ public class DoctorServiceImpl implements DoctorService {
     public DoctorDto createDoctor(DoctorDto doctorDto) {
         Doctor doctor = doctorMapper.toEntity(doctorDto);
 
+        // Generate doctor ID if not provided
+        if (doctor.getDoctorId() == null || doctor.getDoctorId().isEmpty()) {
+            doctor.setDoctorId(generateDoctorId());
+        }
+
         if (doctorDto.getClinicId() != null) {
             Clinic clinic = clinicRepository.findById(doctorDto.getClinicId()).orElseThrow(
                     () -> new ResourceNotFoundExecption(
@@ -78,6 +83,10 @@ public class DoctorServiceImpl implements DoctorService {
             doctor.setClinicId(doctorDto.getClinicId());
         }
 
+        if (doctorDto.getAppointmentDurationInMinutes() != null) {
+            doctor.setAppointmentDurationInMinutes(doctorDto.getAppointmentDurationInMinutes());
+        }
+
         Doctor savedDoctor = doctorRepository.save(doctor);
         return doctorMapper.toDto(savedDoctor);
     }
@@ -93,5 +102,19 @@ public class DoctorServiceImpl implements DoctorService {
     @Override
     public int getDoctorCount() {
         return (int) doctorRepository.count();
+    }
+
+    private String generateDoctorId() {
+        List<Doctor> allDoctors = doctorRepository.findAll();
+        if (allDoctors.isEmpty()) {
+            return "D000000001";
+        }
+        String maxId = allDoctors.stream()
+                .map(Doctor::getDoctorId)
+                .max(String::compareTo)
+                .orElse("D000000000");
+        int currentNumber = Integer.parseInt(maxId.trim().substring(1));
+        int nextNumber = currentNumber + 1;
+        return String.format("D%08d", nextNumber);
     }
 }

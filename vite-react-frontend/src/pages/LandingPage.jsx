@@ -100,7 +100,10 @@ const LandingPage = () => {
             <div className="col-md-4">
               <div className="card h-100 border-0 shadow-sm hover-shadow transition">
                 <div className="card-body text-center p-4">
-                  <div className="rounded-circle bg-primary bg-opacity-10 d-inline-flex p-4 mb-4">
+                  <div
+                    className="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center mb-4"
+                    style={{ width: "120px", height: "120px", margin: "0 auto" }}
+                  >
                     <i
                       className="bi bi-calendar-check text-primary"
                       style={{ fontSize: "3rem" }}
@@ -119,7 +122,10 @@ const LandingPage = () => {
             <div className="col-md-4">
               <div className="card h-100 border-0 shadow-sm hover-shadow transition">
                 <div className="card-body text-center p-4">
-                  <div className="rounded-circle bg-success bg-opacity-10 d-inline-flex p-4 mb-4">
+                  <div
+                    className="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center mb-4"
+                    style={{ width: "120px", height: "120px", margin: "0 auto" }}
+                  >
                     <i
                       className="bi bi-hospital text-success"
                       style={{ fontSize: "3rem" }}
@@ -138,7 +144,10 @@ const LandingPage = () => {
             <div className="col-md-4">
               <div className="card h-100 border-0 shadow-sm hover-shadow transition">
                 <div className="card-body text-center p-4">
-                  <div className="rounded-circle bg-info bg-opacity-10 d-inline-flex p-4 mb-4">
+                  <div
+                    className="rounded-circle bg-info bg-opacity-10 d-flex align-items-center justify-content-center mb-4"
+                    style={{ width: "120px", height: "120px", margin: "0 auto" }}
+                  >
                     <i
                       className="bi bi-clock-history text-info"
                       style={{ fontSize: "3rem" }}
@@ -170,7 +179,10 @@ const LandingPage = () => {
           <div className="row g-4">
             <div className="col-md-6 col-lg-3">
               <div className="text-center p-4">
-                <div className="rounded-circle bg-danger bg-opacity-10 d-inline-flex p-3 mb-3">
+                <div
+                  className="rounded-circle bg-danger bg-opacity-10 d-flex align-items-center justify-content-center mb-3"
+                  style={{ width: "100px", height: "100px", margin: "0 auto" }}
+                >
                   <i
                     className="bi bi-heart-pulse text-danger"
                     style={{ fontSize: "2.5rem" }}
@@ -185,7 +197,10 @@ const LandingPage = () => {
 
             <div className="col-md-6 col-lg-3">
               <div className="text-center p-4">
-                <div className="rounded-circle bg-warning bg-opacity-10 d-inline-flex p-3 mb-3">
+                <div
+                  className="rounded-circle bg-warning bg-opacity-10 d-flex align-items-center justify-content-center mb-3"
+                  style={{ width: "100px", height: "100px", margin: "0 auto" }}
+                >
                   <i
                     className="bi bi-eye text-warning"
                     style={{ fontSize: "2.5rem" }}
@@ -198,7 +213,10 @@ const LandingPage = () => {
 
             <div className="col-md-6 col-lg-3">
               <div className="text-center p-4">
-                <div className="rounded-circle bg-success bg-opacity-10 d-inline-flex p-3 mb-3">
+                <div
+                  className="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center mb-3"
+                  style={{ width: "100px", height: "100px", margin: "0 auto" }}
+                >
                   <i
                     className="bi bi-bandaid text-success"
                     style={{ fontSize: "2.5rem" }}
@@ -213,7 +231,10 @@ const LandingPage = () => {
 
             <div className="col-md-6 col-lg-3">
               <div className="text-center p-4">
-                <div className="rounded-circle bg-info bg-opacity-10 d-inline-flex p-3 mb-3">
+                <div
+                  className="rounded-circle bg-info bg-opacity-10 d-flex align-items-center justify-content-center mb-3"
+                  style={{ width: "100px", height: "100px", margin: "0 auto" }}
+                >
                   <i
                     className="bi bi-activity text-info"
                     style={{ fontSize: "2.5rem" }}

@@ -83,6 +83,18 @@ const Navbar = () => {
                         Clinics
                       </Link>
                     </li>
+                    <li className="nav-item">
+                      <Link className="nav-link" to="/admin/monitoring">
+                        <i className="bi bi-graph-up me-1"></i>
+                        Monitoring
+                      </Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link className="nav-link" to="/admin/backup">
+                        <i className="bi bi-cloud-arrow-down me-1"></i>
+                        Backup
+                      </Link>
+                    </li>
                   </>
                 )}
 
