@@ -7,11 +7,24 @@
 
 set -e  # Exit on any error
 
-if command -v python3 &> /dev/null; then
+# Detect working Python installation (cross-platform compatible)
+PYTHON_CMD=""
+if python --version &> /dev/null; then
+    PYTHON_CMD="python"
+elif python3 --version &> /dev/null; then
+    PYTHON_CMD="python3"
+elif py --version &> /dev/null; then
+    # Windows py launcher fallback
+    PYTHON_CMD="py"
+fi
+
+# Install Python dependencies if Python is available
+if [ -n "$PYTHON_CMD" ]; then
+    echo "Using Python: $($PYTHON_CMD --version)"
     echo "requests>=2.25.1" > requirements.txt
     echo "python-dotenv>=0.19.0" >> requirements.txt
-    pip3 install -r requirements.txt
-fi  
+    $PYTHON_CMD -m pip install -r requirements.txt -q 2>&1 || true
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -149,14 +162,13 @@ echo -e "${GREEN} Loaded $DOCTOR_COUNT doctors${NC}"
 # 3. Create Auth Users via Python script
 echo ""
 echo -e "${BLUE}[5/10]${NC} Creating Auth users..."
-if command -v python3 &> /dev/null; then
-    cd "$(dirname "$0")"  # Ensure we're in the db folder
-    python3 create_auth_users.py
-    cd - > /dev/null
-else
-    echo -e "${RED} Error: Python3 is required but not installed${NC}"
+if [ -z "$PYTHON_CMD" ]; then
+    echo -e "${RED} Error: Python is required but not installed${NC}"
     exit 1
 fi
+cd "$(dirname "$0")"  # Ensure we're in the db folder
+$PYTHON_CMD create_auth_users.py
+cd - > /dev/null
 echo -e "${GREEN} Auth users created${NC}"
 
 # 4. Update User_Profile data AND load appointments in ONE session

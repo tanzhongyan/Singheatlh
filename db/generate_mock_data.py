@@ -181,10 +181,13 @@ def generate_doctors(num_clinics: int) -> List[Dict]:
         num_doctors = random.randint(2, 5)
         for _ in range(num_doctors):
             name = f"Dr. {generate_name()}"
+            # Appointment duration: 15, 20, or 30 minutes (most doctors use 15)
+            appointment_duration = random.choices([15, 20, 30], weights=[0.7, 0.2, 0.1])[0]
             doctors.append({
                 "doctor_id": f"D{str(doctor_counter).zfill(9)}",
                 "name": name,
-                "clinic_id": str(clinic_id)
+                "clinic_id": str(clinic_id),
+                "appointment_duration_in_minutes": str(appointment_duration)
             })
             doctor_counter += 1
 
@@ -465,7 +468,7 @@ def main():
 
     print("\nGenerating doctor.csv...")
     doctors = generate_doctors(num_clinics)
-    write_csv("doctor.csv", doctors, ["doctor_id", "name", "clinic_id"])
+    write_csv("doctor.csv", doctors, ["doctor_id", "name", "clinic_id", "appointment_duration_in_minutes"])
 
     print("\nGenerating schedule.csv...")
     schedules = generate_schedules(doctors, clinics)
