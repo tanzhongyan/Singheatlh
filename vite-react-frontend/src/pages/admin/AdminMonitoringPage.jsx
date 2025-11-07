@@ -5,17 +5,22 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, L
 
 const AdminMonitoringPage = () => {
   const [statistics, setStatistics] = useState(null);
+  const [queueTickets, setQueueTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"];
 
   useEffect(() => {
-    fetchSystemStatistics();
+    fetchData();
     // Auto-refresh every 30 seconds
-    const interval = setInterval(fetchSystemStatistics, 30000);
+    const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  const fetchData = async () => {
+    await Promise.all([fetchSystemStatistics(), fetchQueueTickets()]);
+  };
 
   const fetchSystemStatistics = async () => {
     try {
@@ -28,6 +33,15 @@ const AdminMonitoringPage = () => {
       setError("Failed to load system statistics");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchQueueTickets = async () => {
+    try {
+      const response = await apiClient.get("/api/queue/all");
+      setQueueTickets(response.data || []);
+    } catch (err) {
+      console.error("Failed to fetch queue tickets:", err);
     }
   };
 
@@ -62,6 +76,18 @@ const AdminMonitoringPage = () => {
     { name: "Clinic Staff", value: statistics.totalClinicStaff },
     { name: "Administrators", value: statistics.totalAdministrators }
   ];
+
+  // Prepare data for queue status chart
+  const queueStatusCounts = queueTickets.reduce((acc, ticket) => {
+    const status = ticket.status || "UNKNOWN";
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {});
+
+  const queueStatusData = Object.entries(queueStatusCounts).map(([name, value]) => ({
+    name: name.replace(/_/g, " "),
+    value
+  }));
 
   return (
     <div className="container-fluid py-4">
@@ -275,6 +301,58 @@ const AdminMonitoringPage = () => {
         </div>
       </div>
 
+      {/* Queue Status Distribution */}
+      <div className="row g-4 mb-4">
+        <div className="col-12">
+          <Card className="border-0 shadow-sm">
+            <Card.Body className="p-4">
+              <h5 className="fw-bold mb-4">
+                <i className="bi bi-list-ol me-2"></i>
+                Queue Status Distribution (All Tickets)
+              </h5>
+              <ResponsiveContainer width="100%" height={400}>
+                <PieChart>
+                  <Pie
+                    data={queueStatusData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={true}
+                    label={(entry) => `${entry.name}: ${entry.value}`}
+                    outerRadius={120}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {queueStatusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="mt-4 text-center">
+                <h6 className="fw-bold text-muted">Total Queue Tickets: {queueTickets.length}</h6>
+                <div className="d-flex flex-wrap justify-content-center gap-3 mt-3">
+                  {queueStatusData.map((item, index) => (
+                    <div key={index} className="d-flex align-items-center">
+                      <div
+                        className="rounded-circle me-2"
+                        style={{
+                          width: "12px",
+                          height: "12px",
+                          backgroundColor: COLORS[index % COLORS.length]
+                        }}
+                      ></div>
+                      <span className="small fw-semibold">{item.name}: {item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </div>
+      </div>
+
       {/* Last Update */}
       <div className="row">
         <div className="col-12">
@@ -283,7 +361,7 @@ const AdminMonitoringPage = () => {
               Last updated: {new Date().toLocaleString()} |
               <button
                 className="btn btn-sm btn-link ms-2"
-                onClick={fetchSystemStatistics}
+                onClick={fetchData}
                 disabled={loading}
               >
                 {loading ? "Refreshing..." : "Refresh Now"}

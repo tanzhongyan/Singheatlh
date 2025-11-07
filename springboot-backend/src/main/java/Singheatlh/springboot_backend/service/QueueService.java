@@ -39,4 +39,6 @@ public interface QueueService {
     Integer getCurrentServingTicketId(String doctorId);
     
     Long getActiveQueueCount(String doctorId);
+    
+    List<QueueTicketDto> getAllQueueTickets();
 }

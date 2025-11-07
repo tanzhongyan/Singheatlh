@@ -93,6 +93,11 @@ const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => 
   }, [appointments, queueByAppointment]);
 
   const handleCheckIn = async (appointmentId) => {
+    // Prevent double-click: check if already loading
+    if (checkInLoading[appointmentId]) {
+      return;
+    }
+
     try {
       setCheckInLoading((prev) => ({ ...prev, [appointmentId]: true }));
       setCheckInResult((prev) => ({ ...prev, [appointmentId]: undefined }));
@@ -123,12 +128,16 @@ const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => 
           message: backendMsg,
         },
       }));
-    } finally {
       setCheckInLoading((prev) => ({ ...prev, [appointmentId]: false }));
     }
   };
 
   const handleFastTrack = async (appointmentId) => {
+    // Prevent double-click: check if already loading
+    if (fastTrackLoading[appointmentId] || checkInLoading[appointmentId]) {
+      return;
+    }
+
     // Prompt for reason first; if none, exit without check-in
     const reason = window.prompt('Enter fast-track reason (e.g., Emergency/Priority):', 'Emergency/Priority');
     if (reason === null) return; // user cancelled
@@ -202,6 +211,11 @@ const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => 
   };
 
   const handleComplete = async (appointmentId, doctorId) => {
+    // Prevent double-click: check if already loading
+    if (completedLoading[appointmentId]) {
+      return;
+    }
+
     if (!doctorId) {
       setCheckInResult((prev) => ({
         ...prev,
@@ -225,12 +239,16 @@ const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => 
           message: backendMsg,
         },
       }));
-    } finally {
       setCompletedLoading((prev) => ({ ...prev, [appointmentId]: false }));
     }
   };
 
   const handleNoShow = async (appointmentId) => {
+    // Prevent double-click: check if already loading
+    if (noShowLoading[appointmentId]) {
+      return;
+    }
+
     const ticket = queueByAppointment[appointmentId];
     if (!ticket || !ticket.ticketId) {
       return;
@@ -254,7 +272,6 @@ const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => 
           message: backendMsg,
         },
       }));
-    } finally {
       setNoShowLoading((prev) => ({ ...prev, [appointmentId]: false }));
     }
   };

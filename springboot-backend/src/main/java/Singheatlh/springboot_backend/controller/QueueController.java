@@ -265,4 +265,14 @@ public class QueueController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+    
+    @GetMapping("/all")
+    public ResponseEntity<List<QueueTicketDto>> getAllQueueTickets() {
+        try {
+            List<QueueTicketDto> tickets = queueService.getAllQueueTickets();
+            return ResponseEntity.ok(tickets);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
 }

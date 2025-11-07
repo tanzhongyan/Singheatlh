@@ -5,9 +5,12 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import jakarta.persistence.LockModeType;
 
 import Singheatlh.springboot_backend.entity.QueueTicket;
 import Singheatlh.springboot_backend.entity.enums.QueueStatus;
@@ -50,6 +53,7 @@ public interface QueueTicketRepository extends JpaRepository<QueueTicket, Intege
            "AND DATE(qt.checkInTime) = DATE(:date) " +
            "AND qt.status NOT IN ('COMPLETED', 'NO_SHOW') " +
            "ORDER BY qt.queueNumber ASC")
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<QueueTicket> findActiveQueueByDoctorIdAndDate(
         @Param("doctorId") String doctorId, 
         @Param("date") LocalDateTime date);
@@ -68,6 +72,7 @@ public interface QueueTicketRepository extends JpaRepository<QueueTicket, Intege
            "WHERE a.doctorId = :doctorId " +
            "AND DATE(qt.checkInTime) = DATE(:date) " +
            "AND qt.queueNumber > 0")
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     Integer findMaxQueueNumberByDoctorIdAndDate(
         @Param("doctorId") String doctorId, 
         @Param("date") LocalDateTime date);
@@ -77,6 +82,7 @@ public interface QueueTicketRepository extends JpaRepository<QueueTicket, Intege
            "AND DATE(qt.checkInTime) = DATE(:date) " +
            "AND qt.status IN ('CALLED') " +
            "ORDER BY qt.queueNumber ASC")
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<QueueTicket> findCurrentQueueNumberByDoctorIdAndDate(
         @Param("doctorId") String doctorId, 
         @Param("date") LocalDateTime date);
