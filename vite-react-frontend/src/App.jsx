@@ -13,6 +13,7 @@ import ClinicManagementPage from "./pages/admin/ClinicManagementPage";
 import AdminMonitoringPage from "./pages/admin/AdminMonitoringPage";
 import AdminBackupPage from "./pages/admin/AdminBackupPage";
 import StaffDashboardPage from "./pages/clinicStaff/StaffDashboardPage";
+import NowServingPage from "./pages/clinicStaff/NowServingPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 import "./App.css";
@@ -48,6 +49,7 @@ function App() {
         {/* Clinic Staff Routes - Only accessible by role 'C' */}
         <Route element={<ProtectedRoute allowedRoles={["C"]} />}>
           <Route path="/staff" element={<StaffDashboardPage />} />
+          <Route path="/staff/now-serving" element={<NowServingPage />} />
         </Route>
 
         {/* Catch all - redirect to landing page */}

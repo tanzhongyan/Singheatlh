@@ -318,7 +318,57 @@ public class QueueServiceImpl implements QueueService {
 
     @Override
     public QueueTicketDto markAsNoShow(Integer ticketId) {
-        return updateQueueStatus(ticketId, QueueStatus.NO_SHOW);
+        try {
+            QueueTicket queueTicket = queueTicketRepository.findById(ticketId)
+                .orElseThrow(() -> new ResourceNotFoundExecption("Queue ticket not found with id: " + ticketId));
+            
+            String doctorId = queueTicket.getDoctorId();
+            LocalDateTime referenceTime = queueTicket.getCheckInTime() != null ? queueTicket.getCheckInTime() : LocalDateTime.now();
+            
+            // Mark as no-show and set queue number to 0
+            queueTicket.setStatus(QueueStatus.NO_SHOW);
+            queueTicket.setQueueNumber(0);
+            queueTicket = queueTicketRepository.save(queueTicket);
+            
+            // Update appointment status
+            Appointment appointment = appointmentRepository.findById(queueTicket.getAppointmentId()).orElse(null);
+            if (appointment != null) {
+                appointment.setStatus(AppointmentStatus.Missed);
+                appointmentRepository.save(appointment);
+            }
+            
+            // Decrement queue numbers for all remaining tickets (same as callNextQueue)
+            List<QueueTicket> allTicketsToday = queueTicketRepository.findActiveQueueByDoctorIdAndDate(doctorId, referenceTime);
+            for (QueueTicket ticket : allTicketsToday) {
+                if (ticket.getStatus() != QueueStatus.COMPLETED && ticket.getStatus() != QueueStatus.NO_SHOW) {
+                    ticket.setQueueNumber(ticket.getQueueNumber() - 1);
+                    queueTicketRepository.save(ticket);
+                }
+            }
+            
+            // Refresh the active queue list after updates
+            List<QueueTicket> activeQueue = queueTicketRepository.findActiveQueueByDoctorIdAndDate(doctorId, referenceTime);
+            
+            // Find the next patient to call (either CHECKED_IN or FAST_TRACKED status)
+            Optional<QueueTicket> nextTicketOptional = activeQueue.stream()
+                .filter(ticket -> ticket.getStatus() == QueueStatus.CHECKED_IN || ticket.getStatus() == QueueStatus.FAST_TRACKED)
+                .findFirst();
+            
+            if (nextTicketOptional.isPresent()) {
+                QueueTicket nextTicket = nextTicketOptional.get();
+                nextTicket.setStatus(QueueStatus.CALLED);
+                queueTicketRepository.save(nextTicket);
+            }
+            
+            processQueueNotifications(doctorId);
+            
+            return queueTicketMapper.toDto(queueTicket);
+            
+        } catch (ResourceNotFoundExecption e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalStateException("Mark as no-show failed due to an unexpected error: " + e.getMessage(), e);
+        }
     }
 
     @Override
@@ -404,25 +454,6 @@ public class QueueServiceImpl implements QueueService {
         processQueueNotifications(queueTicket.getDoctorId());
         
         return queueTicketMapper.toDto(queueTicket);
-    }
-
-    @Override
-    public void cancelQueueTicket(Integer ticketId) {
-        QueueTicket queueTicket = queueTicketRepository.findById(ticketId)
-            .orElseThrow(() -> new ResourceNotFoundExecption("Queue ticket not found with id: " + ticketId));
-        
-        // Set status to NO_SHOW to indicate patient is no longer in queue
-        queueTicket.setStatus(QueueStatus.NO_SHOW);
-        queueTicketRepository.save(queueTicket);
-        
-        // Update appointment status
-        Appointment appointment = appointmentRepository.findById(queueTicket.getAppointmentId()).orElse(null);
-        if (appointment != null) {
-            appointment.setStatus(AppointmentStatus.Cancelled);
-            appointmentRepository.save(appointment);
-        }
-
-        processQueueNotifications(queueTicket.getDoctorId());
     }
 
     @Override

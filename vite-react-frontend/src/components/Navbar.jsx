@@ -19,7 +19,15 @@ const Navbar = () => {
       <div className="container">
         <Link
           className="navbar-brand fw-bold"
-          to={user ? (userProfile?.role === "S" ? "/admin" : "/home") : "/"}
+          to={
+            user
+              ? userProfile?.role === "S"
+                ? "/admin"
+                : userProfile?.role === "C"
+                ? "/staff"
+                : "/home"
+              : "/"
+          }
         >
           <i className="bi bi-heart-pulse-fill me-2 text-primary"></i>
           SingHealth
@@ -98,6 +106,24 @@ const Navbar = () => {
                   </>
                 )}
 
+                {/* Clinic Staff Navigation */}
+                {userProfile.role === "C" && (
+                  <>
+                    <li className="nav-item">
+                      <Link className="nav-link" to="/staff">
+                        <i className="bi bi-calendar-check me-1"></i>
+                        Appointments
+                      </Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link className="nav-link" to="/staff/now-serving">
+                        <i className="bi bi-broadcast me-1"></i>
+                        Now Serving
+                      </Link>
+                    </li>
+                  </>
+                )}
+
                 <li className="nav-item dropdown">
                   <a
                     className="nav-link dropdown-toggle"
@@ -122,7 +148,11 @@ const Navbar = () => {
                     <li>
                       <span className="dropdown-item-text small">
                         <span className="badge bg-primary">
-                          {userProfile.role === "S" ? "Admin" : "Patient"}
+                          {userProfile.role === "S"
+                            ? "Admin"
+                            : userProfile.role === "C"
+                            ? "Clinic Staff"
+                            : "Patient"}
                         </span>
                       </span>
                     </li>

@@ -8,6 +8,7 @@ const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => 
   const [queueByAppointment, setQueueByAppointment] = useState({}); // { [appointmentId]: QueueTicketDto-like }
   const [fastTrackLoading, setFastTrackLoading] = useState({}); // { [appointmentId]: boolean }
   const [completedLoading, setCompletedLoading] = useState({}); // { [appointmentId]: boolean }
+  const [noShowLoading, setNoShowLoading] = useState({}); // { [appointmentId]: boolean }
 
   const getStatusBadge = (status) => {
     const badges = {
@@ -229,6 +230,35 @@ const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => 
     }
   };
 
+  const handleNoShow = async (appointmentId) => {
+    const ticket = queueByAppointment[appointmentId];
+    if (!ticket || !ticket.ticketId) {
+      return;
+    }
+
+    const confirmed = window.confirm('Mark this patient as no-show? This will update the queue positions.');
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setNoShowLoading((prev) => ({ ...prev, [appointmentId]: true }));
+      await apiClient.put(`/api/queue/ticket/${ticket.ticketId}/no-show`);
+      window.location.reload();
+    } catch (err) {
+      const backendMsg = err?.response?.data?.message || 'Marking no-show failed. Please try again.';
+      setCheckInResult((prev) => ({
+        ...prev,
+        [appointmentId]: {
+          success: false,
+          message: backendMsg,
+        },
+      }));
+    } finally {
+      setNoShowLoading((prev) => ({ ...prev, [appointmentId]: false }));
+    }
+  };
+
   if (loading) {
     return (
       <div className="text-center py-5">
@@ -419,6 +449,32 @@ const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => 
                               <>
                                 <i className="bi bi-lightning-charge-fill me-1"></i>
                                 Fast-track
+                              </>
+                            )}
+                          </button>
+                        );
+                      })()}
+
+                      {(() => {
+                        const statusUpper = (appointment.status || '').toUpperCase();
+                        const qNum = queueByAppointment[appointment.appointmentId]?.queueNumber;
+                        const isOngoingAndFirst = statusUpper === 'ONGOING' && qNum === 1;
+                        if (!isOngoingAndFirst) return null;
+                        return (
+                          <button
+                            className="btn btn-outline-danger btn-sm"
+                            onClick={() => handleNoShow(appointment.appointmentId)}
+                            disabled={!!noShowLoading[appointment.appointmentId]}
+                          >
+                            {noShowLoading[appointment.appointmentId] ? (
+                              <>
+                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                Marking...
+                              </>
+                            ) : (
+                              <>
+                                <i className="bi bi-x-octagon me-1"></i>
+                                Mark as No-Show
                               </>
                             )}
                           </button>
