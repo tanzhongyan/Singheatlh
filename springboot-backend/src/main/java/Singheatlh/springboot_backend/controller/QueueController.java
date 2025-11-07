@@ -7,7 +7,6 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -218,18 +217,6 @@ public class QueueController {
     }
     
 
-    @DeleteMapping("/ticket/{ticketId}")
-    public ResponseEntity<Map<String, String>> cancelQueueTicket(@PathVariable Integer ticketId) {
-        try {
-            queueService.cancelQueueTicket(ticketId);
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "Queue ticket removed successfully - marked as NO_SHOW");
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
-    }
-    
 
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<List<QueueTicketDto>> getQueueTicketsByPatientId(@PathVariable java.util.UUID patientId) {
