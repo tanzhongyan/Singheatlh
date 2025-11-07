@@ -141,6 +141,9 @@ const NowServingPage = () => {
 
       if (!currentTicketId || currentTicketId === 0) {
         // No one is currently being served
+        // Update previous ticket ID to 0
+        previousTicketIds.current[doctorId] = 0;
+        
         setServingData((prev) => ({
           ...prev,
           [doctorId]: {
@@ -157,11 +160,16 @@ const NowServingPage = () => {
       const ticketResponse = await apiClient.get(`/api/queue/ticket/${currentTicketId}`);
       const queueTicket = ticketResponse?.data;
 
-      // Check if ticket ID changed (and it's not the initial load)
+      // Check if ticket ID changed
       const previousTicketId = previousTicketIds.current[doctorId];
-      const hasChanged = previousTicketId !== undefined && 
-                        previousTicketId !== currentTicketId && 
-                        currentTicketId !== 0;
+      
+      // Play sound if:
+      // 1. Previous was 0 or undefined (no one being served) and now there's a ticket
+      // 2. Previous ticket exists and changed to a different ticket
+      const hasChanged = (
+        ((previousTicketId === 0 || previousTicketId === undefined) && currentTicketId > 0) ||
+        (previousTicketId !== undefined && previousTicketId > 0 && previousTicketId !== currentTicketId)
+      );
 
       // Update previous ticket ID
       previousTicketIds.current[doctorId] = currentTicketId;
