@@ -19,6 +19,8 @@ public class CreateAppointmentRequest {
     private String doctorId;  // Changed to String (CHAR(10))
     
     private LocalDateTime startDatetime;  // Renamed from appointmentDatetime
-    
+
     private LocalDateTime endDatetime;  // Added
+
+    private Boolean isWalkIn;  // Flag to indicate walk-in appointment (default: false/null for regular)
 }

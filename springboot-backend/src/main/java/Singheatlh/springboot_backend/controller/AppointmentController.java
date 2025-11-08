@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import Singheatlh.springboot_backend.dto.AppointmentDto;
 import Singheatlh.springboot_backend.dto.CreateAppointmentRequest;
+import Singheatlh.springboot_backend.dto.ErrorResponse;
 import Singheatlh.springboot_backend.dto.MedicalSummaryDto;
 import Singheatlh.springboot_backend.entity.enums.AppointmentStatus;
 import Singheatlh.springboot_backend.service.AppointmentService;
@@ -110,6 +111,19 @@ public class AppointmentController {
     // ========== Clinic Staff Endpoints ==========
 
     /**
+     * Create a walk-in appointment (staff only)
+     * Bypasses future time validation to allow immediate appointment creation
+     * Staff can create appointments for patients who walk in without prior booking
+     *
+     * Exception handling delegated to GlobalExceptionHandler
+     */
+    @PostMapping("/walk-in")
+    public ResponseEntity<AppointmentDto> createWalkInAppointment(@RequestBody CreateAppointmentRequest request) {
+        AppointmentDto createdAppointment = appointmentService.createWalkInAppointment(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdAppointment);
+    }
+
+    /**
      * Get all appointments for a specific clinic
      * Clinic staff can view all appointments for their clinic
      */
@@ -194,29 +208,15 @@ public class AppointmentController {
      */
     @GetMapping("/{appointmentId}/medical-summary")
     public ResponseEntity<?> getMedicalSummary(@PathVariable String appointmentId) {
-        try {
-            MedicalSummaryDto summary = medicalSummaryService.getMedicalSummaryByAppointmentId(appointmentId);
-            if (summary == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ErrorResponse("No medical summary found for this appointment"));
-            }
-            return ResponseEntity.ok(summary);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse("Failed to retrieve medical summary"));
+        MedicalSummaryDto summary = medicalSummaryService.getMedicalSummaryByAppointmentId(appointmentId);
+        if (summary == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse("No medical summary found for this appointment"));
         }
+        return ResponseEntity.ok(summary);
     }
 
-    // Simple error response class
-    private static class ErrorResponse {
-        private final String message;
-        
-        public ErrorResponse(String message) {
-            this.message = message;
-        }
-        
-        public String getMessage() {
-            return message;
-        }
-    }
+    // Note: ErrorResponse class moved to shared DTO package
+    // Exception handling delegated to GlobalExceptionHandler for most endpoints
 }
+

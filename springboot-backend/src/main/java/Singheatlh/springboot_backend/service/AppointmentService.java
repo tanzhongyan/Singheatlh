@@ -11,6 +11,17 @@ import Singheatlh.springboot_backend.entity.enums.AppointmentStatus;
 public interface AppointmentService {
     
     AppointmentDto createAppointment(CreateAppointmentRequest request);
+
+    /**
+     * Create a walk-in appointment (bypasses future time validation)
+     * @param request The appointment creation request
+     * @return The created appointment DTO
+     */
+    AppointmentDto createWalkInAppointment(CreateAppointmentRequest request);
+
+
+    AppointmentDto getAppointmentById(String appointmentId);
+    
     
     List<AppointmentDto> getAppointmentsByPatientId(UUID patientId);
     

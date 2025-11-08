@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../api/apiClient';
 import StaffAppointmentList from '../../components/staff/StaffAppointmentList';
+import WalkInAppointmentModal from '../../components/staff/WalkInAppointmentModal';
 
 const StaffDashboardPage = () => {
   const { userProfile } = useAuth();
@@ -14,6 +15,7 @@ const StaffDashboardPage = () => {
     startDate: '',
     endDate: '',
   });
+  const [showWalkInModal, setShowWalkInModal] = useState(false);
 
   const clinicId = userProfile?.clinicId;
 
@@ -84,6 +86,11 @@ const StaffDashboardPage = () => {
     if (dateRange.startDate && dateRange.endDate) {
       fetchAppointments();
     }
+  };
+
+  const handleWalkInSuccess = () => {
+    // Refresh appointments after creating walk-in
+    fetchAppointments();
   };
 
   const getFilterLabel = () => {
@@ -252,10 +259,19 @@ const StaffDashboardPage = () => {
             <i className="bi bi-funnel me-2 text-primary"></i>
             {getFilterLabel()}
           </h4>
-          <button className="btn btn-outline-secondary btn-sm" onClick={fetchAppointments}>
-            <i className="bi bi-arrow-clockwise me-2"></i>
-            Refresh
-          </button>
+          <div className="d-flex gap-2">
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => setShowWalkInModal(true)}
+            >
+              <i className="bi bi-person-plus me-2"></i>
+              Add Walk-in
+            </button>
+            <button className="btn btn-outline-secondary btn-sm" onClick={fetchAppointments}>
+              <i className="bi bi-arrow-clockwise me-2"></i>
+              Refresh
+            </button>
+          </div>
         </div>
 
         {/* Error Display */}
@@ -271,6 +287,14 @@ const StaffDashboardPage = () => {
           appointments={appointments}
           loading={loading}
           filterType={activeFilter}
+        />
+
+        {/* Walk-in Appointment Modal */}
+        <WalkInAppointmentModal
+          show={showWalkInModal}
+          onHide={() => setShowWalkInModal(false)}
+          onSuccess={handleWalkInSuccess}
+          clinicId={clinicId}
         />
       </div>
     </div>

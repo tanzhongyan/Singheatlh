@@ -16,6 +16,8 @@ import Singheatlh.springboot_backend.entity.enums.AppointmentStatus;
 import Singheatlh.springboot_backend.mapper.AppointmentMapper;
 import Singheatlh.springboot_backend.repository.AppointmentRepository;
 import Singheatlh.springboot_backend.service.AppointmentService;
+import Singheatlh.springboot_backend.strategy.AppointmentStrategyFactory;
+import Singheatlh.springboot_backend.util.StreamMappingHelper;
 
 @Service
 @Transactional
@@ -23,94 +25,46 @@ public class AppointmentServiceImpl implements AppointmentService {
     
     private final AppointmentRepository appointmentRepository;
     private final AppointmentMapper appointmentMapper;
-    
+    private final AppointmentStrategyFactory strategyFactory;
+
     @Autowired
-    public AppointmentServiceImpl(AppointmentRepository appointmentRepository, 
-                                 AppointmentMapper appointmentMapper) {
+    public AppointmentServiceImpl(AppointmentRepository appointmentRepository,
+                                 AppointmentMapper appointmentMapper,
+                                 AppointmentStrategyFactory strategyFactory) {
         this.appointmentRepository = appointmentRepository;
         this.appointmentMapper = appointmentMapper;
+        this.strategyFactory = strategyFactory;
     }
     
     @Override
     public AppointmentDto createAppointment(CreateAppointmentRequest request) {
-        // Validate required fields
-        if (request.getPatientId() == null || request.getDoctorId() == null || 
-            request.getStartDatetime() == null || request.getEndDatetime() == null) {
-            throw new IllegalArgumentException("All required fields must be provided");
-        }
-        
-        // Validate appointment is in the future
-        if (request.getStartDatetime().isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("Appointment cannot be scheduled in the past");
-        }
-        
-        // Validate appointment is not for today (must be at least next day)
-        LocalDateTime today = LocalDateTime.now().toLocalDate().atStartOfDay();
-        LocalDateTime tomorrow = today.plusDays(1);
-        if (request.getStartDatetime().isBefore(tomorrow)) {
-            throw new IllegalArgumentException("Appointments must be booked at least one day in advance. Please select a date from tomorrow onwards.");
-        }
-        
-        // Validate start time is before end time
-        if (request.getStartDatetime().isAfter(request.getEndDatetime()) || 
-            request.getStartDatetime().isEqual(request.getEndDatetime())) {
-            throw new IllegalArgumentException("Start time must be before end time");
-        }
-        
-        // Check if patient already has an appointment on the same day
-        LocalDateTime startOfDay = request.getStartDatetime().toLocalDate().atStartOfDay();
-        LocalDateTime endOfDay = startOfDay.plusDays(1).minusSeconds(1);
-        List<Appointment> patientAppointmentsOnDay = appointmentRepository
-            .findByPatientIdAndStartDatetimeBetween(request.getPatientId(), startOfDay, endOfDay)
-            .stream()
-            .filter(apt -> apt.getStatus() == AppointmentStatus.Upcoming || apt.getStatus() == AppointmentStatus.Ongoing)
-            .collect(Collectors.toList());
-        
-        if (!patientAppointmentsOnDay.isEmpty()) {
-            throw new IllegalArgumentException("You already have an appointment scheduled on this day. Please choose a different date.");
-        }
-        
-        // Check for conflicting appointments with the same doctor
-        List<Appointment> conflictingAppointments = appointmentRepository
-            .findByDoctorIdAndStartDatetimeBetween(
-                request.getDoctorId(),
-                request.getStartDatetime().minusMinutes(30),
-                request.getEndDatetime()
-            )
-            .stream()
-            .filter(apt -> apt.getStatus() == AppointmentStatus.Upcoming || apt.getStatus() == AppointmentStatus.Ongoing)
-            .collect(Collectors.toList());
-        
-        if (!conflictingAppointments.isEmpty()) {
-            throw new IllegalArgumentException("Doctor is not available at the requested time");
-        }
-        
-        // Generate appointment ID
-        String appointmentId = generateAppointmentId();
-        
-        Appointment appointment = appointmentMapper.toEntity(request);
-        appointment.setAppointmentId(appointmentId);
-        appointment.setStatus(AppointmentStatus.Upcoming);
-        
-        Appointment savedAppointment = appointmentRepository.save(appointment);
-        
-        return appointmentMapper.toDto(savedAppointment);
+        // Use Strategy Pattern to select and execute the appropriate creation strategy
+        // All validation rules (including new ones from main) are handled by the validators
+        return strategyFactory.getStrategy(request).createAppointment(request);
     }
-    
-    private String generateAppointmentId() {
-        // Get the count of existing appointments and increment
-        long count = appointmentRepository.count();
-        // Format as A000000001, A000000002, etc.
-        return String.format("A%09d", count + 1);
+
+    /**
+     * Convenience method for creating walk-in appointments.
+     * Sets the isWalkIn flag and delegates to createAppointment.
+     */
+    public AppointmentDto createWalkInAppointment(CreateAppointmentRequest request) {
+        request.setIsWalkIn(true);
+        return createAppointment(request);
     }
-    
+
+    @Override
+    @Transactional(readOnly = true)
+    public AppointmentDto getAppointmentById(String appointmentId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+            .orElseThrow(() -> new RuntimeException("Appointment not found with id: " + appointmentId));
+        return appointmentMapper.toDto(appointment);
+    }
+
     @Override
     @Transactional(readOnly = true)
     public List<AppointmentDto> getAppointmentsByPatientId(UUID patientId) {
         List<Appointment> appointments = appointmentRepository.findByPatientId(patientId);
-        return appointments.stream()
-                .map(appointmentMapper::toDto)
-                .collect(Collectors.toList());
+        return StreamMappingHelper.mapToList(appointments, appointmentMapper::toDto);
     }
     
     @Override
@@ -118,9 +72,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     public List<AppointmentDto> getUpcomingAppointmentsByPatientId(UUID patientId) {
         List<Appointment> appointments = appointmentRepository
             .findUpcomingAppointmentsByPatientId(patientId, LocalDateTime.now());
-        return appointments.stream()
-                .map(appointmentMapper::toDto)
-                .collect(Collectors.toList());
+        return StreamMappingHelper.mapToList(appointments, appointmentMapper::toDto);
     }
     
     @Override
@@ -223,18 +175,14 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional(readOnly = true)
     public List<AppointmentDto> getAppointmentsByClinicId(Integer clinicId) {
         List<Appointment> appointments = appointmentRepository.findByClinicId(clinicId);
-        return appointments.stream()
-                .map(appointmentMapper::toDto)
-                .collect(Collectors.toList());
+        return StreamMappingHelper.mapToList(appointments, appointmentMapper::toDto);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<AppointmentDto> getAppointmentsByClinicIdAndStatus(Integer clinicId, AppointmentStatus status) {
         List<Appointment> appointments = appointmentRepository.findByClinicIdAndStatus(clinicId, status);
-        return appointments.stream()
-                .map(appointmentMapper::toDto)
-                .collect(Collectors.toList());
+        return StreamMappingHelper.mapToList(appointments, appointmentMapper::toDto);
     }
 
     @Override
@@ -243,9 +191,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         List<Appointment> appointments = appointmentRepository.findTodayAppointmentsByClinicId(
             clinicId, LocalDateTime.now()
         );
-        return appointments.stream()
-                .map(appointmentMapper::toDto)
-                .collect(Collectors.toList());
+        return StreamMappingHelper.mapToList(appointments, appointmentMapper::toDto);
     }
 
     @Override
@@ -255,9 +201,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         List<Appointment> appointments = appointmentRepository.findByClinicIdAndDateRange(
             clinicId, startDate, endDate
         );
-        return appointments.stream()
-                .map(appointmentMapper::toDto)
-                .collect(Collectors.toList());
+        return StreamMappingHelper.mapToList(appointments, appointmentMapper::toDto);
     }
 
     @Override
@@ -266,8 +210,6 @@ public class AppointmentServiceImpl implements AppointmentService {
         List<Appointment> appointments = appointmentRepository.findUpcomingAppointmentsByClinicId(
             clinicId, LocalDateTime.now()
         );
-        return appointments.stream()
-                .map(appointmentMapper::toDto)
-                .collect(Collectors.toList());
+        return StreamMappingHelper.mapToList(appointments, appointmentMapper::toDto);
     }
 }

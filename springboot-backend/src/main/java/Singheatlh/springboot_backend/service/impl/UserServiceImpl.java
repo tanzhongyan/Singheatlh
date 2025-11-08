@@ -2,6 +2,7 @@ package Singheatlh.springboot_backend.service.impl;
 
 import Singheatlh.springboot_backend.dto.UserDto;
 import Singheatlh.springboot_backend.entity.User;
+import Singheatlh.springboot_backend.entity.enums.Role;
 import Singheatlh.springboot_backend.exception.ResourceNotFoundExecption;
 import Singheatlh.springboot_backend.mapper.UserMapper;
 import Singheatlh.springboot_backend.repository.UserRepository;
@@ -70,6 +71,14 @@ public class UserServiceImpl implements UserService {
     @Override
     public int getUserCount() {
         return (int) userRepository.count();
+    }
+
+    @Override
+    public List<UserDto> getUsersByRole(Role role) {
+        List<User> users = userRepository.findByRole(role);
+        return users.stream()
+                .map(userMapper::toDto)
+                .collect(Collectors.toList());
     }
 
 }

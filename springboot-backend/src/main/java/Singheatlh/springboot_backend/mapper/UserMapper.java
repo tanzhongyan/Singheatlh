@@ -20,15 +20,15 @@ public class UserMapper {
         mapperStrategies = new HashMap<>();
 
         // Register role-specific mapping strategies
-        mapperStrategies.put(Role.C, this::toClinicStaffDto);
-        mapperStrategies.put(Role.P, this::toBaseDto);
-        mapperStrategies.put(Role.S, this::toBaseDto);
+        mapperStrategies.put(Role.C, this::toClinicStaffDto);  // Clinic staff
+        mapperStrategies.put(Role.S, this::toClinicStaffDto);  // Doctors (also have clinicId)
+        mapperStrategies.put(Role.P, this::toBaseDto);         // Patients (no clinicId)
     }
 
     /**
      * Converts User entity to appropriate DTO based on role using Strategy Pattern.
-     * Returns ClinicStaffDto for staff users (includes clinicId),
-     * base UserDto for other roles.
+     * Returns ClinicStaffDto for clinic staff and doctors (includes clinicId),
+     * base UserDto for patients (no clinicId needed).
      */
     public UserDto toDto(User user) {
         if (user == null) return null;
@@ -39,7 +39,7 @@ public class UserMapper {
     }
 
     /**
-     * Maps to ClinicStaffDto for clinic staff users
+     * Maps to ClinicStaffDto for clinic staff and doctors (both have clinicId)
      */
     private ClinicStaffDto toClinicStaffDto(User user) {
         return ClinicStaffDto.builder()
@@ -53,7 +53,7 @@ public class UserMapper {
     }
 
     /**
-     * Maps to base UserDto for patients and admins
+     * Maps to base UserDto for patients (no clinicId needed)
      */
     private UserDto toBaseDto(User user) {
         return UserDto.builder()

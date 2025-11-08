@@ -1,6 +1,7 @@
 package Singheatlh.springboot_backend.controller;
 
 import Singheatlh.springboot_backend.dto.UserDto;
+import Singheatlh.springboot_backend.entity.enums.Role;
 import Singheatlh.springboot_backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -51,6 +52,12 @@ public class UserController {
     public ResponseEntity<Integer> getUserCount() {
         int count = userService.getUserCount();
         return ResponseEntity.ok(count);
+    }
+
+    @GetMapping("/role/{role}")
+    public ResponseEntity<List<UserDto>> getUsersByRole(@PathVariable Role role) {
+        List<UserDto> users = userService.getUsersByRole(role);
+        return ResponseEntity.ok(users);
     }
 
 }
