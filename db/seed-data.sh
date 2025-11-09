@@ -42,7 +42,7 @@ DB_PORT="5434"
 DB_CONTAINER="supabase-db"
 
 # Sample data directory
-DATA_DIR="sample-data-mini"
+DATA_DIR="sample-data"
 
 # Function to execute SQL command via docker
 execute_sql() {
