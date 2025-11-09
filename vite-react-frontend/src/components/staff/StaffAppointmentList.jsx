@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import apiClient from '../../api/apiClient';
+import StaffCancelAppointmentModal from './StaffCancelAppointmentModal';
+import { useAuth } from '../../contexts/AuthContext';
 
 const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => {
+  const { user } = useAuth();
   const [sortOrder, setSortOrder] = useState('asc'); // asc = oldest first, desc = newest first
   const [checkInLoading, setCheckInLoading] = useState({}); // { [appointmentId]: boolean }
   const [checkInResult, setCheckInResult] = useState({}); // { [appointmentId]: { success: boolean, message: string, queueNumber?: number } }
@@ -9,6 +12,8 @@ const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => 
   const [fastTrackLoading, setFastTrackLoading] = useState({}); // { [appointmentId]: boolean }
   const [completedLoading, setCompletedLoading] = useState({}); // { [appointmentId]: boolean }
   const [noShowLoading, setNoShowLoading] = useState({}); // { [appointmentId]: boolean }
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedAppointmentForCancel, setSelectedAppointmentForCancel] = useState(null);
 
   const getStatusBadge = (status) => {
     const badges = {
@@ -428,12 +433,14 @@ const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => 
                           </button>
 
                           <button
-                            className="btn btn-outline-secondary btn-sm"
-                            disabled
-                            title="Cancel feature coming in PR #3"
+                            className="btn btn-outline-danger btn-sm"
+                            onClick={() => {
+                              setSelectedAppointmentForCancel(appointment.appointmentId);
+                              setShowCancelModal(true);
+                            }}
                           >
                             <i className="bi bi-x-circle me-1"></i>
-                            Cancel (Coming Soon)
+                            Cancel
                           </button>
                           <button
                             className="btn btn-outline-secondary btn-sm"
@@ -553,6 +560,25 @@ const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => 
             </div>
           ))}
         </div>
+      )}
+
+      {/* Cancel Appointment Modal */}
+      {showCancelModal && (
+        <StaffCancelAppointmentModal
+          show={showCancelModal}
+          onHide={() => {
+            setShowCancelModal(false);
+            setSelectedAppointmentForCancel(null);
+          }}
+          appointmentId={selectedAppointmentForCancel}
+          staffId={user?.id}
+          onSuccess={() => {
+            setShowCancelModal(false);
+            setSelectedAppointmentForCancel(null);
+            // Refresh the page to reflect the cancelled appointment
+            window.location.reload();
+          }}
+        />
       )}
     </div>
   );

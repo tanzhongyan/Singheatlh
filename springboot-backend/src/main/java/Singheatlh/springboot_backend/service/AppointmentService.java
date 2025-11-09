@@ -28,7 +28,20 @@ public interface AppointmentService {
     List<AppointmentDto> getUpcomingAppointmentsByPatientId(UUID patientId);
     
     void cancelAppointment(String appointmentId);
-    
+
+    /**
+     * Cancel an appointment by staff on behalf of a patient.
+     * Unlike patient cancellation, this bypasses the 24-hour restriction
+     * and records the reason and staff member who performed the cancellation.
+     *
+     * @param appointmentId The appointment ID to cancel
+     * @param staffId The staff user ID performing the cancellation
+     * @param reason The reason for cancellation (mandatory)
+     * @throws RuntimeException if appointment not found
+     * @throws IllegalArgumentException if reason is empty
+     */
+    void cancelAppointmentByStaff(String appointmentId, UUID staffId, String reason);
+
     AppointmentDto rescheduleAppointment(String appointmentId, LocalDateTime newDateTime);
 
     // ========== Clinic Staff Methods ==========

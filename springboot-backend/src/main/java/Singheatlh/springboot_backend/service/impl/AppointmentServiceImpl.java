@@ -96,7 +96,30 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointment.setStatus(AppointmentStatus.Cancelled);
         appointmentRepository.save(appointment);
     }
-    
+
+    @Override
+    public void cancelAppointmentByStaff(String appointmentId, UUID staffId, String reason) {
+        // Validate reason is provided
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new IllegalArgumentException("Cancellation reason is required for staff cancellations");
+        }
+
+        // Retrieve appointment
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+            .orElseThrow(() -> new RuntimeException("Appointment not found with id: " + appointmentId));
+
+        // Staff can cancel anytime (no 24-hour restriction)
+        // Update appointment status to Cancelled
+        appointment.setStatus(AppointmentStatus.Cancelled);
+
+        // Record cancellation metadata
+        appointment.setCancellationReason(reason);
+        appointment.setCancelledBy(staffId);
+        appointment.setCancelledAt(LocalDateTime.now());
+
+        appointmentRepository.save(appointment);
+    }
+
     @Override
     public AppointmentDto rescheduleAppointment(String appointmentId, LocalDateTime newDateTime) {
         Appointment appointment = appointmentRepository.findById(appointmentId)

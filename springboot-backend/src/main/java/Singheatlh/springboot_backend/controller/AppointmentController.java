@@ -87,7 +87,24 @@ public class AppointmentController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    
+
+    @PutMapping("/{id}/cancel-by-staff")
+    public ResponseEntity<?> cancelAppointmentByStaff(
+            @PathVariable String id,
+            @RequestBody Singheatlh.springboot_backend.dto.request.CancelAppointmentByStaffRequest request) {
+        try {
+            appointmentService.cancelAppointmentByStaff(id, request.getStaffId(), request.getReason());
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @PutMapping("/{id}/reschedule")
     public ResponseEntity<?> rescheduleAppointment(
             @PathVariable String id, 
