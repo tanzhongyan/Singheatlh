@@ -12,8 +12,8 @@ from typing import List, Dict, Tuple
 
 # Configuration
 OUTPUT_DIR = "db/sample-data"
-TODAY = datetime(2025, 10, 29)
-SCHEDULE_END_DATE = datetime(2025, 11, 15)  # Schedules extend to Nov 15
+TODAY = datetime(2025, 11, 9)
+SCHEDULE_END_DATE = datetime(2025, 12, 1)  # Schedules extend to Dec 1
 NUM_PATIENTS = 800
 NUM_APPOINTMENTS = 5000
 APPOINTMENT_DURATION_MINUTES = 15

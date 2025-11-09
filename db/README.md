@@ -27,3 +27,5 @@ Note: This will generate tokens based on the JWT secret inside of the .env file
 
 - Run npm run dev: seed AFTER setting up DB and running the backend
 - Replace DATA_DIR in seed-data.sh and create_auth_users.py to use sample-data-mini
+
+# Creating mock CSV files

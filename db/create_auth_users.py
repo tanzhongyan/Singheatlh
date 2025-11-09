@@ -15,7 +15,7 @@ POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD')
 JWT_SECRET = os.getenv('JWT_SECRET')
 ANON_KEY = os.getenv('ANON_KEY')
 MOCK_USER_PASSWORD = os.getenv('MOCK_USER_PASSWORD')
-DATA_DIR="sample-data-mini"
+DATA_DIR="sample-data"
 
 print(f"🔑 Using Service Key: {SERVICE_KEY}")
 print(f"🗄️ Postgres Password: {POSTGRES_PASSWORD}")
