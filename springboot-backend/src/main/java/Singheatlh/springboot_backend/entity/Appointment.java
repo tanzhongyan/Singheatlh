@@ -52,7 +52,17 @@ public class Appointment {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "doctor_id", insertable = false, updatable = false)
     private Doctor doctor;
-    
+
+    // Cancellation tracking fields
+    @Column(name = "cancellation_reason", columnDefinition = "TEXT")
+    private String cancellationReason;
+
+    @Column(name = "cancelled_by")
+    private java.util.UUID cancelledBy; // Staff or patient user ID who cancelled
+
+    @Column(name = "cancelled_at")
+    private LocalDateTime cancelledAt;
+
     public Appointment(String appointmentId, java.util.UUID patientId, String doctorId, LocalDateTime startDatetime, LocalDateTime endDatetime) {
         this.appointmentId = appointmentId;
         this.patientId = patientId;
