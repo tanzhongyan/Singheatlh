@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import apiClient from '../../api/apiClient';
 import StaffCancelAppointmentModal from './StaffCancelAppointmentModal';
+import StaffRescheduleAppointmentModal from './StaffRescheduleAppointmentModal';
 import { useAuth } from '../../contexts/AuthContext';
 
 const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => {
@@ -14,6 +15,8 @@ const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => 
   const [noShowLoading, setNoShowLoading] = useState({}); // { [appointmentId]: boolean }
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedAppointmentForCancel, setSelectedAppointmentForCancel] = useState(null);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [selectedAppointmentForReschedule, setSelectedAppointmentForReschedule] = useState(null);
 
   const getStatusBadge = (status) => {
     const badges = {
@@ -443,12 +446,14 @@ const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => 
                             Cancel
                           </button>
                           <button
-                            className="btn btn-outline-secondary btn-sm"
-                            disabled
-                            title="Reschedule feature coming in PR #4"
+                            className="btn btn-outline-primary btn-sm"
+                            onClick={() => {
+                              setSelectedAppointmentForReschedule(appointment);
+                              setShowRescheduleModal(true);
+                            }}
                           >
                             <i className="bi bi-arrow-repeat me-1"></i>
-                            Reschedule (Coming Soon)
+                            Reschedule
                           </button>
                         </>
                       )}
@@ -576,6 +581,24 @@ const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => 
             setShowCancelModal(false);
             setSelectedAppointmentForCancel(null);
             // Refresh the page to reflect the cancelled appointment
+            window.location.reload();
+          }}
+        />
+      )}
+
+      {/* Reschedule Appointment Modal */}
+      {showRescheduleModal && (
+        <StaffRescheduleAppointmentModal
+          show={showRescheduleModal}
+          onHide={() => {
+            setShowRescheduleModal(false);
+            setSelectedAppointmentForReschedule(null);
+          }}
+          appointment={selectedAppointmentForReschedule}
+          onSuccess={() => {
+            setShowRescheduleModal(false);
+            setSelectedAppointmentForReschedule(null);
+            // Refresh the page to reflect the rescheduled appointment
             window.location.reload();
           }}
         />

@@ -107,13 +107,33 @@ public class AppointmentController {
 
     @PutMapping("/{id}/reschedule")
     public ResponseEntity<?> rescheduleAppointment(
-            @PathVariable String id, 
+            @PathVariable String id,
             @RequestParam LocalDateTime newDateTime) {
         try {
             if (newDateTime == null) {
                 return ResponseEntity.badRequest().build();
             }
             AppointmentDto rescheduledAppointment = appointmentService.rescheduleAppointment(id, newDateTime);
+            return ResponseEntity.ok(rescheduledAppointment);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PutMapping("/{id}/reschedule-by-staff")
+    public ResponseEntity<?> rescheduleAppointmentByStaff(
+            @PathVariable String id,
+            @RequestParam LocalDateTime newDateTime) {
+        try {
+            if (newDateTime == null) {
+                return ResponseEntity.badRequest().build();
+            }
+            AppointmentDto rescheduledAppointment = appointmentService.rescheduleAppointmentByStaff(id, newDateTime);
             return ResponseEntity.ok(rescheduledAppointment);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)

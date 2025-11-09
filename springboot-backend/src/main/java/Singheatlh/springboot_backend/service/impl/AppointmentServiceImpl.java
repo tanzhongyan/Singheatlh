@@ -188,7 +188,53 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointment.setEndDatetime(newEndTime);
         appointment.setStatus(AppointmentStatus.Upcoming);
         Appointment updatedAppointment = appointmentRepository.save(appointment);
-        
+
+        return appointmentMapper.toDto(updatedAppointment);
+    }
+
+    @Override
+    public AppointmentDto rescheduleAppointmentByStaff(String appointmentId, LocalDateTime newDateTime) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+            .orElseThrow(() -> new RuntimeException("Appointment not found with id: " + appointmentId));
+
+        // Staff can reschedule anytime (no 24-hour restriction)
+        // Staff can reschedule to same-day (no tomorrow restriction)
+
+        // Validate new time is in the future
+        if (newDateTime.isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("New appointment time cannot be in the past");
+        }
+
+        // Calculate new end time (assume same duration)
+        long durationMinutes = java.time.Duration.between(
+            appointment.getStartDatetime(),
+            appointment.getEndDatetime()
+        ).toMinutes();
+        LocalDateTime newEndTime = newDateTime.plusMinutes(durationMinutes);
+
+        // Check for conflicts with the new time
+        List<Appointment> conflicts = appointmentRepository
+            .findByDoctorIdAndStartDatetimeBetween(
+                appointment.getDoctorId(),
+                newDateTime.minusMinutes(30),
+                newEndTime
+            )
+            .stream()
+            .filter(apt -> apt.getStatus() == AppointmentStatus.Upcoming || apt.getStatus() == AppointmentStatus.Ongoing)
+            .collect(Collectors.toList());
+
+        // Remove current appointment from conflicts
+        conflicts.removeIf(a -> a.getAppointmentId().equals(appointmentId));
+
+        if (!conflicts.isEmpty()) {
+            throw new IllegalArgumentException("Doctor is not available at the requested time");
+        }
+
+        appointment.setStartDatetime(newDateTime);
+        appointment.setEndDatetime(newEndTime);
+        appointment.setStatus(AppointmentStatus.Upcoming);
+        Appointment updatedAppointment = appointmentRepository.save(appointment);
+
         return appointmentMapper.toDto(updatedAppointment);
     }
 
