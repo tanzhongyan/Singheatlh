@@ -44,6 +44,19 @@ public interface AppointmentService {
 
     AppointmentDto rescheduleAppointment(String appointmentId, LocalDateTime newDateTime);
 
+    /**
+     * Reschedule an appointment by staff on behalf of a patient.
+     * Unlike patient reschedule, this bypasses the 24-hour restriction
+     * and allows same-day rescheduling.
+     *
+     * @param appointmentId The appointment ID to reschedule
+     * @param newDateTime The new appointment date/time
+     * @return The updated appointment DTO
+     * @throws RuntimeException if appointment not found
+     * @throws IllegalArgumentException if validation fails (e.g., doctor unavailable)
+     */
+    AppointmentDto rescheduleAppointmentByStaff(String appointmentId, LocalDateTime newDateTime);
+
     // ========== Clinic Staff Methods ==========
 
     /**
