@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Modal, Button, Form, Alert } from "react-bootstrap";
 import apiClient from "../../api/apiClient";
 import SelectSlot from "./SelectSlot";
+import SearchableDropdown from "./SearchableDropdown";
 
 const WalkInAppointmentModal = ({ show, onHide, onSuccess, clinicId }) => {
   const [formData, setFormData] = useState({
@@ -16,6 +17,8 @@ const WalkInAppointmentModal = ({ show, onHide, onSuccess, clinicId }) => {
   const [error, setError] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
+  const [searchBy, setSearchBy] = useState("name"); // "name" or "email"
+  const [selectedPatient, setSelectedPatient] = useState(null);
 
   // Fetch patients and doctors when modal opens
   useEffect(() => {
@@ -25,8 +28,11 @@ const WalkInAppointmentModal = ({ show, onHide, onSuccess, clinicId }) => {
       // Clear any previous selections when opening
       setSelectedDate("");
       setSelectedTime("");
+      setSearchBy("name");
+      setSelectedPatient(null);
       setFormData((prev) => ({
         ...prev,
+        patientId: "",
         startDatetime: "",
         endDatetime: "",
       }));
@@ -84,6 +90,14 @@ const WalkInAppointmentModal = ({ show, onHide, onSuccess, clinicId }) => {
     setSelectedTime(start.toTimeString().slice(0, 5));
   };
 
+  const handlePatientSelect = (patient) => {
+    setSelectedPatient(patient);
+    setFormData((prev) => ({
+      ...prev,
+      patientId: patient ? patient.userId : "",
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -129,22 +143,19 @@ const WalkInAppointmentModal = ({ show, onHide, onSuccess, clinicId }) => {
         {error && <Alert variant="danger">{error}</Alert>}
 
         <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3">
-            <Form.Label>Patient</Form.Label>
-            <Form.Select
-              name="patientId"
-              value={formData.patientId}
-              onChange={handleInputChange}
-              required
-            >
-              <option value="">Select a patient...</option>
-              {patients.map((patient) => (
-                <option key={patient.userId} value={patient.userId}>
-                  {patient.name} - {patient.email}
-                </option>
-              ))}
-            </Form.Select>
-          </Form.Group>
+          <SearchableDropdown
+            items={patients}
+            onSelect={handlePatientSelect}
+            searchBy={searchBy}
+            onSearchByChange={setSearchBy}
+            selectedItem={selectedPatient}
+            placeholder={`Search by ${searchBy}...`}
+            label="Patient"
+            required={true}
+            searchByOptions={["name", "email"]}
+            displayFormat={(patient) => `${patient.name} - ${patient.email}`}
+            itemKey="userId"
+          />
 
           <Form.Group className="mb-3">
             <Form.Label>Doctor</Form.Label>

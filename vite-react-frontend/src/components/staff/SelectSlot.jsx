@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import apiClient from "../../api/apiClient";
+import Calendar from "../Calendar";
 
 export default function SelectSlot({
   selectedClinic,
@@ -14,6 +15,7 @@ export default function SelectSlot({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
+  const [viewMode, setViewMode] = useState("list"); // "list" or "calendar"
 
   // Get minimum date (tomorrow) in YYYY-MM-DD (UTC date portion)
   const getMinDate = () => {
@@ -33,7 +35,7 @@ export default function SelectSlot({
     if (allDates.length === 0) return;
 
     const minDateStr = getMinDate();
-    const minThreshold = new Date(minDateStr + "T00:00:00Z");
+    const minThreshold = new Date(minDateStr);
     const filtered = allDates.filter((d) => new Date(d) >= minThreshold).sort();
 
     if (filtered.length === 0) {
@@ -85,6 +87,11 @@ export default function SelectSlot({
   const groupSlotsByTime = (slots) => {
     const groups = { morning: [], afternoon: [], evening: [] };
 
+    // Guard against undefined or null slots
+    if (!slots || !Array.isArray(slots)) {
+      return groups;
+    }
+
     slots.forEach((slot) => {
       const hour = new Date(slot.startDatetime).getHours();
       if (hour < 12) groups.morning.push(slot);
@@ -122,12 +129,32 @@ export default function SelectSlot({
     const all = Object.keys(availableSlots);
     if (all.length === 0) return [];
     const minDateStr = getMinDate();
-    const minThreshold = new Date(minDateStr + "T00:00:00Z");
+    const minThreshold = new Date(minDateStr);
     return all.filter((d) => new Date(d) >= minThreshold).sort();
   })();
 
-  const selectedDaySlots = selectedDay ? availableSlots[selectedDay] : [];
+  const selectedDaySlots =
+    selectedDay && availableSlots[selectedDay]
+      ? availableSlots[selectedDay]
+      : [];
   const groupedSlots = groupSlotsByTime(selectedDaySlots);
+
+  // Handler for calendar date selection
+  const handleCalendarDateSelect = (date) => {
+    // Find the matching key in availableSlots
+    const matchingKey = Object.keys(availableSlots).find((key) => {
+      const keyDate = new Date(key);
+      return (
+        keyDate.getFullYear() === date.getFullYear() &&
+        keyDate.getMonth() === date.getMonth() &&
+        keyDate.getDate() === date.getDate()
+      );
+    });
+
+    if (matchingKey) {
+      setSelectedDay(matchingKey);
+    }
+  };
 
   return (
     <div className="select-slot-container">
@@ -188,29 +215,98 @@ export default function SelectSlot({
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <div className="date-card">
             <div
-              style={{ fontWeight: 600, color: "#111827", marginBottom: 10 }}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 10,
+              }}
             >
-              Select Date
-            </div>
-            <div
-              style={{ display: "flex", overflowX: "auto", paddingBottom: 8 }}
-            >
-              {sortedDates.map((date) => (
+              <div style={{ fontWeight: 600, color: "#111827" }}>
+                Select Date
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "4px",
+                  background: "#f3f4f6",
+                  padding: "4px",
+                  borderRadius: "8px",
+                }}
+              >
                 <button
-                  key={date}
                   type="button"
-                  onClick={() => setSelectedDay(date)}
-                  className={`slot-date-chip ${
-                    selectedDay === date ? "active" : ""
-                  }`}
+                  onClick={() => setViewMode("list")}
+                  style={{
+                    padding: "6px 12px",
+                    border: "none",
+                    borderRadius: "6px",
+                    background: viewMode === "list" ? "white" : "transparent",
+                    color: viewMode === "list" ? "#111827" : "#6b7280",
+                    fontWeight: viewMode === "list" ? 600 : 400,
+                    fontSize: "13px",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    boxShadow:
+                      viewMode === "list"
+                        ? "0 1px 3px rgba(0,0,0,0.1)"
+                        : "none",
+                  }}
                 >
-                  <div>{formatDate(date)}</div>
-                  <div className="subtext">
-                    {availableSlots[date].length} slots
-                  </div>
+                  📋 List
                 </button>
-              ))}
+                <button
+                  type="button"
+                  onClick={() => setViewMode("calendar")}
+                  style={{
+                    padding: "6px 12px",
+                    border: "none",
+                    borderRadius: "6px",
+                    background:
+                      viewMode === "calendar" ? "white" : "transparent",
+                    color: viewMode === "calendar" ? "#111827" : "#6b7280",
+                    fontWeight: viewMode === "calendar" ? 600 : 400,
+                    fontSize: "13px",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    boxShadow:
+                      viewMode === "calendar"
+                        ? "0 1px 3px rgba(0,0,0,0.1)"
+                        : "none",
+                  }}
+                >
+                  📅 Calendar
+                </button>
+              </div>
             </div>
+
+            {viewMode === "list" ? (
+              <div
+                style={{ display: "flex", overflowX: "auto", paddingBottom: 8 }}
+              >
+                {sortedDates.map((date) => (
+                  <button
+                    key={date}
+                    type="button"
+                    onClick={() => setSelectedDay(date)}
+                    className={`slot-date-chip ${
+                      selectedDay === date ? "active" : ""
+                    }`}
+                  >
+                    <div>{formatDate(date)}</div>
+                    <div className="subtext">
+                      {availableSlots[date].length} slots
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <Calendar
+                availableDates={sortedDates}
+                onDateSelect={handleCalendarDateSelect}
+                selectedDate={selectedDay}
+              />
+            )}
           </div>
 
           {selectedDay && (
