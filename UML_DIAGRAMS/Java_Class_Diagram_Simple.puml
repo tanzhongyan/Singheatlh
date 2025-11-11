@@ -1,0 +1,175 @@
+@startuml Java_Class_Diagram_Simple
+!theme plain
+
+' Simple and clean
+skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 60
+
+' ============================================
+' ENUMS
+' ============================================
+
+enum Role {
+    P
+    C
+    S
+}
+
+enum AppointmentStatus {
+    Upcoming
+    Ongoing
+    Completed
+    Cancelled
+    Missed
+}
+
+enum ScheduleType {
+    AVAILABLE
+    UNAVAILABLE
+}
+
+enum QueueStatus {
+    CHECKED_IN
+    CALLED
+    COMPLETED
+    NO_SHOW
+    FAST_TRACKED
+}
+
+' ============================================
+' MAIN ENTITIES
+' ============================================
+
+class User {
+    - userId: UUID
+    - name: String
+    - email: String
+    - telephoneNumber: String
+    - role: Role
+    - clinicId: Integer
+}
+
+class Patient {
+}
+
+class ClinicStaff {
+}
+
+class SystemAdministrator {
+}
+
+class Clinic {
+    - clinicId: Integer
+    - name: String
+    - address: String
+    - telephoneNumber: String
+    - type: String
+    - openingHours: LocalTime
+    - closingHours: LocalTime
+}
+
+class Doctor {
+    - doctorId: String
+    - name: String
+    - clinicId: Integer
+    - appointmentDurationInMinutes: Integer
+}
+
+class Appointment {
+    - appointmentId: String
+    - patientId: UUID
+    - doctorId: String
+    - startDatetime: LocalDateTime
+    - endDatetime: LocalDateTime
+    - status: AppointmentStatus
+    - cancellationReason: String
+    - cancelledBy: UUID
+    - cancelledAt: LocalDateTime
+}
+
+class Schedule {
+    - scheduleId: String
+    - doctorId: String
+    - startDatetime: LocalDateTime
+    - endDatetime: LocalDateTime
+    - type: ScheduleType
+}
+
+class QueueTicket {
+    - ticketId: Integer
+    - appointmentId: String
+    - status: QueueStatus
+    - checkInTime: LocalDateTime
+    - queueNumber: Integer
+    - isFastTracked: Boolean
+    - ticketNumberForDay: Integer
+}
+
+class MedicalSummary {
+    - summaryId: String
+    - appointmentId: String
+    - treatmentSummary: String
+}
+
+' ============================================
+' RELATIONSHIPS
+' ============================================
+
+' User Hierarchy (Inheritance)
+Patient -up-|> User
+ClinicStaff -up-|> User
+SystemAdministrator -up-|> User
+
+' Clinic relationships
+Clinic "1" -- "*" Doctor : has >
+ClinicStaff "*" -- "1" Clinic : works at >
+
+' Doctor relationships
+Doctor "1" -- "*" Schedule : has >
+Doctor "1" -- "*" Appointment : has >
+
+' Appointment relationships
+Patient "1" -- "*" Appointment : makes >
+Appointment "1" -- "0..1" QueueTicket : has >
+Appointment "1" -- "0..1" MedicalSummary : has >
+
+' Enum relationships
+User -- Role
+Appointment -- AppointmentStatus
+Schedule -- ScheduleType
+QueueTicket -- QueueStatus
+
+' ============================================
+' NOTES
+' ============================================
+
+note right of User
+    **SINGLE_TABLE Inheritance**
+
+    All users in one table: user_profile
+    Discriminator: role (P/C/S)
+
+    clinicId:
+    - NOT NULL for ClinicStaff
+    - NULL for Patient & SystemAdministrator
+end note
+
+note right of Appointment
+    **Central Entity**
+
+    Links Patient, Doctor, QueueTicket,
+    and MedicalSummary together
+end note
+
+note right of QueueTicket
+    **Queue Management**
+
+    One-to-one with Appointment
+    Tracks patient queue position
+
+    Flow: CHECKED_IN → CALLED → COMPLETED
+end note
+
+@enduml

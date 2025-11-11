@@ -1,0 +1,549 @@
+@startuml Java_Class_Diagram_Layered
+!theme plain
+
+' Optimized for clean layer visualization
+skinparam backgroundColor #FEFEFE
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 80
+
+' ============================================
+' LAYER 1: ENUMS (Top)
+' ============================================
+
+package "Enums" #E8F4F8 {
+    enum Role {
+        P (PATIENT)
+        C (CLINIC_STAFF)
+        S (SYSTEM_ADMINISTRATOR)
+    }
+
+    enum AppointmentStatus {
+        Upcoming
+        Ongoing
+        Completed
+        Cancelled
+        Missed
+    }
+
+    enum ScheduleType {
+        AVAILABLE
+        UNAVAILABLE
+    }
+
+    enum QueueStatus {
+        CHECKED_IN
+        CALLED
+        COMPLETED
+        NO_SHOW
+        FAST_TRACKED
+    }
+}
+
+' ============================================
+' LAYER 2: ENTITIES (Database Layer)
+' ============================================
+
+package "Entity Layer (Database Models)" #FFE8E8 {
+
+    ' User Hierarchy
+    class User <<abstract>> {
+        - userId: UUID (PK)
+        - name: String
+        - email: String (Unique)
+        - telephoneNumber: String
+        - role: Role
+        - clinicId: Integer
+    }
+
+    class Patient {
+    }
+
+    class ClinicStaff {
+    }
+
+    class SystemAdministrator {
+    }
+
+    ' Core Entities
+    class Clinic {
+        - clinicId: Integer (PK)
+        - name: String
+        - address: String
+        - telephoneNumber: String
+        - type: String
+        - openingHours: LocalTime
+        - closingHours: LocalTime
+    }
+
+    class Doctor {
+        - doctorId: String (PK)
+        - name: String
+        - clinicId: Integer (FK)
+        - appointmentDurationInMinutes: Integer
+    }
+
+    class Appointment {
+        - appointmentId: String (PK)
+        - patientId: UUID (FK)
+        - doctorId: String (FK)
+        - startDatetime: LocalDateTime
+        - endDatetime: LocalDateTime
+        - status: AppointmentStatus
+        - cancellationReason: String
+        - cancelledBy: UUID
+        - cancelledAt: LocalDateTime
+    }
+
+    class Schedule {
+        - scheduleId: String (PK)
+        - doctorId: String (FK)
+        - startDatetime: LocalDateTime
+        - endDatetime: LocalDateTime
+        - type: ScheduleType
+    }
+
+    class QueueTicket {
+        - ticketId: Integer (PK)
+        - appointmentId: String (FK, Unique)
+        - status: QueueStatus
+        - checkInTime: LocalDateTime
+        - queueNumber: Integer
+        - isFastTracked: Boolean
+        - ticketNumberForDay: Integer
+    }
+
+    class MedicalSummary {
+        - summaryId: String (PK)
+        - appointmentId: String (FK)
+        - treatmentSummary: String
+    }
+
+    ' Relationships
+    Patient -up-|> User
+    ClinicStaff -up-|> User
+    SystemAdministrator -up-|> User
+
+    Clinic "1" -- "*" Doctor
+    Doctor "1" -- "*" Schedule
+    Doctor "1" -- "*" Appointment
+    Patient "1" -- "*" Appointment
+    Appointment "1" -- "0..1" QueueTicket
+    Appointment "1" -- "0..1" MedicalSummary
+    ClinicStaff "*" -- "1" Clinic
+}
+
+' ============================================
+' LAYER 3: REPOSITORIES (Data Access)
+' ============================================
+
+package "Repository Layer (Data Access via JPA)" #FFF4E8 {
+
+    interface UserRepository {
+        + findByEmail(String): Optional<User>
+        + findByRole(Role): List<User>
+    }
+
+    interface PatientRepository {
+        + findByEmail(String): Optional<Patient>
+    }
+
+    interface ClinicRepository {
+        + findById(Integer): Optional<Clinic>
+        + findByName(String): Optional<Clinic>
+    }
+
+    interface DoctorRepository {
+        + findByClinicId(Integer): List<Doctor>
+        + findById(String): Optional<Doctor>
+    }
+
+    interface AppointmentRepository {
+        + findByPatientId(UUID): List<Appointment>
+        + findByDoctorId(String): List<Appointment>
+        + findByStatus(AppointmentStatus): List<Appointment>
+        + findByClinicId(Integer): List<Appointment>
+    }
+
+    interface ScheduleRepository {
+        + findByDoctorId(String): List<Schedule>
+        + findByDoctorIdAndType(String, ScheduleType): List<Schedule>
+    }
+
+    interface QueueTicketRepository {
+        + findByAppointmentId(String): Optional<QueueTicket>
+        + findByStatusOrderByQueueNumberAsc(QueueStatus): List<QueueTicket>
+    }
+
+    interface MedicalSummaryRepository {
+        + findByAppointmentId(String): Optional<MedicalSummary>
+    }
+}
+
+' ============================================
+' LAYER 4: DTOs (Data Transfer Objects)
+' ============================================
+
+package "DTO Layer (API Request/Response)" #E8F8E8 {
+
+    class UserDto {
+        + userId: UUID
+        + name: String
+        + email: String
+        + role: String
+    }
+
+    class PatientDto {
+        + userId: UUID
+        + name: String
+        + email: String
+        + telephoneNumber: String
+    }
+
+    class ClinicDto {
+        + clinicId: Integer
+        + name: String
+        + address: String
+        + type: String
+        + openingHours: LocalTime
+        + closingHours: LocalTime
+    }
+
+    class DoctorDto {
+        + doctorId: String
+        + name: String
+        + clinicName: String
+        + appointmentDurationInMinutes: Integer
+    }
+
+    class AppointmentDto {
+        + appointmentId: String
+        + patientName: String
+        + doctorName: String
+        + clinicName: String
+        + startDatetime: LocalDateTime
+        + endDatetime: LocalDateTime
+        + status: String
+    }
+
+    class CreateAppointmentRequest {
+        + patientId: UUID
+        + doctorId: String
+        + dateTime: LocalDateTime
+        + isWalkIn: Boolean
+    }
+
+    class ScheduleDto {
+        + scheduleId: String
+        + doctorId: String
+        + doctorName: String
+        + startDatetime: LocalDateTime
+        + endDatetime: LocalDateTime
+        + type: String
+    }
+
+    class QueueTicketDto {
+        + ticketId: Integer
+        + appointmentId: String
+        + patientName: String
+        + queueNumber: Integer
+        + status: String
+        + checkInTime: LocalDateTime
+    }
+
+    class MedicalSummaryDto {
+        + summaryId: String
+        + appointmentId: String
+        + treatmentSummary: String
+    }
+}
+
+' ============================================
+' LAYER 5: MAPPERS (Entity <-> DTO Conversion)
+' ============================================
+
+package "Mapper Layer (Entity ↔ DTO Conversion)" #F8E8FF {
+
+    class UserMapper {
+        + toDto(User): UserDto
+        + toEntity(UserDto): User
+    }
+
+    class PatientMapper {
+        + toDto(Patient): PatientDto
+        + toEntity(PatientDto): Patient
+    }
+
+    class ClinicMapper {
+        + toDto(Clinic): ClinicDto
+        + toEntity(ClinicDto): Clinic
+    }
+
+    class DoctorMapper {
+        + toDto(Doctor): DoctorDto
+        + toEntity(DoctorDto): Doctor
+    }
+
+    class AppointmentMapper {
+        + toDto(Appointment): AppointmentDto
+        + toEntity(CreateAppointmentRequest): Appointment
+    }
+
+    class ScheduleMapper {
+        + toDto(Schedule): ScheduleDto
+        + toEntity(ScheduleDto): Schedule
+    }
+
+    class QueueTicketMapper {
+        + toDto(QueueTicket): QueueTicketDto
+        + toEntity(QueueTicketDto): QueueTicket
+    }
+
+    class MedicalSummaryMapper {
+        + toDto(MedicalSummary): MedicalSummaryDto
+        + toEntity(MedicalSummaryDto): MedicalSummary
+    }
+}
+
+' ============================================
+' LAYER 6: SERVICES (Business Logic)
+' ============================================
+
+package "Service Layer (Business Logic)" #FFF8E8 {
+
+    interface UserService {
+        + getUserById(UUID): UserDto
+        + getAllUsers(): List<UserDto>
+        + updateUser(UUID, UserDto): UserDto
+    }
+
+    interface PatientService {
+        + getPatientById(UUID): PatientDto
+        + getAllPatients(): List<PatientDto>
+    }
+
+    interface ClinicService {
+        + getClinicById(Integer): ClinicDto
+        + getAllClinics(): List<ClinicDto>
+        + createClinic(ClinicDto): ClinicDto
+    }
+
+    interface DoctorService {
+        + getDoctorById(String): DoctorDto
+        + getDoctorsByClinicId(Integer): List<DoctorDto>
+        + createDoctor(DoctorDto): DoctorDto
+    }
+
+    interface AppointmentService {
+        + createAppointment(CreateAppointmentRequest): AppointmentDto
+        + cancelAppointment(String, UUID, String): AppointmentDto
+        + getAppointmentsByPatientId(UUID): List<AppointmentDto>
+        + getAppointmentsByDoctorId(String): List<AppointmentDto>
+    }
+
+    interface ScheduleService {
+        + createSchedule(ScheduleDto): ScheduleDto
+        + updateSchedule(ScheduleDto): ScheduleDto
+        + getSchedulesByDoctorId(String): List<ScheduleDto>
+    }
+
+    interface QueueService {
+        + checkIn(String): QueueTicketDto
+        + callNextPatient(String, Integer): QueueTicketDto
+        + getQueueStatus(String): QueueStatusDto
+    }
+
+    interface MedicalSummaryService {
+        + createSummary(MedicalSummaryDto): MedicalSummaryDto
+        + getSummaryByAppointmentId(String): MedicalSummaryDto
+    }
+}
+
+' ============================================
+' LAYER 7: CONTROLLERS (API Endpoints)
+' ============================================
+
+package "Controller Layer (REST API Endpoints)" #E8E8FF {
+
+    class UserController {
+        - userService: UserService
+        --
+        + GET /api/users/{id}
+        + GET /api/users
+        + PUT /api/users/{id}
+    }
+
+    class PatientController {
+        - patientService: PatientService
+        --
+        + GET /api/patients/{id}
+        + GET /api/patients
+    }
+
+    class ClinicController {
+        - clinicService: ClinicService
+        --
+        + GET /api/clinics
+        + GET /api/clinics/{id}
+        + POST /api/clinics
+    }
+
+    class DoctorController {
+        - doctorService: DoctorService
+        --
+        + GET /api/doctors/{id}
+        + GET /api/doctors/clinic/{clinicId}
+        + POST /api/doctors
+    }
+
+    class AppointmentController {
+        - appointmentService: AppointmentService
+        --
+        + POST /api/appointments
+        + GET /api/appointments/patient/{id}
+        + PUT /api/appointments/{id}/cancel
+    }
+
+    class ScheduleController {
+        - scheduleService: ScheduleService
+        --
+        + POST /api/schedules
+        + GET /api/schedules/doctor/{id}
+        + PUT /api/schedules/{id}
+    }
+
+    class QueueController {
+        - queueService: QueueService
+        --
+        + POST /api/queue/check-in/{appointmentId}
+        + POST /api/queue/call-next
+        + GET /api/queue/status/{appointmentId}
+    }
+
+    class MedicalSummaryController {
+        - medicalSummaryService: MedicalSummaryService
+        --
+        + POST /api/summaries
+        + GET /api/summaries/appointment/{id}
+    }
+}
+
+' ============================================
+' LAYER DEPENDENCIES (Top to Bottom)
+' ============================================
+
+' Controllers depend on Services
+UserController -down-> UserService
+PatientController -down-> PatientService
+ClinicController -down-> ClinicService
+DoctorController -down-> DoctorService
+AppointmentController -down-> AppointmentService
+ScheduleController -down-> ScheduleService
+QueueController -down-> QueueService
+MedicalSummaryController -down-> MedicalSummaryService
+
+' Services depend on Repositories
+UserService -down-> UserRepository
+PatientService -down-> PatientRepository
+ClinicService -down-> ClinicRepository
+DoctorService -down-> DoctorRepository
+AppointmentService -down-> AppointmentRepository
+ScheduleService -down-> ScheduleRepository
+QueueService -down-> QueueTicketRepository
+MedicalSummaryService -down-> MedicalSummaryRepository
+
+' Services depend on Mappers
+UserService -down-> UserMapper
+PatientService -down-> PatientMapper
+ClinicService -down-> ClinicMapper
+DoctorService -down-> DoctorMapper
+AppointmentService -down-> AppointmentMapper
+ScheduleService -down-> ScheduleMapper
+QueueService -down-> QueueTicketMapper
+MedicalSummaryService -down-> MedicalSummaryMapper
+
+' Repositories depend on Entities
+UserRepository -down-> User
+PatientRepository -down-> Patient
+ClinicRepository -down-> Clinic
+DoctorRepository -down-> Doctor
+AppointmentRepository -down-> Appointment
+ScheduleRepository -down-> Schedule
+QueueTicketRepository -down-> QueueTicket
+MedicalSummaryRepository -down-> MedicalSummary
+
+' Mappers convert between Entities and DTOs
+UserMapper -down-> User
+UserMapper -down-> UserDto
+PatientMapper -down-> Patient
+PatientMapper -down-> PatientDto
+ClinicMapper -down-> Clinic
+ClinicMapper -down-> ClinicDto
+DoctorMapper -down-> Doctor
+DoctorMapper -down-> DoctorDto
+AppointmentMapper -down-> Appointment
+AppointmentMapper -down-> AppointmentDto
+ScheduleMapper -down-> Schedule
+ScheduleMapper -down-> ScheduleDto
+QueueTicketMapper -down-> QueueTicket
+QueueTicketMapper -down-> QueueTicketDto
+MedicalSummaryMapper -down-> MedicalSummary
+MedicalSummaryMapper -down-> MedicalSummaryDto
+
+' Entities use Enums
+User -up-> Role
+Appointment -up-> AppointmentStatus
+Schedule -up-> ScheduleType
+QueueTicket -up-> QueueStatus
+
+' ============================================
+' LAYER FLOW NOTES
+' ============================================
+
+note bottom of "Controller Layer (REST API Endpoints)"
+    **Request Flow (Top to Bottom):**
+
+    1. Client sends HTTP request (JSON)
+    2. **Controller** receives request, extracts data
+    3. **Service** executes business logic
+    4. **Repository** queries database via JPA
+    5. **Entity** is retrieved from database
+    6. **Mapper** converts Entity → DTO
+    7. **Service** returns DTO to Controller
+    8. **Controller** returns JSON response to client
+
+    **Response Flow (Bottom to Top):**
+    Database → Entity → Repository → Mapper → DTO → Service → Controller → Client
+end note
+
+note top of "Entity Layer (Database Models)"
+    **User Inheritance (SINGLE_TABLE):**
+
+    All users stored in "user_profile" table
+    Discriminator: role (P/C/S)
+
+    clinicId field:
+    - NOT NULL for ClinicStaff only
+    - NULL for Patient & SystemAdministrator
+end note
+
+note top of "Repository Layer (Data Access via JPA)"
+    **Spring Data JPA:**
+
+    Extends JpaRepository<Entity, ID>
+    Auto-generates SQL from method names
+    Example: findByEmail() → SELECT * FROM user WHERE email = ?
+end note
+
+note top of "DTO Layer (API Request/Response)"
+    **DTO Pattern Benefits:**
+
+    - Decouples API from database structure
+    - Hides sensitive fields (passwords, internal IDs)
+    - Combines data from multiple entities
+    - Enables API versioning
+end note
+
+@enduml

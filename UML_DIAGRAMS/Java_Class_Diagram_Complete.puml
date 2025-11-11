@@ -1,0 +1,823 @@
+@startuml Java_Class_Diagram_Complete
+!theme plain
+' Set diagram properties
+scale 1.2
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #FFFFFF
+skinparam classBorderColor #333333
+skinparam arrowColor #333333
+skinparam arrowThickness 2
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+' ============================================
+' ENUMS
+' ============================================
+
+package "Enums" <<Rectangle>> {
+    enum Role {
+        P (PATIENT)
+        C (CLINIC_STAFF)
+        S (SYSTEM_ADMINISTRATOR)
+    }
+
+    enum AppointmentStatus {
+        Upcoming
+        Missed
+        Completed
+        Ongoing
+        Cancelled
+    }
+
+    enum ScheduleType {
+        AVAILABLE
+        UNAVAILABLE
+    }
+
+    enum QueueStatus {
+        CHECKED_IN
+        CALLED
+        COMPLETED
+        NO_SHOW
+        FAST_TRACKED
+    }
+}
+
+' ============================================
+' ENTITIES - USER HIERARCHY
+' ============================================
+
+package "Entities - User Hierarchy" <<Rectangle>> {
+    class User {
+        - userId: UUID (PK)
+        - name: String
+        - email: String (Unique)
+        - telephoneNumber: String
+        - role: Role (Discriminator)
+        - clinicId: Integer
+        __
+        + getId(): UUID
+        + getName(): String
+        + setName(String): void
+        + getRole(): Role
+    }
+
+    class Patient {
+        - appointments: List<Appointment>
+        __
+        + getAppointments(): List<Appointment>
+        + setAppointments(List<Appointment>): void
+    }
+
+    class ClinicStaff {
+        - clinic: Clinic
+        __
+        + getClinic(): Clinic
+        + setClinic(Clinic): void
+    }
+
+    class SystemAdministrator {
+        __
+        (No additional fields)
+    }
+
+    Patient --|> User: <<extends>>\nDiscriminatorValue: "P"
+    ClinicStaff --|> User: <<extends>>\nDiscriminatorValue: "C"
+    SystemAdministrator --|> User: <<extends>>\nDiscriminatorValue: "S"
+
+    User --> Role: <<uses>>
+}
+
+' ============================================
+' ENTITIES - CORE DOMAIN
+' ============================================
+
+package "Entities - Core Domain" <<Rectangle>> {
+    class Clinic {
+        - clinicId: Integer (PK)
+        - type: String
+        - name: String
+        - address: String
+        - telephoneNumber: String
+        - openingHours: LocalTime
+        - closingHours: LocalTime
+        - doctors: List<Doctor>
+        __
+        + getClinicId(): Integer
+        + getName(): String
+        + setName(String): void
+        + getDoctors(): List<Doctor>
+    }
+
+    class Doctor {
+        - doctorId: String (PK)
+        - name: String
+        - clinicId: Integer (FK)
+        - appointmentDurationInMinutes: Integer
+        - clinic: Clinic
+        - schedules: List<Schedule>
+        - appointments: List<Appointment>
+        __
+        + getDoctorId(): String
+        + getName(): String
+        + setName(String): void
+        + getClinic(): Clinic
+        + getAppointmentDuration(): Integer
+    }
+
+    class Appointment {
+        - appointmentId: String (PK)
+        - patientId: UUID (FK)
+        - doctorId: String (FK)
+        - startDatetime: LocalDateTime
+        - endDatetime: LocalDateTime
+        - status: AppointmentStatus
+        - cancellationReason: String
+        - cancelledBy: UUID
+        - cancelledAt: LocalDateTime
+        - patient: Patient
+        - doctor: Doctor
+        __
+        + getAppointmentId(): String
+        + getStatus(): AppointmentStatus
+        + setStatus(AppointmentStatus): void
+        + getPatient(): Patient
+        + getDoctor(): Doctor
+        + cancel(reason: String, cancelledBy: UUID): void
+    }
+
+    class Schedule {
+        - scheduleId: String (PK)
+        - doctorId: String (FK)
+        - startDatetime: LocalDateTime
+        - endDatetime: LocalDateTime
+        - type: ScheduleType
+        - doctor: Doctor
+        __
+        + getScheduleId(): String
+        + getType(): ScheduleType
+        + setType(ScheduleType): void
+        + getDoctor(): Doctor
+    }
+
+    class MedicalSummary {
+        - summaryId: String (PK)
+        - appointmentId: String (FK)
+        - treatmentSummary: String
+        __
+        + getSummaryId(): String
+        + getTreatmentSummary(): String
+        + setTreatmentSummary(String): void
+    }
+
+    class QueueTicket {
+        - ticketId: Integer (PK, Auto-increment)
+        - appointmentId: String (FK, Unique)
+        - status: QueueStatus
+        - checkInTime: LocalDateTime
+        - queueNumber: Integer
+        - isFastTracked: Boolean
+        - fastTrackReason: String
+        - ticketNumberForDay: Integer
+        - consultationStartTime: LocalDateTime
+        - consultationCompleteTime: LocalDateTime
+        - appointment: Appointment
+        __
+        + getTicketId(): Integer
+        + getStatus(): QueueStatus
+        + setStatus(QueueStatus): void
+        + getClinicId(): Integer
+        + getDoctorId(): String
+        + getPatientId(): UUID
+    }
+
+    Clinic "1" --> "*" Doctor: <<has>>
+    Doctor "1" --> "*" Schedule: <<has>>
+    Doctor "1" --> "*" Appointment: <<has>>
+    Patient "1" --> "*" Appointment: <<makes>>
+    Appointment "1" --> "0..1" QueueTicket: <<has>>
+    Appointment "1" --> "0..1" MedicalSummary: <<has>>
+    ClinicStaff "*" --> "1" Clinic: <<works at>>
+
+    Appointment --> AppointmentStatus: <<uses>>
+    Schedule --> ScheduleType: <<uses>>
+    QueueTicket --> QueueStatus: <<uses>>
+}
+
+' ============================================
+' DTOs - DATA TRANSFER OBJECTS
+' ============================================
+
+package "DTOs - Data Transfer Objects" <<Rectangle>> {
+    class AppointmentDto {
+        - appointmentId: String
+        - patientName: String
+        - doctorName: String
+        - clinicName: String
+        - startDatetime: LocalDateTime
+        - endDatetime: LocalDateTime
+        - status: String
+    }
+
+    class CreateAppointmentRequest {
+        - patientId: UUID
+        - doctorId: String
+        - dateTime: LocalDateTime
+        - isWalkIn: Boolean
+    }
+
+    class QueueTicketDto {
+        - ticketId: Integer
+        - appointmentId: String
+        - patientName: String
+        - doctorName: String
+        - queueNumber: Integer
+        - status: String
+        - checkInTime: LocalDateTime
+        - isFastTracked: Boolean
+        - ticketNumberForDay: Integer
+    }
+
+    class ScheduleDto {
+        - scheduleId: String
+        - doctorId: String
+        - doctorName: String
+        - startDatetime: LocalDateTime
+        - endDatetime: LocalDateTime
+        - type: String
+    }
+
+    class UserDto {
+        - userId: UUID
+        - name: String
+        - email: String
+        - role: String
+    }
+
+    class PatientDto {
+        - userId: UUID
+        - name: String
+        - email: String
+        - telephoneNumber: String
+    }
+
+    class ClinicDto {
+        - clinicId: Integer
+        - name: String
+        - address: String
+        - telephoneNumber: String
+        - openingHours: LocalTime
+        - closingHours: LocalTime
+    }
+
+    class DoctorDto {
+        - doctorId: String
+        - name: String
+        - clinicName: String
+        - appointmentDurationInMinutes: Integer
+    }
+
+    class MedicalSummaryDto {
+        - summaryId: String
+        - appointmentId: String
+        - treatmentSummary: String
+    }
+
+    class ErrorResponse {
+        - message: String
+        - timestamp: LocalDateTime
+    }
+
+    class QueueStatusDto {
+        - position: Integer
+        - estimatedWaitTime: Integer
+        - status: String
+    }
+}
+
+' ============================================
+' REPOSITORIES
+' ============================================
+
+package "Repositories - Data Access Layer" <<Rectangle>> {
+    interface AppointmentRepository {
+        + findByPatientId(UUID): List<Appointment>
+        + findByDoctorId(String): List<Appointment>
+        + findByStatus(AppointmentStatus): List<Appointment>
+        + findUpcomingAppointmentsByPatientId(UUID, LocalDateTime): List<Appointment>
+        + findByClinicId(Integer): List<Appointment>
+    }
+
+    interface QueueTicketRepository {
+        + findByAppointmentId(String): Optional<QueueTicket>
+        + findByStatusOrderByQueueNumberAsc(QueueStatus): List<QueueTicket>
+        + findByClinicIdAndStatus(Integer, QueueStatus): List<QueueTicket>
+        + findNextInQueue(Integer, String): Optional<QueueTicket>
+    }
+
+    interface ScheduleRepository {
+        + findByDoctorId(String): List<Schedule>
+        + findByDoctorIdAndType(String, ScheduleType): List<Schedule>
+        + findOverlappingSchedules(String, LocalDateTime, LocalDateTime): List<Schedule>
+    }
+
+    interface UserRepository {
+        + findByEmail(String): Optional<User>
+        + findByRole(Role): List<User>
+    }
+
+    interface PatientRepository {
+        + findByEmail(String): Optional<Patient>
+    }
+
+    interface ClinicRepository {
+        + findByName(String): Optional<Clinic>
+    }
+
+    interface DoctorRepository {
+        + findByClinicId(Integer): List<Doctor>
+        + findByName(String): List<Doctor>
+    }
+
+    interface MedicalSummaryRepository {
+        + findByAppointmentId(String): Optional<MedicalSummary>
+    }
+
+    AppointmentRepository --|> JpaRepository
+    QueueTicketRepository --|> JpaRepository
+    ScheduleRepository --|> JpaRepository
+    UserRepository --|> JpaRepository
+    PatientRepository --|> JpaRepository
+    ClinicRepository --|> JpaRepository
+    DoctorRepository --|> JpaRepository
+    MedicalSummaryRepository --|> JpaRepository
+
+    interface JpaRepository {
+        <<Spring Data JPA>>
+        + save(T): T
+        + findById(ID): Optional<T>
+        + findAll(): List<T>
+        + deleteById(ID): void
+    }
+}
+
+' ============================================
+' SERVICES
+' ============================================
+
+package "Services - Business Logic Layer" <<Rectangle>> {
+    interface AppointmentService {
+        + createAppointment(CreateAppointmentRequest): AppointmentDto
+        + cancelAppointment(String, UUID, String): AppointmentDto
+        + rescheduleAppointment(String, LocalDateTime, UUID): AppointmentDto
+        + getAppointmentsByPatientId(UUID): List<AppointmentDto>
+        + getAppointmentsByDoctorId(String): List<AppointmentDto>
+    }
+
+    class AppointmentServiceImpl {
+        - appointmentRepository: AppointmentRepository
+        - strategyFactory: AppointmentStrategyFactory
+        - cancellationFactory: CancellationStrategyFactory
+        - rescheduleFactory: RescheduleStrategyFactory
+        - mapper: AppointmentMapper
+        __
+        + createAppointment(CreateAppointmentRequest): AppointmentDto
+        + cancelAppointment(String, UUID, String): AppointmentDto
+    }
+
+    interface QueueService {
+        + checkIn(String): QueueTicketDto
+        + callNextPatient(String, Integer): QueueTicketDto
+        + getQueueStatus(String): QueueStatusDto
+        + fastTrackPatient(Integer, String): QueueTicketDto
+        + markConsultationComplete(Integer): QueueTicketDto
+    }
+
+    class QueueServiceImpl {
+        - queueTicketRepository: QueueTicketRepository
+        - appointmentRepository: AppointmentRepository
+        - mapper: QueueTicketMapper
+        __
+        + checkIn(String): QueueTicketDto
+        + callNextPatient(String, Integer): QueueTicketDto
+    }
+
+    interface ScheduleService {
+        + createSchedule(ScheduleDto): ScheduleDto
+        + updateSchedule(ScheduleDto): ScheduleDto
+        + deleteSchedule(String): void
+        + getSchedulesByDoctorId(String): List<ScheduleDto>
+    }
+
+    class ScheduleServiceImpl {
+        - scheduleRepository: ScheduleRepository
+        - scheduleValidator: ScheduleValidator
+        - mapper: ScheduleMapper
+        - timeProvider: TimeProvider
+        __
+        + createSchedule(ScheduleDto): ScheduleDto
+    }
+
+    interface UserService {
+        + getUserById(UUID): UserDto
+        + getAllUsers(): List<UserDto>
+        + updateUser(UUID, UserDto): UserDto
+    }
+
+    interface NotificationService {
+        + sendAppointmentConfirmation(Appointment): void
+        + sendQueueNotification(QueueTicket): void
+        + sendCancellationNotification(Appointment): void
+    }
+
+    AppointmentServiceImpl ..|> AppointmentService
+    QueueServiceImpl ..|> QueueService
+    ScheduleServiceImpl ..|> ScheduleService
+}
+
+' ============================================
+' CONTROLLERS
+' ============================================
+
+package "Controllers - API Layer" <<Rectangle>> {
+    class AppointmentController {
+        - appointmentService: AppointmentService
+        __
+        + createAppointment(CreateAppointmentRequest): ResponseEntity
+        + getAppointmentsByPatientId(UUID): ResponseEntity
+        + cancelAppointment(String): ResponseEntity
+    }
+
+    class QueueController {
+        - queueService: QueueService
+        __
+        + checkIn(String): ResponseEntity
+        + callNextPatient(String, Integer): ResponseEntity
+        + getQueueStatus(String): ResponseEntity
+        + fastTrackPatient(Integer, String): ResponseEntity
+    }
+
+    class ScheduleController {
+        - scheduleService: ScheduleService
+        __
+        + createSchedule(ScheduleDto): ResponseEntity
+        + updateSchedule(ScheduleDto): ResponseEntity
+        + getSchedulesByDoctorId(String): ResponseEntity
+    }
+
+    class UserController {
+        - userService: UserService
+        __
+        + getUserById(UUID): ResponseEntity
+        + getAllUsers(): ResponseEntity
+    }
+
+    class AuthController {
+        - authService: AuthService
+        __
+        + login(LoginRequest): ResponseEntity
+        + register(RegisterRequest): ResponseEntity
+    }
+
+    AppointmentController --> AppointmentService
+    QueueController --> QueueService
+    ScheduleController --> ScheduleService
+    UserController --> UserService
+}
+
+' ============================================
+' STRATEGY PATTERN - APPOINTMENT CREATION
+' ============================================
+
+package "Strategy - Appointment Creation" <<Rectangle>> {
+    interface AppointmentCreationStrategy {
+        + getStrategyName(): String
+        + createAppointment(CreateAppointmentRequest): AppointmentDto
+    }
+
+    abstract class AbstractAppointmentStrategy {
+        # appointmentRepository: AppointmentRepository
+        # patientRepository: PatientRepository
+        # doctorRepository: DoctorRepository
+        # appointmentValidator: AppointmentValidator
+        # mapper: AppointmentMapper
+        __
+        + createAppointment(CreateAppointmentRequest): AppointmentDto
+        # preprocessRequest(CreateAppointmentRequest): void
+        # validateSpecificRequirements(CreateAppointmentRequest): void
+    }
+
+    class RegularAppointmentStrategy {
+        __
+        + getStrategyName(): String
+        # preprocessRequest(CreateAppointmentRequest): void
+        # validateSpecificRequirements(CreateAppointmentRequest): void
+    }
+
+    class WalkInAppointmentStrategy {
+        __
+        + getStrategyName(): String
+        # preprocessRequest(CreateAppointmentRequest): void
+        # validateSpecificRequirements(CreateAppointmentRequest): void
+    }
+
+    class AppointmentStrategyFactory {
+        - regularStrategy: RegularAppointmentStrategy
+        - walkInStrategy: WalkInAppointmentStrategy
+        __
+        + getStrategy(CreateAppointmentRequest): AppointmentCreationStrategy
+    }
+
+    AbstractAppointmentStrategy ..|> AppointmentCreationStrategy
+    RegularAppointmentStrategy --|> AbstractAppointmentStrategy
+    WalkInAppointmentStrategy --|> AbstractAppointmentStrategy
+    AppointmentStrategyFactory --> AppointmentCreationStrategy: <<creates>>
+}
+
+' ============================================
+' STRATEGY PATTERN - CANCELLATION
+' ============================================
+
+package "Strategy - Cancellation" <<Rectangle>> {
+    interface AppointmentCancellationStrategy {
+        + cancel(Appointment, CancellationContext): void
+    }
+
+    abstract class AbstractCancellationStrategy {
+        # appointmentRepository: AppointmentRepository
+        # notificationService: NotificationService
+        __
+        + cancel(Appointment, CancellationContext): void
+        # validateCancellation(Appointment, CancellationContext): void
+        # performAdditionalActions(Appointment, CancellationContext): void
+    }
+
+    class PatientCancellationStrategy {
+        __
+        # validateCancellation(Appointment, CancellationContext): void
+    }
+
+    class StaffCancellationStrategy {
+        __
+        # validateCancellation(Appointment, CancellationContext): void
+    }
+
+    class CancellationStrategyFactory {
+        - patientStrategy: PatientCancellationStrategy
+        - staffStrategy: StaffCancellationStrategy
+        __
+        + getStrategy(CancellationContext): AppointmentCancellationStrategy
+    }
+
+    class CancellationContext {
+        - isStaff: boolean
+        - cancelledBy: UUID
+        - reason: String
+        - now: LocalDateTime
+    }
+
+    AbstractCancellationStrategy ..|> AppointmentCancellationStrategy
+    PatientCancellationStrategy --|> AbstractCancellationStrategy
+    StaffCancellationStrategy --|> AbstractCancellationStrategy
+    CancellationStrategyFactory --> AppointmentCancellationStrategy: <<creates>>
+    AppointmentCancellationStrategy ..> CancellationContext: <<uses>>
+}
+
+' ============================================
+' VALIDATION - CHAIN OF RESPONSIBILITY
+' ============================================
+
+package "Validation - Chain of Responsibility" <<Rectangle>> {
+    interface ValidationRule<T> {
+        + validate(T): void
+    }
+
+    class AppointmentValidator {
+        - rules: List<ValidationRule<CreateAppointmentRequest>>
+        __
+        + validateCreate(CreateAppointmentRequest): void
+    }
+
+    class RequiredFieldsValidationRule {
+        __
+        + validate(CreateAppointmentRequest): void
+    }
+
+    class FutureTimeValidationRule {
+        - timeProvider: TimeProvider
+        __
+        + validate(CreateAppointmentRequest): void
+    }
+
+    class DoctorAvailabilityValidationRule {
+        - scheduleRepository: ScheduleRepository
+        - appointmentRepository: AppointmentRepository
+        __
+        + validate(CreateAppointmentRequest): void
+    }
+
+    class OneAppointmentPerDayValidationRule {
+        - appointmentRepository: AppointmentRepository
+        __
+        + validate(CreateAppointmentRequest): void
+    }
+
+    class ScheduleValidator {
+        - rules: List<ScheduleValidationRule>
+        __
+        + validate(ScheduleDto): void
+    }
+
+    RequiredFieldsValidationRule ..|> ValidationRule
+    FutureTimeValidationRule ..|> ValidationRule
+    DoctorAvailabilityValidationRule ..|> ValidationRule
+    OneAppointmentPerDayValidationRule ..|> ValidationRule
+
+    AppointmentValidator --> ValidationRule: <<chains>>
+    ScheduleValidator --> ValidationRule: <<chains>>
+}
+
+' ============================================
+' CONFIGURATION
+' ============================================
+
+package "Configuration" <<Rectangle>> {
+    class SecurityConfig {
+        + securityFilterChain(HttpSecurity): SecurityFilterChain
+        + passwordEncoder(): PasswordEncoder
+    }
+
+    class WebConfig {
+        + corsConfigurer(): WebMvcConfigurer
+    }
+
+    class WebClientConfig {
+        + webClient(): WebClient
+    }
+
+    class FlywayConfig {
+        + flyway(DataSource): Flyway
+    }
+}
+
+' ============================================
+' UTILITIES
+' ============================================
+
+package "Utilities" <<Rectangle>> {
+    interface TimeProvider {
+        + now(): LocalDateTime
+    }
+
+    class SystemTimeProvider {
+        __
+        + now(): LocalDateTime
+    }
+
+    class TimeRangeValidator {
+        __
+        + validateTimeRange(LocalDateTime, LocalDateTime): void
+    }
+
+    class EntityDtoConverter {
+        __
+        + convertToDto(Object): Object
+        + convertToEntity(Object): Object
+    }
+
+    SystemTimeProvider ..|> TimeProvider
+}
+
+' ============================================
+' MAPPERS
+' ============================================
+
+package "Mappers - Entity/DTO Conversion" <<Rectangle>> {
+    class AppointmentMapper {
+        __
+        + toDto(Appointment): AppointmentDto
+        + toEntity(CreateAppointmentRequest): Appointment
+    }
+
+    class QueueTicketMapper {
+        __
+        + toDto(QueueTicket): QueueTicketDto
+        + toEntity(QueueTicketDto): QueueTicket
+    }
+
+    class ScheduleMapper {
+        __
+        + toDto(Schedule): ScheduleDto
+        + toEntity(ScheduleDto): Schedule
+    }
+
+    class UserMapper {
+        __
+        + toDto(User): UserDto
+        + toEntity(UserDto): User
+    }
+}
+
+' ============================================
+' RELATIONSHIPS BETWEEN PACKAGES
+' ============================================
+
+AppointmentServiceImpl --> AppointmentRepository: <<uses>>
+AppointmentServiceImpl --> AppointmentStrategyFactory: <<uses>>
+AppointmentServiceImpl --> CancellationStrategyFactory: <<uses>>
+AppointmentServiceImpl --> AppointmentMapper: <<uses>>
+
+QueueServiceImpl --> QueueTicketRepository: <<uses>>
+QueueServiceImpl --> AppointmentRepository: <<uses>>
+QueueServiceImpl --> QueueTicketMapper: <<uses>>
+
+ScheduleServiceImpl --> ScheduleRepository: <<uses>>
+ScheduleServiceImpl --> ScheduleValidator: <<uses>>
+ScheduleServiceImpl --> ScheduleMapper: <<uses>>
+ScheduleServiceImpl --> TimeProvider: <<uses>>
+
+AbstractAppointmentStrategy --> AppointmentValidator: <<uses>>
+AbstractAppointmentStrategy --> AppointmentRepository: <<uses>>
+AbstractAppointmentStrategy --> AppointmentMapper: <<uses>>
+
+AppointmentValidator --> RequiredFieldsValidationRule: <<uses>>
+AppointmentValidator --> FutureTimeValidationRule: <<uses>>
+AppointmentValidator --> DoctorAvailabilityValidationRule: <<uses>>
+AppointmentValidator --> OneAppointmentPerDayValidationRule: <<uses>>
+
+FutureTimeValidationRule --> TimeProvider: <<uses>>
+
+' ============================================
+' NOTES
+' ============================================
+
+note top of User
+    **SINGLE_TABLE Inheritance Strategy**
+
+    All user types (Patient, ClinicStaff, SystemAdministrator)
+    are stored in ONE table: "user_profile"
+
+    Discriminator column: "role" (P/C/S)
+
+    **clinicId field:**
+    - Exists in base User table for ALL users
+    - Only populated (NOT NULL) for ClinicStaff (role='C')
+    - Set to NULL for Patient (role='P') and SystemAdministrator (role='S')
+
+    JPA automatically handles this through discriminator values.
+end note
+
+note top of QueueTicket
+    **Queue Management:**
+
+    One-to-one relationship with Appointment.
+    Tracks patient check-in and queue position.
+
+    Flow: CHECKED_IN → CALLED → COMPLETED
+    Alternative: CHECKED_IN → NO_SHOW
+    Fast-track: FAST_TRACKED → COMPLETED
+
+    Unique constraint on appointment_id.
+end note
+
+note top of AppointmentCreationStrategy
+    **Strategy Pattern:**
+
+    Open/Closed Principle - New appointment types
+    can be added by creating new strategy classes
+    without modifying existing code.
+
+    Examples: Regular, Walk-in, (future: Telemedicine)
+end note
+
+note top of ValidationRule
+    **Chain of Responsibility Pattern:**
+
+    Validators are chained together.
+    Each rule validates one specific concern.
+
+    Open/Closed Principle - New validation rules
+    can be added without modifying existing validators.
+end note
+
+note top of AppointmentDto
+    **DTO Pattern:**
+
+    DTOs separate API contract from internal entities.
+    - Prevents exposing database structure
+    - Filters sensitive data
+    - Combines data from multiple entities
+    - Enables API versioning
+end note
+
+note top of AppointmentRepository
+    **Repository Pattern with JPA:**
+
+    Repositories abstract database operations.
+    Spring Data JPA auto-generates implementations
+    from method names.
+
+    Custom JPQL queries use @Query annotation.
+end note
+
+@enduml
