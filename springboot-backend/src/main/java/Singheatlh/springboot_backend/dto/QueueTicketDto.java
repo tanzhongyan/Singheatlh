@@ -22,4 +22,6 @@ public class QueueTicketDto {
     private Boolean isFastTracked;
     private String fastTrackReason;
     private Integer ticketNumberForDay;
+    private LocalDateTime consultationStartTime;
+    private LocalDateTime consultationCompleteTime;
 }

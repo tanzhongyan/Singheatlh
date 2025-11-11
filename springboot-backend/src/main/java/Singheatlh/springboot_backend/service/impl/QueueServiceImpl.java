@@ -143,6 +143,7 @@ public class QueueServiceImpl implements QueueService {
             
             if (newQueueNumber == FIRST_POSITION) {
                 queueTicket.setStatus(QueueStatus.CALLED);
+                queueTicket.setConsultationStartTime(now);
             }
             
             queueTicket = queueTicketRepository.save(queueTicket);
@@ -282,6 +283,10 @@ public class QueueServiceImpl implements QueueService {
             List<QueueTicket> currentlyServing = queueTicketRepository.findCurrentQueueNumberByDoctorIdAndDate(doctorId, today);
             for (QueueTicket serving : currentlyServing) {
                 if (serving.getStatus() == QueueStatus.CALLED) {
+                    // Set consultation completion time
+                    if (serving.getConsultationCompleteTime() == null) {
+                        serving.setConsultationCompleteTime(LocalDateTime.now());
+                    }
                     serving.setStatus(QueueStatus.COMPLETED);
                     serving.setQueueNumber(EMPTY_QUEUE_NUMBER);
                     queueTicketRepository.save(serving);
@@ -315,6 +320,9 @@ public class QueueServiceImpl implements QueueService {
                 
             if (nextTicketOptional.isPresent()) {
                 QueueTicket nextTicket = nextTicketOptional.get();
+                if (nextTicket.getConsultationStartTime() == null) {
+                    nextTicket.setConsultationStartTime(LocalDateTime.now());
+                }
                 nextTicket.setStatus(QueueStatus.CALLED);
                 nextTicket = queueTicketRepository.save(nextTicket);
                 
@@ -335,6 +343,14 @@ public class QueueServiceImpl implements QueueService {
     public QueueTicketDto updateQueueStatus(Integer ticketId, QueueStatus status) {
         QueueTicket queueTicket = queueTicketRepository.findById(ticketId)
             .orElseThrow(() -> new ResourceNotFoundExecption("Queue ticket not found with id: " + ticketId));
+        
+        if (status == QueueStatus.CALLED && queueTicket.getConsultationStartTime() == null) {
+            queueTicket.setConsultationStartTime(LocalDateTime.now());
+        }
+        
+        if (status == QueueStatus.COMPLETED && queueTicket.getConsultationCompleteTime() == null) {
+            queueTicket.setConsultationCompleteTime(LocalDateTime.now());
+        }
         
         queueTicket.setStatus(status);
         queueTicket = queueTicketRepository.save(queueTicket);

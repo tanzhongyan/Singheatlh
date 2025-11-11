@@ -54,6 +54,12 @@ public class QueueTicket {
     @Column(name = "ticket_number_for_day")
     private Integer ticketNumberForDay;
     
+    @Column(name = "consultation_start_time")
+    private LocalDateTime consultationStartTime;
+    
+    @Column(name = "consultation_complete_time")
+    private LocalDateTime consultationCompleteTime;
+    
     // Relationship with Appointment (EAGER fetch to access related data)
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "appointment_id", insertable = false, updatable = false)

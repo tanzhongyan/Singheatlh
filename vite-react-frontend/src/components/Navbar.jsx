@@ -121,6 +121,12 @@ const Navbar = () => {
                         Now Serving
                       </Link>
                     </li>
+                    <li className="nav-item">
+                      <Link className="nav-link" to="/staff/monitoring">
+                        <i className="bi bi-graph-up me-1"></i>
+                        Monitoring
+                      </Link>
+                    </li>
                   </>
                 )}
 

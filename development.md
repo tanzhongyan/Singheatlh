@@ -176,7 +176,8 @@ ORDER BY installed_rank;
 - **Tables:** Clinic, User_Profile, Doctor, Schedule, Appointment, Queue_Ticket, Medical_Summary
 - **Constraints:** All primary keys, foreign keys, check constraints
 - **Indexes:** 13 performance indexes
-- **Queue_Ticket Status Constraint:** Valid statuses are `CHECKED_IN`, `CALLED`, `IN_CONSULTATION`, `COMPLETED`, `NO_SHOW`, `FAST_TRACKED`
+- **Queue_Ticket Status Constraint:** Valid statuses are `CHECKED_IN`, `CALLED`, `COMPLETED`, `NO_SHOW`, `FAST_TRACKED`
+- **Note:** `CALLED` status indicates patient is being seen by doctor
 
 ### V2: Auth Trigger
 - **Purpose:** Auto-create User_Profile when users sign up via Supabase
@@ -271,9 +272,8 @@ The script simulates realistic patient arrival patterns for today's appointments
 
 Queue tickets for appointments earlier today (before 2pm) will show progression through the queue:
 - `COMPLETED` - For appointments that happened 1+ hours ago
-- `IN_CONSULTATION` - For appointments 30-60 minutes ago
-- `CALLED` - For recent appointments
-- `CHECKED_IN` - For future appointments today
+- `CALLED` - For appointments being seen by doctor (patient is with doctor)
+- `CHECKED_IN` - For future appointments today (waiting in queue)
 
 **Configuration:**
 Edit these constants in `generate_mock_data.py` to adjust data volume:

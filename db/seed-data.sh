@@ -267,7 +267,7 @@ echo -e "${GREEN} Loaded $MEDICAL_COUNT medical summaries${NC}"
 echo ""
 echo -e "${BLUE}[10/10]${NC} Loading Queue_Ticket data..."
 docker exec -i -e PGPASSWORD="$DB_PASSWORD" "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" << 'EOF'
-\copy Queue_Ticket(appointment_id, status, check_in_time, queue_number, is_fast_tracked) FROM '/tmp/seed-data/queue_ticket.csv' CSV HEADER
+\copy Queue_Ticket(appointment_id, status, check_in_time,queue_number, is_fast_tracked, fast_track_reason, ticket_number_for_day, consultation_start_time, consultation_complete_time) FROM '/tmp/seed-data/queue_ticket.csv' CSV HEADER
 EOF
 QUEUE_COUNT=$(execute_sql_plain "SELECT COUNT(*) FROM Queue_Ticket;")
 echo -e "${GREEN} Loaded $QUEUE_COUNT queue tickets${NC}"

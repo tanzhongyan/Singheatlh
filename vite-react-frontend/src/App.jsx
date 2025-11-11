@@ -14,6 +14,7 @@ import AdminMonitoringPage from "./pages/admin/AdminMonitoringPage";
 import AdminBackupPage from "./pages/admin/AdminBackupPage";
 import StaffDashboardPage from "./pages/clinicStaff/StaffDashboardPage";
 import NowServingPage from "./pages/clinicStaff/NowServingPage";
+import ClinicMonitoringPage from "./pages/clinicStaff/ClinicMonitoringPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 import "./App.css";
@@ -50,6 +51,7 @@ function App() {
         <Route element={<ProtectedRoute allowedRoles={["C"]} />}>
           <Route path="/staff" element={<StaffDashboardPage />} />
           <Route path="/staff/now-serving" element={<NowServingPage />} />
+          <Route path="/staff/monitoring" element={<ClinicMonitoringPage />} />
         </Route>
 
         {/* Catch all - redirect to landing page */}

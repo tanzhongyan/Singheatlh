@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Tuple
 
 # Configuration
-OUTPUT_DIR = "db/sample-data"
+OUTPUT_DIR = "sample-data"
 TODAY = datetime(2025, 11, 9)
 SCHEDULE_END_DATE = datetime(2025, 12, 1)  # Schedules extend to Dec 1
 NUM_PATIENTS = 800
@@ -361,7 +361,7 @@ def get_arrival_scenario() -> str:
     return "on_time"
 
 
-def generate_queue_tickets(appointments: List[Dict]) -> Tuple[List[Dict], List[str]]:
+def generate_queue_tickets(appointments: List[Dict], doctors: List[Dict]) -> Tuple[List[Dict], List[str]]:
     """
     Generate queue_ticket.csv for today's upcoming appointments with realistic arrival scenarios.
     Returns: (tickets, no_show_appointment_ids)
@@ -369,7 +369,14 @@ def generate_queue_tickets(appointments: List[Dict]) -> Tuple[List[Dict], List[s
     tickets = []
     no_show_appointment_ids = []
     ticket_counter = 1
-    queue_number = 1001
+    queue_number = 1
+
+    # Create doctor lookup to get clinic_id from doctor_id
+    doctor_lookup = {d["doctor_id"]: d for d in doctors}
+
+    # Track ticket_number_for_day per (clinic_id, date) combination
+    # Format: (clinic_id, date_str) -> current_ticket_number
+    ticket_number_tracker = {}
 
     # Filter appointments for today with Upcoming status
     today_appointments = [
@@ -384,9 +391,35 @@ def generate_queue_tickets(appointments: List[Dict]) -> Tuple[List[Dict], List[s
         appt_time = datetime.strptime(appt["start_datetime"], "%Y-%m-%d %H:%M:%S")
         scenario = get_arrival_scenario()
 
+        # Get clinic_id from doctor
+        doctor_id = appt["doctor_id"]
+        clinic_id = int(doctor_lookup.get(doctor_id, {}).get("clinic_id", 1))
+        checkin_date_str = TODAY.strftime("%Y-%m-%d")
+
         if scenario == "no_show":
-            # Patient didn't show up - no queue ticket created
+            # Patient didn't show up - create queue ticket with NO_SHOW status
+            # Get ticket_number_for_day for this clinic and date
+            ticket_key = (clinic_id, checkin_date_str)
+            if ticket_key not in ticket_number_tracker:
+                ticket_number_tracker[ticket_key] = 0
+            ticket_number_tracker[ticket_key] += 1
+            ticket_number_for_day = ticket_number_tracker[ticket_key]
+
+            tickets.append({
+                "ticket_id": str(ticket_counter),
+                "appointment_id": appt["appointment_id"],
+                "status": "NO_SHOW",
+                "check_in_time": "",  # No check-in for no-shows
+                "queue_number": str(queue_number),
+                "is_fast_tracked": "FALSE",
+                "fast_track_reason": "",
+                "ticket_number_for_day": str(ticket_number_for_day),
+                "consultation_start_time": "",  # Empty for no-shows
+                "consultation_complete_time": ""  # Empty for no-shows
+            })
             no_show_appointment_ids.append(appt["appointment_id"])
+            ticket_counter += 1
+            queue_number += 1
             continue
 
         # Determine check-in time based on scenario
@@ -415,13 +448,33 @@ def generate_queue_tickets(appointments: List[Dict]) -> Tuple[List[Dict], List[s
             # Past appointment on today - should be in various stages
             if checkin_time < current_time - timedelta(hours=1):
                 status = "COMPLETED"
-            elif checkin_time < current_time - timedelta(minutes=30):
-                status = "IN_CONSULTATION"
             else:
+                # CALLED status means patient is being seen by doctor
                 status = "CALLED"
         else:
             # Future appointment today - still waiting
             status = "CHECKED_IN"
+
+        # Get ticket_number_for_day for this clinic and date
+        ticket_key = (clinic_id, checkin_date_str)
+        if ticket_key not in ticket_number_tracker:
+            ticket_number_tracker[ticket_key] = 0
+        ticket_number_tracker[ticket_key] += 1
+        ticket_number_for_day = ticket_number_tracker[ticket_key]
+
+        # Set consultation_start_time (same date as check_in_time, set when status is CALLED or COMPLETED)
+        consultation_start_time = ""
+        consultation_complete_time = ""
+
+        if status in ["CALLED", "COMPLETED"]:
+            # Consultation starts when patient is called (same date and time as check-in)
+            consultation_start_time = checkin_time.strftime("%Y-%m-%d %H:%M:%S")
+
+            if status == "COMPLETED":
+                # Consultation complete time is 10-15 minutes after consultation start
+                consultation_duration = random.randint(10, 15)
+                consultation_complete_time_dt = checkin_time + timedelta(minutes=consultation_duration)
+                consultation_complete_time = consultation_complete_time_dt.strftime("%Y-%m-%d %H:%M:%S")
 
         tickets.append({
             "ticket_id": str(ticket_counter),
@@ -430,7 +483,10 @@ def generate_queue_tickets(appointments: List[Dict]) -> Tuple[List[Dict], List[s
             "check_in_time": checkin_time.strftime("%Y-%m-%d %H:%M:%S"),
             "queue_number": str(queue_number),
             "is_fast_tracked": "FALSE",
-            "fast_track_reason": ""
+            "fast_track_reason": "",
+            "ticket_number_for_day": str(ticket_number_for_day),
+            "consultation_start_time": consultation_start_time,
+            "consultation_complete_time": consultation_complete_time
         })
 
         ticket_counter += 1
@@ -486,7 +542,7 @@ def main():
               ["summary_id", "appointment_id", "treatment_summary"])
 
     print("\nGenerating queue_ticket.csv...")
-    tickets, no_show_ids = generate_queue_tickets(appointments)
+    tickets, no_show_ids = generate_queue_tickets(appointments, doctors)
 
     # Update appointments that were no-shows
     if no_show_ids:
@@ -499,10 +555,20 @@ def main():
         write_csv("appointment.csv", appointments,
                   ["appointment_id", "patient_id", "doctor_id", "start_datetime", "end_datetime", "status"])
 
-    # Only output columns matching the table
-    queue_ticket_table_fields = ["appointment_id", "status", "check_in_time", "queue_number", "is_fast_tracked"]
+    # Output columns matching the table (including new columns)
+    queue_ticket_table_fields = [
+        "appointment_id", 
+        "status", 
+        "check_in_time", 
+        "queue_number", 
+        "is_fast_tracked",
+        "fast_track_reason",
+        "ticket_number_for_day",
+        "consultation_start_time",
+        "consultation_complete_time"
+    ]
     queue_ticket_table_data = [
-        {k: t[k] for k in queue_ticket_table_fields} for t in tickets
+        {k: t.get(k, "") for k in queue_ticket_table_fields} for t in tickets
     ]
     write_csv("queue_ticket.csv", queue_ticket_table_data, queue_ticket_table_fields)
 
@@ -527,7 +593,7 @@ def main():
         print(f"    Queue Status Distribution:")
         for status, count in sorted(ticket_status_counts.items()):
             print(f"      - {status}: {count}")
-    print(f"  - No-shows: {len(no_show_ids)} patients didn't check in")
+    print(f"  - No-shows: {len(no_show_ids)} patients checked in but did not go for consultation")
 
 
 if __name__ == "__main__":

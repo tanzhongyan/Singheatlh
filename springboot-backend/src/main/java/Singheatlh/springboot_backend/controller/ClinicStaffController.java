@@ -1,77 +1,41 @@
 package Singheatlh.springboot_backend.controller;
 
-import Singheatlh.springboot_backend.dto.request.CreateClinicStaffRequest;
-import Singheatlh.springboot_backend.dto.ClinicStaffDto;
-import Singheatlh.springboot_backend.service.ClinicStaffService;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import Singheatlh.springboot_backend.dto.ClinicStatisticsDto;
+import Singheatlh.springboot_backend.service.ClinicMonitoringService;
 
-import java.util.List;
-import java.util.UUID;
+import java.time.LocalDate;
 
-@AllArgsConstructor
 @RestController
 @RequestMapping("/api/clinic-staff")
+@RequiredArgsConstructor
 public class ClinicStaffController {
-
-    private final ClinicStaffService clinicStaffService;
-
-
-    @PostMapping
-    public ResponseEntity<ClinicStaffDto> createClinicStaff(@RequestBody CreateClinicStaffRequest createClinicStaffRequest) {
-        ClinicStaffDto clinicStaffDto = ClinicStaffDto.builder()
-                .userId(UUID.fromString(createClinicStaffRequest.getId()))
-                .name(createClinicStaffRequest.getName())
-                .email(createClinicStaffRequest.getEmail())
-                .clinicId(createClinicStaffRequest.getClinicId())
-                .build();
-        ClinicStaffDto createdStaff = clinicStaffService.create(clinicStaffDto);
-        return ResponseEntity.ok(createdStaff);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<ClinicStaffDto> getClinicStaffById(@PathVariable String id) {
-        ClinicStaffDto staff = clinicStaffService.getById(id);
-        return ResponseEntity.ok(staff);
-    }
-
-    @GetMapping
-    public ResponseEntity<List<ClinicStaffDto>> getAllClinicStaff() {
-        List<ClinicStaffDto> staffList = clinicStaffService.getAllClinicStaff();
-        return ResponseEntity.ok(staffList);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<ClinicStaffDto> updateClinicStaff(@PathVariable String id,
-                                                            @RequestBody ClinicStaffDto clinicStaffDto) {
-        clinicStaffDto.setUserId(UUID.fromString(id)); // ensure path ID is used
-        ClinicStaffDto updatedStaff = clinicStaffService.update(clinicStaffDto);
-        return ResponseEntity.ok(updatedStaff);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteClinicStaff(@PathVariable String id) {
-        clinicStaffService.deleteClinicStaffBy(id);
-        return ResponseEntity.ok("Clinic staff deleted successfully!");
-    }
-
-    @GetMapping("/search")
-    public ResponseEntity<List<ClinicStaffDto>> searchClinicStaffByName(@RequestParam String name) {
-        List<ClinicStaffDto> staffList = clinicStaffService.getClinicStaffByName(name);
-        return ResponseEntity.ok(staffList);
-    }
-
-    @GetMapping("/clinic/{clinicId}")
-    public ResponseEntity<List<ClinicStaffDto>> getStaffByClinic(@PathVariable int clinicId) {
-        List<ClinicStaffDto> staffList = clinicStaffService.getClinicStaffByClinic(clinicId);
-        return ResponseEntity.ok(staffList);
-    }
-
-    @GetMapping("/email/{email}")
-    public ResponseEntity<ClinicStaffDto> getStaffByEmail(@PathVariable String email) {
-        ClinicStaffDto staff = clinicStaffService.getByEmail(email);
-        return ResponseEntity.ok(staff);
+    
+    private final ClinicMonitoringService clinicMonitoringService;
+    
+    /**
+     * Get monitoring statistics for a specific clinic
+     * @param clinicId The clinic ID
+     * @param date Optional date parameter (defaults to today)
+     * @return Clinic statistics
+     */
+    @GetMapping("/monitoring/statistics/{clinicId}")
+    public ResponseEntity<?> getClinicStatistics(
+            @PathVariable Integer clinicId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        try {
+            ClinicStatisticsDto statistics = clinicMonitoringService.getClinicStatistics(clinicId, date);
+            return ResponseEntity.ok(statistics);
+        } catch (Exception e) {
+            java.util.Map<String, String> errorResponse = new java.util.HashMap<>();
+            errorResponse.put("error", "Failed to fetch clinic statistics");
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("clinicId", clinicId.toString());
+            errorResponse.put("date", date != null ? date.toString() : "today");
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
     }
 }
-
