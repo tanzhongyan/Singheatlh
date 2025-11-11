@@ -7,10 +7,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
+import Singheatlh.springboot_backend.dto.PaginatedResponse;
 import Singheatlh.springboot_backend.dto.ScheduleDto;
 import Singheatlh.springboot_backend.dto.SlotDto;
 import Singheatlh.springboot_backend.entity.Appointment;
@@ -100,16 +104,9 @@ public class ScheduleServiceImpl implements
     }
 
     private String generateScheduleId() {
-        // Get the latest schedule ID and increment
-        List<Schedule> allSchedules = scheduleRepository.findAll();
-        if (allSchedules.isEmpty()) {
-            return "S000000001";
-        }
-
-        // Find the maximum ID
-        String maxId = allSchedules.stream()
-                .map(Schedule::getScheduleId)
-                .max(String::compareTo)
+        // Query database for maximum ID instead of fetching all schedules
+        // This is much more efficient, especially as data grows
+        String maxId = scheduleRepository.findMaxScheduleId()
                 .orElse("S000000000");
 
         // Extract number and increment
@@ -212,6 +209,47 @@ public class ScheduleServiceImpl implements
         return toDtoList(
                 scheduleRepository.findSchedulesInDateRange(startDate, endDate)
         );
+    }
+
+    @Override
+    public PaginatedResponse<ScheduleDto> getSchedulesWithPaginationByDoctorId(String doctorId, int page, int pageSize) {
+        Pageable pageable = PageRequest.of(page - 1, pageSize);
+        Page<Schedule> schedulesPage = scheduleRepository.findByDoctorIdPaginated(doctorId, pageable);
+
+        List<ScheduleDto> content = toDtoList(schedulesPage.getContent());
+
+        return PaginatedResponse.<ScheduleDto>builder()
+                .content(content)
+                .page(page)
+                .pageSize(pageSize)
+                .totalElements(schedulesPage.getTotalElements())
+                .totalPages(schedulesPage.getTotalPages())
+                .hasNextPage(schedulesPage.hasNext())
+                .hasPreviousPage(schedulesPage.hasPrevious())
+                .build();
+    }
+
+    @Override
+    public PaginatedResponse<ScheduleDto> getSchedulesWithPaginationByDoctorAndDateRange(
+            String doctorId,
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            int page,
+            int pageSize) {
+        Pageable pageable = PageRequest.of(page - 1, pageSize);
+        Page<Schedule> schedulesPage = scheduleRepository.findByDoctorIdAndDateRangePaginated(doctorId, startDate, endDate, pageable);
+
+        List<ScheduleDto> content = toDtoList(schedulesPage.getContent());
+
+        return PaginatedResponse.<ScheduleDto>builder()
+                .content(content)
+                .page(page)
+                .pageSize(pageSize)
+                .totalElements(schedulesPage.getTotalElements())
+                .totalPages(schedulesPage.getTotalPages())
+                .hasNextPage(schedulesPage.hasNext())
+                .hasPreviousPage(schedulesPage.hasPrevious())
+                .build();
     }
 
     // ========= Slot Service Methods ========

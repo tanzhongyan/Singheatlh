@@ -72,6 +72,15 @@ public class SystemAdministratorController {
         return ResponseEntity.ok(users);
     }
 
+    @GetMapping("/users/paginated")
+    public ResponseEntity<Object> getUsersPaginated(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String role) {
+        return ResponseEntity.ok(userService.getUsersWithPagination(page, pageSize, search, role));
+    }
+
     @GetMapping("/users/count")
     public ResponseEntity<Integer> getUserCount() {
         int count = userService.getUserCount();
@@ -110,6 +119,14 @@ public class SystemAdministratorController {
         return ResponseEntity.ok(doctors);
     }
 
+    @GetMapping("/doctors/paginated")
+    public ResponseEntity<Object> getDoctorsPaginated(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String search) {
+        return ResponseEntity.ok(doctorService.getDoctorsWithPagination(page, pageSize, search));
+    }
+
     @GetMapping("/doctors/count")
     public ResponseEntity<Integer> getDoctorCount() {
         int count = doctorService.getDoctorCount();
@@ -136,6 +153,14 @@ public class SystemAdministratorController {
     }
 
     // Clinic Management
+    @GetMapping("/clinics/paginated")
+    public ResponseEntity<Object> getClinicsPaginated(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String search) {
+        return ResponseEntity.ok(clinicManagementService.getClinicsWithPagination(page, pageSize, search));
+    }
+
     @PutMapping("/clinics/{clinicId}/hours")
     public ResponseEntity<ClinicDto> setClinicHours(@PathVariable Integer clinicId, @RequestBody UpdateClinicHoursRequest request) {
         ClinicDto updatedClinic = clinicManagementService.setClinicHours(clinicId, request.getOpeningHours(), request.getClosingHours());

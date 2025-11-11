@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Table, Button, Modal, Form, Row, Col } from "react-bootstrap";
 import apiClient from "../../api/apiClient";
 import AddDoctorModal from "../../components/admin/AddDoctorModal";
@@ -6,78 +6,53 @@ import EditDoctorModal from "../../components/admin/EditDoctorModal";
 import DoctorScheduleModal from "../../components/admin/DoctorScheduleModal";
 
 const DoctorManagementPage = () => {
-  const [doctors, setDoctors] = useState([]);
-  const [filteredDoctors, setFilteredDoctors] = useState([]);
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [searchText, setSearchText] = useState("");
-  const [sortBy, setSortBy] = useState("name");
-  const [sortOrder, setSortOrder] = useState("asc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const searchTimeoutRef = useRef(null);
 
   useEffect(() => {
-    fetchDoctors();
-  }, []);
+    fetchDoctors(currentPage, searchText);
+  }, [currentPage, searchText]);
 
-  useEffect(() => {
-    // Filter and sort doctors
-    let result = [...doctors];
-
-    // Apply search filter
-    if (searchText.trim()) {
-      const searchLower = searchText.toLowerCase();
-      result = result.filter(
-        (doctor) =>
-          doctor.name.toLowerCase().includes(searchLower) ||
-          (doctor.clinicName && doctor.clinicName.toLowerCase().includes(searchLower))
-      );
-    }
-
-    // Apply sorting
-    result.sort((a, b) => {
-      let aValue, bValue;
-
-      switch (sortBy) {
-        case "name":
-          aValue = a.name.toLowerCase();
-          bValue = b.name.toLowerCase();
-          break;
-        case "clinic":
-          aValue = (a.clinicName || "").toLowerCase();
-          bValue = (b.clinicName || "").toLowerCase();
-          break;
-        case "duration":
-          aValue = a.appointmentDurationInMinutes;
-          bValue = b.appointmentDurationInMinutes;
-          break;
-        default:
-          aValue = a.name.toLowerCase();
-          bValue = b.name.toLowerCase();
-      }
-
-      if (aValue < bValue) {
-        return sortOrder === "asc" ? -1 : 1;
-      }
-      if (aValue > bValue) {
-        return sortOrder === "asc" ? 1 : -1;
-      }
-      return 0;
-    });
-
-    setFilteredDoctors(result);
-  }, [doctors, searchText, sortBy, sortOrder]);
-
-  const fetchDoctors = async () => {
+  const fetchDoctors = useCallback(async (page, search) => {
+    setError(null);
     try {
+      const params = new URLSearchParams({
+        page,
+        pageSize,
+        ...(search && { search }),
+      });
+
       const response = await apiClient.get(
-        "/api/system-administrators/doctors"
+        `/api/system-administrators/doctors/paginated?${params.toString()}`
       );
-      setDoctors(response.data);
-    } catch (error) {
-      console.error("Failed to fetch doctors:", error);
+      setData(response.data);
+    } catch (err) {
+      setError(err.message || "Failed to fetch doctors");
+      console.error("Failed to fetch doctors:", err);
     }
+  }, [pageSize]);
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchText(value);
+    setCurrentPage(1);
+
+    // Debounce search
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    searchTimeoutRef.current = setTimeout(() => {
+      fetchDoctors(1, value);
+    }, 500);
   };
 
   const handleEditClick = (doctor) => {
@@ -101,13 +76,46 @@ const DoctorManagementPage = () => {
       await apiClient.delete(
         `/api/system-administrators/doctors/${selectedDoctor.doctorId}`
       );
-      fetchDoctors();
       setShowDeleteModal(false);
       setSelectedDoctor(null);
+      fetchDoctors(currentPage, searchText);
     } catch (error) {
       console.error("Failed to delete doctor:", error);
+      alert("Failed to delete doctor. Please try again.");
     }
   };
+
+  // Pagination helper
+  const getPageNumbers = () => {
+    if (!data) return [];
+    const totalPages = data.totalPages;
+    const pages = [];
+
+    pages.push(1);
+    const startPage = Math.max(2, currentPage - 1);
+    const endPage = Math.min(totalPages - 1, currentPage + 1);
+
+    if (startPage > 2) {
+      pages.push("...");
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+
+    if (endPage < totalPages - 1) {
+      pages.push("...");
+    }
+
+    if (totalPages > 1) {
+      pages.push(totalPages);
+    }
+
+    return pages;
+  };
+
+  const doctors = data?.content || [];
+  const pageNumbers = getPageNumbers();
 
   return (
     <div>
@@ -121,109 +129,151 @@ const DoctorManagementPage = () => {
       {/* Filter and Search Controls */}
       <div className="card mb-4 p-3">
         <Row className="g-3">
-          <Col md={5}>
+          <Col md={12}>
             <Form.Group>
               <Form.Label className="small fw-semibold">Search by Doctor Name or Clinic</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="Search..."
+                placeholder="Search... (updates as you type)"
                 value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
+                onChange={handleSearchChange}
               />
-            </Form.Group>
-          </Col>
-          <Col md={4}>
-            <Form.Group>
-              <Form.Label className="small fw-semibold">Sort By</Form.Label>
-              <Form.Select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
-                <option value="name">Doctor Name</option>
-                <option value="clinic">Clinic Name</option>
-                <option value="duration">Appointment Duration</option>
-              </Form.Select>
-            </Form.Group>
-          </Col>
-          <Col md={3}>
-            <Form.Group>
-              <Form.Label className="small fw-semibold">Order</Form.Label>
-              <Form.Select
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)}
-              >
-                <option value="asc">Ascending</option>
-                <option value="desc">Descending</option>
-              </Form.Select>
             </Form.Group>
           </Col>
         </Row>
       </div>
 
-      <Table striped bordered hover style={{ tableLayout: 'auto' }}>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Clinic</th>
-            <th style={{ width: '100px' }}>Duration (min)</th>
-            <th style={{ width: '200px' }}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredDoctors.length > 0 ? (
-            filteredDoctors.map((doctor) => (
-              <tr key={doctor.doctorId}>
-                <td style={{ wordBreak: 'break-word' }}>{doctor.name}</td>
-                <td style={{ wordBreak: 'break-word' }}>{doctor.clinicName || `Clinic #${doctor.clinicId}`}</td>
-                <td>{doctor.appointmentDurationInMinutes}</td>
-                <td>
-                  <Button
-                    variant="info"
-                    size="sm"
-                    className="me-2"
-                    onClick={() => handleScheduleClick(doctor)}
-                  >
-                    Schedule
-                  </Button>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    className="me-2"
-                    onClick={() => handleEditClick(doctor)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => handleDeleteClick(doctor)}
-                  >
-                    Delete
-                  </Button>
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="4" className="text-center text-muted py-4">
-                No doctors found matching your filters.
-              </td>
-            </tr>
+      {/* Error State */}
+      {error && (
+        <div className="alert alert-danger" role="alert">
+          {error}
+        </div>
+      )}
+
+      {/* Doctors Table */}
+      {data && (
+        <>
+          {/* Result counter */}
+          {data && (
+            <div className="mb-3 text-muted small">
+              Showing {doctors.length > 0 ? (currentPage - 1) * pageSize + 1 : 0}-
+              {Math.min(currentPage * pageSize, data.totalElements)} of {data.totalElements} doctors
+            </div>
           )}
-        </tbody>
-      </Table>
+
+          <Table striped bordered hover style={{ tableLayout: "auto" }}>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Clinic</th>
+                <th style={{ width: "100px" }}>Duration (min)</th>
+                <th style={{ width: "280px" }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {doctors.length > 0 ? (
+                doctors.map((doctor) => (
+                  <tr key={doctor.doctorId}>
+                    <td style={{ wordBreak: "break-word" }}>{doctor.name}</td>
+                    <td style={{ wordBreak: "break-word" }}>
+                      {doctor.clinicName || `Clinic #${doctor.clinicId}`}
+                    </td>
+                    <td>{doctor.appointmentDurationInMinutes}</td>
+                    <td style={{ display: "flex", gap: "6px", flexWrap: "nowrap" }}>
+                      <Button
+                        variant="info"
+                        size="sm"
+                        onClick={() => handleScheduleClick(doctor)}
+                        style={{ flex: "0 0 auto" }}
+                      >
+                        Schedule
+                      </Button>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => handleEditClick(doctor)}
+                        style={{ flex: "0 0 auto" }}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleDeleteClick(doctor)}
+                        style={{ flex: "0 0 auto" }}
+                      >
+                        Delete
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="4" className="text-center text-muted py-4">
+                    No doctors found matching your filters.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </Table>
+
+          {/* Pagination Controls */}
+          {data && data.totalPages > 1 && (
+            <div className="d-flex justify-content-center align-items-center gap-2 mt-4 mb-3">
+              <Button
+                variant="outline-secondary"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={!data.hasPreviousPage}
+              >
+                ← Previous
+              </Button>
+
+              <div className="d-flex gap-1">
+                {pageNumbers.map((pageNum, idx) => (
+                  <React.Fragment key={idx}>
+                    {pageNum === "..." ? (
+                      <span className="px-2">...</span>
+                    ) : (
+                      <Button
+                        variant={pageNum === currentPage ? "primary" : "outline-primary"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+
+              <Button
+                variant="outline-secondary"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(data.totalPages, prev + 1))}
+                disabled={!data.hasNextPage}
+              >
+                Next →
+              </Button>
+            </div>
+          )}
+        </>
+      )}
 
       <AddDoctorModal
         show={showAddModal}
         onHide={() => setShowAddModal(false)}
-        onDoctorAdded={fetchDoctors}
+        onDoctorAdded={() => {
+          setCurrentPage(1);
+          fetchDoctors(1, searchText);
+        }}
       />
 
       {selectedDoctor && (
         <EditDoctorModal
           show={showEditModal}
           onHide={() => setShowEditModal(false)}
-          onDoctorUpdated={fetchDoctors}
+          onDoctorUpdated={() => fetchDoctors(currentPage, searchText)}
           doctor={selectedDoctor}
         />
       )}

@@ -1,6 +1,7 @@
 package Singheatlh.springboot_backend.service.impl;
 
 import Singheatlh.springboot_backend.dto.DoctorDto;
+import Singheatlh.springboot_backend.dto.PaginatedResponse;
 import Singheatlh.springboot_backend.entity.Clinic;
 import Singheatlh.springboot_backend.entity.Doctor;
 import Singheatlh.springboot_backend.exception.ResourceNotFoundExecption;
@@ -9,6 +10,9 @@ import Singheatlh.springboot_backend.repository.ClinicRepository;
 import Singheatlh.springboot_backend.repository.DoctorRepository;
 import Singheatlh.springboot_backend.service.DoctorService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -102,6 +106,30 @@ public class DoctorServiceImpl implements DoctorService {
     @Override
     public int getDoctorCount() {
         return (int) doctorRepository.count();
+    }
+
+    @Override
+    public PaginatedResponse<DoctorDto> getDoctorsWithPagination(int page, int pageSize, String search) {
+        Pageable pageable = PageRequest.of(page - 1, pageSize);
+
+        // Build search pattern with wildcards
+        String searchPattern = (search != null && !search.isEmpty()) ? "%" + search + "%" : null;
+
+        Page<Doctor> doctorsPage = doctorRepository.findWithPaginationAndSearch(search, searchPattern, pageable);
+
+        List<DoctorDto> content = doctorsPage.getContent().stream()
+                .map(doctorMapper::toDto)
+                .collect(Collectors.toList());
+
+        return PaginatedResponse.<DoctorDto>builder()
+                .content(content)
+                .page(page)
+                .pageSize(pageSize)
+                .totalElements(doctorsPage.getTotalElements())
+                .totalPages(doctorsPage.getTotalPages())
+                .hasNextPage(doctorsPage.hasNext())
+                .hasPreviousPage(doctorsPage.hasPrevious())
+                .build();
     }
 
     private String generateDoctorId() {
