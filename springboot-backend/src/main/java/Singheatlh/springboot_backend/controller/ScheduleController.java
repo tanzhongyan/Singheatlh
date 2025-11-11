@@ -1,5 +1,6 @@
 package Singheatlh.springboot_backend.controller;
 
+import Singheatlh.springboot_backend.dto.PaginatedResponse;
 import Singheatlh.springboot_backend.dto.ScheduleDto;
 import Singheatlh.springboot_backend.dto.SlotDto;
 import Singheatlh.springboot_backend.entity.enums.ScheduleType;
@@ -66,6 +67,24 @@ public class ScheduleController {
     public ResponseEntity<List<ScheduleDto>> getSchedulesByDoctor(@PathVariable("doctorId") String doctorId) {
         List<ScheduleDto> schedules = scheduleService.getSchedulesByDoctorId(doctorId);
         return ResponseEntity.ok(schedules);
+    }
+
+    @GetMapping("/doctor/{doctorId}/paginated")
+    public ResponseEntity<Object> getSchedulesByDoctorPaginated(
+            @PathVariable String doctorId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        return ResponseEntity.ok(scheduleService.getSchedulesWithPaginationByDoctorId(doctorId, page, pageSize));
+    }
+
+    @GetMapping("/doctor/{doctorId}/paginated/date-range")
+    public ResponseEntity<Object> getSchedulesByDoctorAndDateRangePaginated(
+            @PathVariable String doctorId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        return ResponseEntity.ok(scheduleService.getSchedulesWithPaginationByDoctorAndDateRange(doctorId, startDate, endDate, page, pageSize));
     }
 
     @GetMapping("/doctor/{doctorId}/available")

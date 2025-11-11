@@ -1,5 +1,6 @@
 package Singheatlh.springboot_backend.service.impl;
 
+import Singheatlh.springboot_backend.dto.PaginatedResponse;
 import Singheatlh.springboot_backend.dto.UserDto;
 import Singheatlh.springboot_backend.entity.User;
 import Singheatlh.springboot_backend.entity.enums.Role;
@@ -8,6 +9,9 @@ import Singheatlh.springboot_backend.mapper.UserMapper;
 import Singheatlh.springboot_backend.repository.UserRepository;
 import Singheatlh.springboot_backend.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -79,6 +83,29 @@ public class UserServiceImpl implements UserService {
         return users.stream()
                 .map(userMapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public PaginatedResponse<UserDto> getUsersWithPagination(int page, int pageSize, String search, String role) {
+        Pageable pageable = PageRequest.of(page - 1, pageSize);
+
+        // Build search pattern with wildcards
+        String searchPattern = (search != null && !search.isEmpty()) ? "%" + search + "%" : null;
+
+        Page<User> usersPage = userRepository.findWithPaginationAndSearch(search, searchPattern, role, pageable);
+        List<UserDto> content = usersPage.getContent().stream()
+                .map(userMapper::toDto)
+                .collect(Collectors.toList());
+
+        return PaginatedResponse.<UserDto>builder()
+                .content(content)
+                .page(page)
+                .pageSize(pageSize)
+                .totalElements(usersPage.getTotalElements())
+                .totalPages(usersPage.getTotalPages())
+                .hasNextPage(usersPage.hasNext())
+                .hasPreviousPage(usersPage.hasPrevious())
+                .build();
     }
 
 }

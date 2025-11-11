@@ -1,6 +1,7 @@
 package Singheatlh.springboot_backend.service;
 
 import Singheatlh.springboot_backend.dto.DoctorDto;
+import Singheatlh.springboot_backend.dto.PaginatedResponse;
 
 import java.util.List;
 
@@ -18,4 +19,6 @@ public interface DoctorService {
     void deleteDoctor(String id);
 
     int getDoctorCount();
+
+    PaginatedResponse<DoctorDto> getDoctorsWithPagination(int page, int pageSize, String search);
 }

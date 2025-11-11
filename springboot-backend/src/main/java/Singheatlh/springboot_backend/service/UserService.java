@@ -1,5 +1,6 @@
 package Singheatlh.springboot_backend.service;
 
+import Singheatlh.springboot_backend.dto.PaginatedResponse;
 import Singheatlh.springboot_backend.dto.UserDto;
 import Singheatlh.springboot_backend.entity.enums.Role;
 
@@ -19,4 +20,6 @@ public interface UserService {
     int getUserCount();
 
     List<UserDto> getUsersByRole(Role role);
+
+    PaginatedResponse<UserDto> getUsersWithPagination(int page, int pageSize, String search, String role);
 }

@@ -3,6 +3,7 @@ package Singheatlh.springboot_backend.service;
 import java.util.List;
 
 import Singheatlh.springboot_backend.dto.ClinicDto;
+import Singheatlh.springboot_backend.dto.PaginatedResponse;
 
 public interface ClinicManagementService {
 
@@ -35,4 +36,7 @@ public interface ClinicManagementService {
 
     // Get Clinic Count
     int getClinicCount();
+
+    // Get clinics with pagination and search
+    PaginatedResponse<ClinicDto> getClinicsWithPagination(int page, int pageSize, String search);
 }

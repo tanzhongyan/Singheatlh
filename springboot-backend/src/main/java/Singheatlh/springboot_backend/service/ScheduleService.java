@@ -1,5 +1,6 @@
 package Singheatlh.springboot_backend.service;
 
+import Singheatlh.springboot_backend.dto.PaginatedResponse;
 import Singheatlh.springboot_backend.dto.ScheduleDto;
 import Singheatlh.springboot_backend.dto.SlotDto;
 import Singheatlh.springboot_backend.entity.enums.ScheduleType;
@@ -32,6 +33,16 @@ public interface ScheduleService {
 
     // Validation
     boolean hasOverlappingSchedule(String doctorId, LocalDateTime startTime, LocalDateTime endTime);
+
+    // Pagination
+    PaginatedResponse<ScheduleDto> getSchedulesWithPaginationByDoctorId(String doctorId, int page, int pageSize);
+    PaginatedResponse<ScheduleDto> getSchedulesWithPaginationByDoctorAndDateRange(
+            String doctorId,
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            int page,
+            int pageSize
+    );
 
     /*
      * Get schedules in slots
