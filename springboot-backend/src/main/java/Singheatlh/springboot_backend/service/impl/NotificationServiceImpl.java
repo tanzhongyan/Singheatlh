@@ -10,6 +10,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 import Singheatlh.springboot_backend.dto.EmailRequest;
 import Singheatlh.springboot_backend.dto.EmailResponse;
 import Singheatlh.springboot_backend.entity.Appointment;
@@ -44,16 +47,22 @@ public class NotificationServiceImpl implements NotificationService {
     
     @Override
     public void sendQueueNotification3Away(QueueTicket queueTicket) {
+        String patientName = getPatientName(queueTicket);
         String doctorName = getDoctorName(queueTicket);
+        String appointmentDetails = getAppointmentDetails(queueTicket);
+        
         String subject = "Queue Update - 3 Patients Away";
         String message = String.format(
             "Ticket Number: %s\n\n" +
-            "Dear Patient,\n\n" +
+            "Dear %s,\n\n" +
+            "%s\n\n" +
             "Doctor: %s\n\n" +
             "You are currently 3 patients away from being called. " +
             "Please proceed closer to the consultation room.\n\n" +
             "Thank you for your patience.",
             queueTicket.getTicketNumberForDay(),
+            patientName,
+            appointmentDetails,
             doctorName
         );
         
@@ -63,16 +72,22 @@ public class NotificationServiceImpl implements NotificationService {
     
     @Override
     public void sendQueueNotificationNext(QueueTicket queueTicket) {
+        String patientName = getPatientName(queueTicket);
         String doctorName = getDoctorName(queueTicket);
+        String appointmentDetails = getAppointmentDetails(queueTicket);
+        
         String subject = "Queue Update - You're Next!";
         String message = String.format(
             "Ticket Number: %s\n\n" +
-            "Dear Patient,\n\n" +
+            "Dear %s,\n\n" +
+            "%s\n\n" +
             "Doctor: %s\n\n" +
             "You are next in line. " +
             "Please be ready and stay close to the consultation room.\n\n" +
             "Thank you for your patience.",
             queueTicket.getTicketNumberForDay(),
+            patientName,
+            appointmentDetails,
             doctorName
         );
         
@@ -82,16 +97,22 @@ public class NotificationServiceImpl implements NotificationService {
     
     @Override
     public void sendQueueCalledNotification(QueueTicket queueTicket) {
+        String patientName = getPatientName(queueTicket);
         String doctorName = getDoctorName(queueTicket);
+        String appointmentDetails = getAppointmentDetails(queueTicket);
+        
         String subject = "Queue Called - Your Turn Now!";
         String message = String.format(
             "Ticket Number: %s\n\n" +
-            "Dear Patient,\n\n" +
+            "Dear %s,\n\n" +
+            "%s\n\n" +
             "Doctor: %s\n\n" +
             "It's your turn now. " +
             "Please proceed to the consultation room immediately.\n\n" +
             "Thank you for your cooperation.",
             queueTicket.getTicketNumberForDay(),
+            patientName,
+            appointmentDetails,
             doctorName
         );
         
@@ -101,11 +122,15 @@ public class NotificationServiceImpl implements NotificationService {
     
     @Override
     public void sendFastTrackNotification(QueueTicket queueTicket) {
+        String patientName = getPatientName(queueTicket);
         String doctorName = getDoctorName(queueTicket);
+        String appointmentDetails = getAppointmentDetails(queueTicket);
+        
         String subject = "Queue Update - You've Been Fast-Tracked!";
         String message = String.format(
             "Ticket Number: %s\n\n" +
-            "Dear Patient,\n\n" +
+            "Dear %s,\n\n" +
+            "%s\n\n" +
             "Doctor: %s\n\n" +
             "Due to your situation! You have been fast-tracked in the queue.\n\n" +
             "Reason: %s\n\n" +
@@ -113,6 +138,8 @@ public class NotificationServiceImpl implements NotificationService {
             "Stay close to the consultation room.\n\n" +
             "Thank you for your patience.",
             queueTicket.getTicketNumberForDay(),
+            patientName,
+            appointmentDetails,
             doctorName,
             queueTicket.getFastTrackReason() != null ? queueTicket.getFastTrackReason() : "Priority/Emergency"
         );
@@ -120,13 +147,108 @@ public class NotificationServiceImpl implements NotificationService {
         // Send Email via SMU Lab Notification Service
         sendEmail(queueTicket, subject, message);
     }
+    
+    @Override
+    public void sendCheckInConfirmationNotification(QueueTicket queueTicket) {
+        String patientName = getPatientName(queueTicket);
+        String appointmentDetails = getAppointmentDetails(queueTicket);
+        Integer queuePosition = queueTicket.getQueueNumber();
+        
+        String subject = "Check-in Confirmation";
+        String message;
+        
+        // Different message if patient is immediately called vs. waiting in queue
+        if (queuePosition != null && queuePosition == 1) {
+            message = String.format(
+                "Ticket Number: %s\n\n" +
+                "Dear %s,\n\n" +
+                "%s\n\n" +
+                "You have successfully checked in!\n\n" +
+                "Great news! The doctor is ready to see you now. " +
+                "Please proceed to the consultation room immediately.\n\n" +
+                "Thank you for your promptness.",
+                queueTicket.getTicketNumberForDay(),
+                patientName,
+                appointmentDetails
+            );
+        } else {
+            // Calculate estimated people ahead
+            int peopleAhead = (queuePosition != null && queuePosition > 0) ? queuePosition - 1 : 0;
+            
+            message = String.format(
+                "Ticket Number: %s\n\n" +
+                "Dear %s,\n\n" +
+                "%s\n\n" +
+                "You have successfully checked in!\n\n" +
+                "Current Queue Position: %d\n" +
+                "Number of patients ahead: %d\n\n" +
+                "You will receive notifications as your turn approaches. " +
+                "Please stay nearby and wait for further updates.\n\n" +
+                "Thank you for your patience.",
+                queueTicket.getTicketNumberForDay(),
+                patientName,
+                appointmentDetails,
+                queuePosition != null ? queuePosition : 0,
+                peopleAhead
+            );
+        }
+        
+        // Send Email via SMU Lab Notification Service
+        sendEmail(queueTicket, subject, message);
+    }
 
+    private String getPatientName(QueueTicket queueTicket) {
+        try {
+            java.util.UUID patientId = queueTicket.getPatientId();
+            
+            if (patientId == null && queueTicket.getAppointment() != null) {
+                patientId = queueTicket.getAppointment().getPatientId();
+            }
+            
+            if (patientId != null) {
+                Patient patient = patientRepository.findById(patientId).orElse(null);
+                if (patient != null && patient.getName() != null && !patient.getName().trim().isEmpty()) {
+                    return patient.getName();
+                }
+            }
+        } catch (Exception e) {
+            // Fallback to generic greeting
+        }
+        return "Patient";
+    }
+    
     private String getDoctorName(QueueTicket queueTicket) {
         if (queueTicket.getAppointment() != null && queueTicket.getAppointment().getDoctor() != null) {
             String name = queueTicket.getAppointment().getDoctor().getName();
             return name != null && !name.trim().isEmpty() ? name : "Unknown Doctor";
         }
         return "Unknown Doctor";
+    }
+    
+    private String getAppointmentDetails(QueueTicket queueTicket) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy 'at' h:mm a");
+        StringBuilder details = new StringBuilder();
+        
+        try {
+            // Check-in time
+            LocalDateTime checkInTime = queueTicket.getCheckInTime();
+            if (checkInTime != null) {
+                details.append("Check-in Time: ").append(checkInTime.format(formatter)).append("\n");
+            }
+            
+            // Appointment date & time
+            if (queueTicket.getAppointment() != null) {
+                LocalDateTime appointmentTime = queueTicket.getAppointment().getStartDatetime();
+                if (appointmentTime != null) {
+                    details.append("Appointment Time: ").append(appointmentTime.format(formatter));
+                }
+            }
+        } catch (Exception e) {
+            // Return minimal details if formatting fails
+            return "Appointment Details: Available in your records";
+        }
+        
+        return details.length() > 0 ? details.toString() : "Appointment Details: Available in your records";
     }
     
     /**

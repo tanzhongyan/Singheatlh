@@ -31,4 +31,10 @@ public interface NotificationService {
      * @param queueTicket The queue ticket of the fast-tracked patient to notify
      */
     void sendFastTrackNotification(QueueTicket queueTicket);
+    
+    /**
+     * Send email notification when patient first checks in, informing them of their queue position
+     * @param queueTicket The queue ticket of the patient who just checked in
+     */
+    void sendCheckInConfirmationNotification(QueueTicket queueTicket);
 }

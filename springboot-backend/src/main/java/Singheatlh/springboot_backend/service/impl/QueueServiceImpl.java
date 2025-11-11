@@ -154,6 +154,14 @@ public class QueueServiceImpl implements QueueService {
             queueTicket = queueTicketRepository.findByIdWithAppointment(queueTicket.getTicketId())
                 .orElseThrow(() -> new ResourceNotFoundExecption("Queue ticket not found after save"));
             
+            // Send check-in confirmation notification to the patient
+            if (notificationService != null) {
+                try {
+                    notificationService.sendCheckInConfirmationNotification(queueTicket);
+                } catch (Exception e) {
+                }
+            }
+            
             if (newQueueNumber == FIRST_POSITION || newQueueNumber == SECOND_POSITION || newQueueNumber == FOURTH_POSITION) {
                 processQueueNotifications(appointment.getDoctorId());
             }

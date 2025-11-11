@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Card, Row, Col } from "react-bootstrap";
 import { useAuth } from "../../contexts/AuthContext";
 import apiClient from "../../api/apiClient";
@@ -9,7 +9,17 @@ const ClinicMonitoringPage = () => {
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  // Helper function to get today's date in local timezone (YYYY-MM-DD format)
+  const getTodayLocalDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  
+  const [selectedDate, setSelectedDate] = useState(getTodayLocalDate());
 
   const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8", "#FF6B9D"];
 
@@ -56,13 +66,9 @@ const ClinicMonitoringPage = () => {
     return null;
   };
 
-  useEffect(() => {
-    if (userProfile?.clinicId) {
-      fetchData();
-    }
-  }, [userProfile, selectedDate]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    if (!userProfile?.clinicId) return;
+    
     try {
       setLoading(true);
       const response = await apiClient.get(
@@ -76,7 +82,11 @@ const ClinicMonitoringPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userProfile?.clinicId, selectedDate]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   if (loading && !statistics) {
     return (
@@ -151,7 +161,7 @@ const ClinicMonitoringPage = () => {
                     className="form-control"
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
-                    max={new Date().toISOString().split('T')[0]}
+                    max={getTodayLocalDate()}
                   />
                 </div>
               </div>

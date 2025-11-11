@@ -50,6 +50,18 @@ const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => 
     });
   };
 
+  // Returns true if the given datetime string is the same calendar date as "today" (in local timezone)
+  const isSameDayAsToday = (dateTimeString) => {
+    if (!dateTimeString) return false;
+    const appointmentDate = new Date(dateTimeString);
+    const today = new Date();
+    return (
+      appointmentDate.getFullYear() === today.getFullYear() &&
+      appointmentDate.getMonth() === today.getMonth() &&
+      appointmentDate.getDate() === today.getDate()
+    );
+  };
+
   const sortedAppointments = [...appointments].sort((a, b) => {
     const dateA = new Date(a.startDatetime);
     const dateB = new Date(b.startDatetime);
@@ -106,6 +118,31 @@ const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => 
       return;
     }
 
+    // Find the appointment to check its date
+    const appointment = appointments.find(a => a.appointmentId === appointmentId);
+    if (!appointment) {
+      setCheckInResult((prev) => ({
+        ...prev,
+        [appointmentId]: {
+          success: false,
+          message: 'Appointment not found.',
+        },
+      }));
+      return;
+    }
+
+    // Validate that the appointment date is today (in local timezone)
+    if (!isSameDayAsToday(appointment.startDatetime)) {
+      setCheckInResult((prev) => ({
+        ...prev,
+        [appointmentId]: {
+          success: false,
+          message: 'Check-in is only allowed for appointments scheduled for today.',
+        },
+      }));
+      return;
+    }
+
     try {
       setCheckInLoading((prev) => ({ ...prev, [appointmentId]: true }));
       setCheckInResult((prev) => ({ ...prev, [appointmentId]: undefined }));
@@ -143,6 +180,31 @@ const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => 
   const handleFastTrack = async (appointmentId) => {
     // Prevent double-click: check if already loading
     if (fastTrackLoading[appointmentId] || checkInLoading[appointmentId]) {
+      return;
+    }
+
+    // Find the appointment to check its date
+    const appointment = appointments.find(a => a.appointmentId === appointmentId);
+    if (!appointment) {
+      setCheckInResult((prev) => ({
+        ...prev,
+        [appointmentId]: {
+          success: false,
+          message: 'Appointment not found.',
+        },
+      }));
+      return;
+    }
+
+    // Validate that the appointment date is today (in local timezone)
+    if (!isSameDayAsToday(appointment.startDatetime)) {
+      setCheckInResult((prev) => ({
+        ...prev,
+        [appointmentId]: {
+          success: false,
+          message: 'Fast-track is only allowed for appointments scheduled for today.',
+        },
+      }));
       return;
     }
 
@@ -417,23 +479,25 @@ const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => 
                     <div className="d-grid gap-2 mt-3">
                       {(appointment.status || '').toUpperCase() === 'UPCOMING' && (
                         <>
-                          <button
-                            className="btn btn-primary btn-sm"
-                            onClick={() => handleCheckIn(appointment.appointmentId)}
-                            disabled={!!checkInLoading[appointment.appointmentId] || !!checkInResult[appointment.appointmentId]?.success || !!fastTrackLoading[appointment.appointmentId] || !!queueByAppointment[appointment.appointmentId]?.ticketId}
-                          >
-                            {checkInLoading[appointment.appointmentId] ? (
-                              <>
-                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                Checking in...
-                              </>
-                            ) : (
-                              <>
-                                <i className="bi bi-person-walking me-1"></i>
-                                Check-in
-                              </>
-                            )}
-                          </button>
+                          {isSameDayAsToday(appointment.startDatetime) && (
+                            <button
+                              className="btn btn-primary btn-sm"
+                              onClick={() => handleCheckIn(appointment.appointmentId)}
+                              disabled={!!checkInLoading[appointment.appointmentId] || !!checkInResult[appointment.appointmentId]?.success || !!fastTrackLoading[appointment.appointmentId] || !!queueByAppointment[appointment.appointmentId]?.ticketId}
+                            >
+                              {checkInLoading[appointment.appointmentId] ? (
+                                <>
+                                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                  Checking in...
+                                </>
+                              ) : (
+                                <>
+                                  <i className="bi bi-person-walking me-1"></i>
+                                  Check-in
+                                </>
+                              )}
+                            </button>
+                          )}
 
                           <button
                             className="btn btn-outline-danger btn-sm"
@@ -461,7 +525,8 @@ const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => 
                       {(() => {
                         const qNum = queueByAppointment[appointment.appointmentId]?.queueNumber;
                         const allowFastTrack = typeof qNum === 'undefined' || qNum > 2;
-                        if (!allowFastTrack) return null;
+                        const isToday = isSameDayAsToday(appointment.startDatetime);
+                        if (!allowFastTrack || !isToday) return null;
                         return (
                           <button
                             className="btn btn-warning btn-sm"
