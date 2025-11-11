@@ -12,7 +12,8 @@ from typing import List, Dict, Tuple
 
 # Configuration
 OUTPUT_DIR = "sample-data"
-TODAY = datetime(2025, 11, 9)
+# Use the actual current date/time when generating data
+TODAY = datetime.now()
 SCHEDULE_END_DATE = datetime(2025, 12, 1)  # Schedules extend to Dec 1
 NUM_PATIENTS = 800
 NUM_APPOINTMENTS = 5000
@@ -363,13 +364,15 @@ def get_arrival_scenario() -> str:
 
 def generate_queue_tickets(appointments: List[Dict], doctors: List[Dict]) -> Tuple[List[Dict], List[str]]:
     """
-    Generate queue_ticket.csv for today's upcoming appointments with realistic arrival scenarios.
+    Generate queue_ticket.csv for:
+      - COMPLETED appointments (today) with queue_number = 0
+      - ~50% of UPCOMING appointments (today) as CHECKED_IN with non-overlapping queue_number
+        assigned by ascending check-in time (1 = earliest)
     Returns: (tickets, no_show_appointment_ids)
     """
     tickets = []
     no_show_appointment_ids = []
     ticket_counter = 1
-    queue_number = 1
 
     # Create doctor lookup to get clinic_id from doctor_id
     doctor_lookup = {d["doctor_id"]: d for d in doctors}
@@ -378,110 +381,61 @@ def generate_queue_tickets(appointments: List[Dict], doctors: List[Dict]) -> Tup
     # Format: (clinic_id, date_str) -> current_ticket_number
     ticket_number_tracker = {}
 
-    # Filter appointments for today with Upcoming status
-    today_appointments = [
-        a for a in appointments
-        if a["status"] == "Upcoming" and a["start_datetime"].startswith(TODAY.strftime("%Y-%m-%d"))
-    ]
+    # Track queue_number per clinic per day for CHECKED_IN tickets only
+    # Format: (clinic_id, date_str) -> next_queue_number (starts from 1)
+    clinic_queue_number_tracker = {}
 
-    # Sort by start time for logical queue ordering
-    today_appointments.sort(key=lambda x: x["start_datetime"])
+    # Helper to fetch and increment ticket_number_for_day
+    def next_ticket_number_for_day(clinic_id: int, date_str: str) -> int:
+        key = (clinic_id, date_str)
+        if key not in ticket_number_tracker:
+            ticket_number_tracker[key] = 0
+        ticket_number_tracker[key] += 1
+        return ticket_number_tracker[key]
 
-    for appt in today_appointments:
+    # Helper to fetch and increment queue_number per clinic/day (for CHECKED_IN only)
+    def next_queue_number_for_clinic(clinic_id: int, date_str: str) -> int:
+        key = (clinic_id, date_str)
+        if key not in clinic_queue_number_tracker:
+            clinic_queue_number_tracker[key] = 1
+        current = clinic_queue_number_tracker[key]
+        clinic_queue_number_tracker[key] += 1
+        return current
+
+    today_str = TODAY.strftime("%Y-%m-%d")
+
+    # 1) COMPLETED appointments (for all dates present in appointments)
+    completed_all = [a for a in appointments if a["status"] == "Completed"]
+    completed_all.sort(key=lambda x: (x["start_datetime"]))
+
+    for appt in completed_all:
         appt_time = datetime.strptime(appt["start_datetime"], "%Y-%m-%d %H:%M:%S")
-        scenario = get_arrival_scenario()
 
         # Get clinic_id from doctor
         doctor_id = appt["doctor_id"]
         clinic_id = int(doctor_lookup.get(doctor_id, {}).get("clinic_id", 1))
-        checkin_date_str = TODAY.strftime("%Y-%m-%d")
+        checkin_date_str = appt_time.strftime("%Y-%m-%d")
 
-        if scenario == "no_show":
-            # Patient didn't show up - create queue ticket with NO_SHOW status
-            # Get ticket_number_for_day for this clinic and date
-            ticket_key = (clinic_id, checkin_date_str)
-            if ticket_key not in ticket_number_tracker:
-                ticket_number_tracker[ticket_key] = 0
-            ticket_number_tracker[ticket_key] += 1
-            ticket_number_for_day = ticket_number_tracker[ticket_key]
+        # Determine a realistic check-in time: 0-30 minutes before appointment start
+        minutes_before = random.randint(0, 30)
+        checkin_time = appt_time - timedelta(minutes=minutes_before)
+        status = "COMPLETED"
 
-            tickets.append({
-                "ticket_id": str(ticket_counter),
-                "appointment_id": appt["appointment_id"],
-                "status": "NO_SHOW",
-                "check_in_time": "",  # No check-in for no-shows
-                "queue_number": str(queue_number),
-                "is_fast_tracked": "FALSE",
-                "fast_track_reason": "",
-                "ticket_number_for_day": str(ticket_number_for_day),
-                "consultation_start_time": "",  # Empty for no-shows
-                "consultation_complete_time": ""  # Empty for no-shows
-            })
-            no_show_appointment_ids.append(appt["appointment_id"])
-            ticket_counter += 1
-            queue_number += 1
-            continue
+        # ticket_number_for_day increments per clinic per day
+        ticket_number_for_day = next_ticket_number_for_day(clinic_id, checkin_date_str)
 
-        # Determine check-in time based on scenario
-        if scenario == "early":
-            # Arrive 5-30 minutes early
-            minutes_offset = -random.randint(5, 30)
-        elif scenario == "on_time":
-            # Arrive 0-5 minutes early
-            minutes_offset = -random.randint(0, 5)
-        elif scenario == "late":
-            # Arrive 5-20 minutes late
-            minutes_offset = random.randint(5, 20)
-        elif scenario == "very_late":
-            # Arrive 20-40 minutes late
-            minutes_offset = random.randint(20, 40)
-        else:
-            minutes_offset = -10  # default
-
-        checkin_time = appt_time + timedelta(minutes=minutes_offset)
-
-        # Determine queue status based on current time and appointment time
-        # Assuming current time is around 2pm on TODAY
-        current_time = TODAY.replace(hour=14, minute=0, second=0)
-
-        if appt_time < current_time:
-            # Past appointment on today - should be in various stages
-            if checkin_time < current_time - timedelta(hours=1):
-                status = "COMPLETED"
-            else:
-                # CALLED status means patient is being seen by doctor
-                status = "CALLED"
-        else:
-            # Future appointment today - still waiting
-            status = "CHECKED_IN"
-
-        # Get ticket_number_for_day for this clinic and date
-        ticket_key = (clinic_id, checkin_date_str)
-        if ticket_key not in ticket_number_tracker:
-            ticket_number_tracker[ticket_key] = 0
-        ticket_number_tracker[ticket_key] += 1
-        ticket_number_for_day = ticket_number_tracker[ticket_key]
-
-        # Set consultation_start_time (same date as check_in_time, set when status is CALLED or COMPLETED)
-        consultation_start_time = ""
-        consultation_complete_time = ""
-
-        if status in ["CALLED", "COMPLETED"]:
-            # Consultation starts when patient is called (same date and time as check-in)
-            consultation_start_time = checkin_time.strftime("%Y-%m-%d %H:%M:%S")
-
-            if status == "COMPLETED":
-                # Consultation complete time is 10-15 minutes after consultation start
-                consultation_duration = random.randint(10, 15)
-                consultation_complete_time_dt = checkin_time + timedelta(minutes=consultation_duration)
-                consultation_complete_time = consultation_complete_time_dt.strftime("%Y-%m-%d %H:%M:%S")
+        # Consultation starts at check-in time (same date), completes 10-15 mins later
+        consultation_start_time = checkin_time.strftime("%Y-%m-%d %H:%M:%S")
+        consultation_duration = random.randint(10, 15)
+        consultation_complete_time_dt = checkin_time + timedelta(minutes=consultation_duration)
+        consultation_complete_time = consultation_complete_time_dt.strftime("%Y-%m-%d %H:%M:%S")
 
         tickets.append({
             "ticket_id": str(ticket_counter),
             "appointment_id": appt["appointment_id"],
             "status": status,
             "check_in_time": checkin_time.strftime("%Y-%m-%d %H:%M:%S"),
-            "queue_number": str(queue_number),
+            "queue_number": "0",  # Completed rows must have queue_number = 0
             "is_fast_tracked": "FALSE",
             "fast_track_reason": "",
             "ticket_number_for_day": str(ticket_number_for_day),
@@ -490,7 +444,62 @@ def generate_queue_tickets(appointments: List[Dict], doctors: List[Dict]) -> Tup
         })
 
         ticket_counter += 1
-        queue_number += 1
+
+    # 2) ~50% of UPCOMING appointments for TODAY: generate CHECKED_IN tickets
+    upcoming_today = [
+        a for a in appointments
+        if a["status"] == "Upcoming" and a["start_datetime"].startswith(today_str)
+    ]
+
+    # Choose roughly half at random
+    selected_upcoming = [a for a in upcoming_today if random.random() < 0.5]
+
+    # For each selected upcoming appointment, compute a check-in time (0-30 mins before appt)
+    upcoming_entries = []
+    for appt in selected_upcoming:
+        appt_time = datetime.strptime(appt["start_datetime"], "%Y-%m-%d %H:%M:%S")
+        doctor_id = appt["doctor_id"]
+        clinic_id = int(doctor_lookup.get(doctor_id, {}).get("clinic_id", 1))
+        checkin_date_str = today_str
+
+        minutes_before = random.randint(0, 30)
+        checkin_time = appt_time - timedelta(minutes=minutes_before)
+
+        upcoming_entries.append({
+            "appt": appt,
+            "clinic_id": clinic_id,
+            "checkin_date_str": checkin_date_str,
+            "checkin_time": checkin_time
+        })
+
+    # Sort by clinic, then by check-in time; assign queue_number starting at 1 per clinic/day
+    upcoming_entries.sort(key=lambda x: (x["clinic_id"], x["checkin_time"]))
+
+    for entry in upcoming_entries:
+        appt = entry["appt"]
+        clinic_id = entry["clinic_id"]
+        checkin_date_str = entry["checkin_date_str"]
+        checkin_time = entry["checkin_time"]
+
+        # ticket_number_for_day increments per clinic per day
+        ticket_number_for_day = next_ticket_number_for_day(clinic_id, checkin_date_str)
+        # queue_number per clinic/day by ascending check-in time
+        q_number = next_queue_number_for_clinic(clinic_id, checkin_date_str)
+
+        tickets.append({
+            "ticket_id": str(ticket_counter),
+            "appointment_id": appt["appointment_id"],
+            "status": "CHECKED_IN",
+            "check_in_time": checkin_time.strftime("%Y-%m-%d %H:%M:%S"),
+            "queue_number": str(q_number),
+            "is_fast_tracked": "FALSE",
+            "fast_track_reason": "",
+            "ticket_number_for_day": str(ticket_number_for_day),
+            "consultation_start_time": "",         # Not started yet
+            "consultation_complete_time": ""       # Not completed
+        })
+
+        ticket_counter += 1
 
     return tickets, no_show_appointment_ids
 
@@ -588,7 +597,7 @@ def main():
     print(f"  - Schedules: {len(schedules)} (through {SCHEDULE_END_DATE.strftime('%Y-%m-%d')})")
     print(f"  - Appointments: {len(appointments)}")
     print(f"  - Medical Summaries: {len(summaries)}")
-    print(f"  - Queue Tickets: {len(tickets)} (for today)")
+    print(f"  - Queue Tickets: {len(tickets)}")
     if ticket_status_counts:
         print(f"    Queue Status Distribution:")
         for status, count in sorted(ticket_status_counts.items()):
