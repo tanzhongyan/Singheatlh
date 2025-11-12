@@ -39,10 +39,15 @@ const EditDoctorModal = ({ show, onHide, onDoctorUpdated, doctor }) => {
         if (!doctor) return;
         setError('');
 
+        if (!clinicId) {
+            setError('Please select a clinic');
+            return;
+        }
+
         const updatedDoctorData = {
             name,
-            clinicId: parseInt(clinicId.trim()),
-            appointmentDurationInMinutes: parseInt(appointmentDuration.trim())
+            clinicId: typeof clinicId === 'string' ? parseInt(clinicId) : clinicId,
+            appointmentDurationInMinutes: parseInt(appointmentDuration)
         };
 
         try {

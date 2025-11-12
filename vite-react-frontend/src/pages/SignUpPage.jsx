@@ -6,6 +6,8 @@ const SignUpPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [telephoneNumber, setTelephoneNumber] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -47,7 +49,12 @@ const SignUpPage = () => {
     setLoading(true);
 
     try {
-      const { error } = await signUp({ email, password });
+      const { error } = await signUp({
+        email,
+        password,
+        name: fullName || undefined,  // Optional field
+        telephoneNumber: telephoneNumber || undefined  // Optional field
+      });
       if (error) throw error;
 
       setMessage(
@@ -56,6 +63,8 @@ const SignUpPage = () => {
       setEmail("");
       setPassword("");
       setConfirmPassword("");
+      setFullName("");
+      setTelephoneNumber("");
 
       setTimeout(() => {
         navigate("/login");
@@ -110,7 +119,7 @@ const SignUpPage = () => {
                 <form onSubmit={handleSubmit}>
                   <div className="mb-3">
                     <label htmlFor="email" className="form-label fw-semibold">
-                      Email Address
+                      Email Address <span className="text-danger">*</span>
                     </label>
                     <input
                       type="email"
@@ -124,11 +133,39 @@ const SignUpPage = () => {
                   </div>
 
                   <div className="mb-3">
+                    <label htmlFor="fullName" className="form-label fw-semibold">
+                      Full Name <span className="text-muted">(Optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control form-control-lg"
+                      id="fullName"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+
+                  <div className="mb-3">
+                    <label htmlFor="telephoneNumber" className="form-label fw-semibold">
+                      Telephone Number <span className="text-muted">(Optional)</span>
+                    </label>
+                    <input
+                      type="tel"
+                      className="form-control form-control-lg"
+                      id="telephoneNumber"
+                      value={telephoneNumber}
+                      onChange={(e) => setTelephoneNumber(e.target.value)}
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
+
+                  <div className="mb-3">
                     <label
                       htmlFor="password"
                       className="form-label fw-semibold"
                     >
-                      Password
+                      Password <span className="text-danger">*</span>
                     </label>
                     <input
                       type="password"
@@ -147,7 +184,7 @@ const SignUpPage = () => {
                       htmlFor="confirmPassword"
                       className="form-label fw-semibold"
                     >
-                      Confirm Password
+                      Confirm Password <span className="text-danger">*</span>
                     </label>
                     <input
                       type="password"

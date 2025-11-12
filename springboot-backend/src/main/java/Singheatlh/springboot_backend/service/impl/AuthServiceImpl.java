@@ -57,7 +57,12 @@ public class AuthServiceImpl implements AuthService {
 
         // Create user in Supabase Auth - this will trigger handle_new_user() which creates User_Profile
         Map<String, Object> metadata = new HashMap<>();
-        metadata.put("name", signUpRequest.getName());
+        if (signUpRequest.getName() != null && !signUpRequest.getName().trim().isEmpty()) {
+            metadata.put("name", signUpRequest.getName());
+        }
+        if (signUpRequest.getTelephoneNumber() != null && !signUpRequest.getTelephoneNumber().trim().isEmpty()) {
+            metadata.put("telephone_number", signUpRequest.getTelephoneNumber());
+        }
         metadata.put("role", signUpRequest.getRole());
         if (signUpRequest.getClinicId() != null) {
             metadata.put("clinic_id", signUpRequest.getClinicId());

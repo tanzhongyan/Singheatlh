@@ -46,10 +46,10 @@ const EditUserModal = ({ show, onHide, onUserUpdated, user }) => {
         try {
             const userData = {
                 userId: user.userId,
-                name,
+                name: name || null,  // Allow null for name
                 email,
                 role: user.role,
-                telephoneNumber: telephoneNumber || null
+                telephoneNumber: telephoneNumber || null  // Allow null for telephone number
             };
 
             // Add clinicId for clinic staff
@@ -113,14 +113,13 @@ const EditUserModal = ({ show, onHide, onUserUpdated, user }) => {
                     </Form.Group>
 
                     <Form.Group className="mb-3">
-                        <Form.Label>Full Name *</Form.Label>
+                        <Form.Label>Full Name <span className="text-muted">(Optional)</span></Form.Label>
                         <Form.Control
                             type="text"
                             value={name}
                             onChange={e => setName(e.target.value.slice(0, 255))}
                             placeholder="Enter full name"
                             maxLength="255"
-                            required
                         />
                         <Form.Text className="text-muted">
                             {name.length}/255 characters
@@ -141,7 +140,7 @@ const EditUserModal = ({ show, onHide, onUserUpdated, user }) => {
                     </Form.Group>
 
                     <Form.Group className="mb-3">
-                        <Form.Label>Telephone Number</Form.Label>
+                        <Form.Label>Telephone Number <span className="text-muted">(Optional)</span></Form.Label>
                         <Form.Control
                             type="tel"
                             value={telephoneNumber}

@@ -14,7 +14,10 @@ public class SignUpRequest {
     @NotBlank
     private String password;
 
-    private String name;
+    // Optional user profile fields
+    private String name;  // Full Name (Optional)
+    private String telephoneNumber;  // Phone Number (Optional)
+
     private String role;
     private String username;
 
