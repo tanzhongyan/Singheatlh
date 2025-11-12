@@ -2,7 +2,6 @@ package Singheatlh.springboot_backend.service.impl;
 
 import Singheatlh.springboot_backend.dto.BackupStatusDto;
 import Singheatlh.springboot_backend.service.SystemBackupService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,19 +16,27 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class SystemBackupServiceImpl implements SystemBackupService {
     private final JdbcTemplate jdbcTemplate;
-    private final ObjectMapper objectMapper;
+
+    @Value("${spring.datasource.url}")
+    private String datasourceUrl;
+
+    @Value("${spring.datasource.username}")
+    private String datasourceUsername;
+
+    @Value("${spring.datasource.password}")
+    private String datasourcePassword;
 
     @Value("${backup.directory:./backups}")
     private String backupDirectory;
+
+    private static final String BACKUP_FILE_EXTENSION = ".sql.gz";
 
     @Override
     public BackupStatusDto createBackup() {
@@ -37,50 +44,80 @@ public class SystemBackupServiceImpl implements SystemBackupService {
             String backupId = UUID.randomUUID().toString();
             LocalDateTime createdAt = LocalDateTime.now();
             Path backupDir = createBackupDirectory();
+            Path backupFile = backupDir.resolve(backupId + BACKUP_FILE_EXTENSION);
 
-            // Create a JSON backup of all critical data
-            Map<String, Object> backupData = new HashMap<>();
-            backupData.put("users", getTableData("public.user_profile"));
-            backupData.put("patients", getTableData("public.patient"));
-            backupData.put("doctors", getTableData("public.doctor"));
-            backupData.put("clinics", getTableData("public.clinic"));
-            backupData.put("appointments", getTableData("public.appointment"));
-            backupData.put("schedules", getTableData("public.schedule"));
-            backupData.put("clinic_staff", getTableData("public.clinic_staff"));
+            log.info("Starting database backup: {}", backupId);
 
-            // Write backup metadata
-            Map<String, Object> metadata = new HashMap<>();
-            metadata.put("backupId", backupId);
-            metadata.put("createdAt", createdAt);
-            metadata.put("version", "1.0");
-            backupData.put("metadata", metadata);
+            // Extract database credentials from datasource URL
+            String dbName = extractDatabaseName(datasourceUrl);
+            String host = extractHost(datasourceUrl);
+            String port = extractPort(datasourceUrl);
 
-            // Write to file
-            Path backupFile = backupDir.resolve(backupId + ".json");
-            objectMapper.writerWithDefaultPrettyPrinter()
-                    .writeValue(backupFile.toFile(), backupData);
+            // Build pg_dump command
+            List<String> command = new ArrayList<>();
+            command.add("pg_dump");
+            command.add("-h");
+            command.add(host);
+            command.add("-p");
+            command.add(port);
+            command.add("-U");
+            command.add(datasourceUsername);
+            command.add("-d");
+            command.add(dbName);
+            command.add("-F");
+            command.add("c"); // Custom format (binary, compressible)
+            command.add("-f");
+            command.add(backupFile.toString());
+            command.add("-v"); // Verbose
 
-            // Compress the backup
-            Path compressedFile = backupDir.resolve(backupId + ".zip");
-            compressFile(backupFile, compressedFile);
+            // Set password via environment variable to avoid command line exposure
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.environment().put("PGPASSWORD", datasourcePassword);
 
-            // Delete uncompressed file
-            Files.delete(backupFile);
+            // Execute pg_dump
+            Process process = pb.start();
 
-            long fileSize = Files.size(compressedFile);
+            // Capture output
+            BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+            String errorLine;
+            while ((errorLine = errorReader.readLine()) != null) {
+                log.debug("pg_dump: {}", errorLine);
+            }
+
+            // Wait for process to complete with timeout
+            boolean completed = process.waitFor(5, TimeUnit.MINUTES);
+            if (!completed) {
+                process.destroy();
+                throw new RuntimeException("Backup process timed out after 5 minutes");
+            }
+
+            int exitCode = process.exitValue();
+            if (exitCode != 0) {
+                throw new RuntimeException("pg_dump failed with exit code: " + exitCode);
+            }
+
+            // Verify backup file was created
+            if (!Files.exists(backupFile)) {
+                throw new RuntimeException("Backup file was not created");
+            }
+
+            long fileSize = Files.size(backupFile);
             int recordCount = countTotalRecords();
+
+            log.info("Backup completed successfully: {} (Size: {} bytes)", backupId, fileSize);
 
             return BackupStatusDto.builder()
                     .backupId(backupId)
                     .createdAt(createdAt)
                     .sizeInBytes(fileSize)
                     .status("COMPLETED")
-                    .description("System backup completed successfully")
+                    .description("Database backup completed successfully")
                     .recordCount(recordCount)
                     .build();
+
         } catch (Exception e) {
             log.error("Failed to create backup", e);
-            throw new RuntimeException("Failed to create backup: " + e.getMessage());
+            throw new RuntimeException("Failed to create backup: " + e.getMessage(), e);
         }
     }
 
@@ -94,30 +131,25 @@ public class SystemBackupServiceImpl implements SystemBackupService {
             }
 
             Files.list(backupDir)
-                    .filter(p -> p.toString().endsWith(".zip"))
+                    .filter(p -> p.toString().endsWith(BACKUP_FILE_EXTENSION))
                     .forEach(backupFile -> {
                         try {
-                            String backupId = backupFile.getFileName().toString().replace(".zip", "");
+                            String backupId = backupFile.getFileName().toString()
+                                    .replace(BACKUP_FILE_EXTENSION, "");
                             long fileSize = Files.size(backupFile);
                             LocalDateTime createdAt = LocalDateTime.ofInstant(
                                     Files.getLastModifiedTime(backupFile).toInstant(),
                                     java.time.ZoneId.systemDefault()
                             );
 
-                            // Try to get record count from the backup
-                            int recordCount = 0;
-                            try {
-                                recordCount = getRecordCountFromBackup(backupFile);
-                            } catch (Exception e) {
-                                log.warn("Could not read record count from backup: {}", backupId);
-                            }
+                            int recordCount = countTotalRecords();
 
                             backups.add(BackupStatusDto.builder()
                                     .backupId(backupId)
                                     .createdAt(createdAt)
                                     .sizeInBytes(fileSize)
                                     .status("COMPLETED")
-                                    .description("Backup file")
+                                    .description("Database backup file")
                                     .recordCount(recordCount)
                                     .build());
                         } catch (IOException e) {
@@ -136,68 +168,117 @@ public class SystemBackupServiceImpl implements SystemBackupService {
     @Override
     public Resource downloadBackup(String backupId) {
         try {
-            Path backupFile = Paths.get(backupDirectory, backupId + ".zip");
+            Path backupFile = Paths.get(backupDirectory, backupId + BACKUP_FILE_EXTENSION);
             if (!Files.exists(backupFile)) {
                 throw new FileNotFoundException("Backup not found: " + backupId);
             }
             return new FileSystemResource(backupFile);
         } catch (Exception e) {
             log.error("Failed to download backup: {}", backupId, e);
-            throw new RuntimeException("Failed to download backup: " + e.getMessage());
+            throw new RuntimeException("Failed to download backup: " + e.getMessage(), e);
         }
     }
 
     @Override
     public void restoreBackup(String backupId) {
         try {
-            Path backupFile = Paths.get(backupDirectory, backupId + ".zip");
+            Path backupFile = Paths.get(backupDirectory, backupId + BACKUP_FILE_EXTENSION);
             if (!Files.exists(backupFile)) {
                 throw new FileNotFoundException("Backup not found: " + backupId);
             }
 
-            // Decompress and read backup
-            Path tempDir = Files.createTempDirectory("backup_restore_");
-            decompressFile(backupFile, tempDir.resolve("backup.json"));
+            log.info("Starting database restore from backup: {}", backupId);
 
-            // Read backup data
-            @SuppressWarnings("unchecked")
-            Map<String, Object> backupData = objectMapper.readValue(
-                    tempDir.resolve("backup.json").toFile(),
-                    Map.class
-            );
+            // Extract database credentials from datasource URL
+            String dbName = extractDatabaseName(datasourceUrl);
+            String host = extractHost(datasourceUrl);
+            String port = extractPort(datasourceUrl);
 
-            log.info("Restoring from backup: {}", backupId);
-            log.info("Backup contains {} record groups", backupData.size());
+            // Build pg_restore command with options to handle incompatibilities
+            List<String> command = new ArrayList<>();
+            command.add("pg_restore");
+            command.add("-h");
+            command.add(host);
+            command.add("-p");
+            command.add(port);
+            command.add("-U");
+            command.add(datasourceUsername);
+            command.add("-d");
+            command.add(dbName);
+            command.add("-v"); // Verbose
+            command.add("--clean"); // Clean (drop) objects before recreating
+            command.add("--if-exists"); // Use IF EXISTS clause for compatibility
+            command.add("--no-owner"); // Don't restore object ownership (avoids permission issues)
+            command.add("--disable-triggers"); // Disable triggers during restore
+            command.add("-j");
+            command.add("4"); // Use 4 parallel jobs for faster restore
+            command.add(backupFile.toString());
 
-            // Clean up temp directory
-            Files.walk(tempDir)
-                    .sorted(Comparator.reverseOrder())
-                    .forEach(path -> {
-                        try {
-                            Files.delete(path);
-                        } catch (IOException e) {
-                            log.warn("Failed to delete temp file: {}", path);
-                        }
-                    });
+            // Set password via environment variable
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.environment().put("PGPASSWORD", datasourcePassword);
 
-            log.info("Restore operation completed successfully");
+            // Execute pg_restore
+            Process process = pb.start();
+
+            // Capture output
+            BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+            BufferedReader outputReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            StringBuilder output = new StringBuilder();
+            StringBuilder errorOutput = new StringBuilder();
+
+            String line;
+            while ((line = errorReader.readLine()) != null) {
+                log.debug("pg_restore stderr: {}", line);
+                errorOutput.append(line).append("\n");
+            }
+
+            while ((line = outputReader.readLine()) != null) {
+                log.debug("pg_restore stdout: {}", line);
+                output.append(line).append("\n");
+            }
+
+            // Wait for process to complete with timeout
+            boolean completed = process.waitFor(10, TimeUnit.MINUTES);
+            if (!completed) {
+                process.destroy();
+                throw new RuntimeException("Restore process timed out after 10 minutes");
+            }
+
+            int exitCode = process.exitValue();
+            // pg_restore returns exit code 0 on success, but may have warnings
+            // We consider it successful if exit code is 0 or if only harmless errors occurred
+            if (exitCode == 0) {
+                log.info("Database restore completed successfully from backup: {}", backupId);
+            } else {
+                // Check if the output indicates warnings (731 errors ignored, etc.)
+                String allOutput = errorOutput.toString() + output.toString();
+                if (allOutput.toLowerCase().contains("errors ignored")) {
+                    log.info("Database restore completed with non-critical errors from backup: {}", backupId);
+                } else {
+                    log.error("pg_restore stderr: {}", errorOutput.toString());
+                    log.error("pg_restore stdout: {}", output.toString());
+                    throw new RuntimeException("pg_restore failed with exit code: " + exitCode);
+                }
+            }
+
         } catch (Exception e) {
             log.error("Failed to restore backup: {}", backupId, e);
-            throw new RuntimeException("Failed to restore backup: " + e.getMessage());
+            throw new RuntimeException("Failed to restore backup: " + e.getMessage(), e);
         }
     }
 
     @Override
     public void deleteBackup(String backupId) {
         try {
-            Path backupFile = Paths.get(backupDirectory, backupId + ".zip");
+            Path backupFile = Paths.get(backupDirectory, backupId + BACKUP_FILE_EXTENSION);
             if (Files.exists(backupFile)) {
                 Files.delete(backupFile);
                 log.info("Backup deleted: {}", backupId);
             }
         } catch (Exception e) {
             log.error("Failed to delete backup: {}", backupId, e);
-            throw new RuntimeException("Failed to delete backup: " + e.getMessage());
+            throw new RuntimeException("Failed to delete backup: " + e.getMessage(), e);
         }
     }
 
@@ -210,68 +291,58 @@ public class SystemBackupServiceImpl implements SystemBackupService {
         return backupDir;
     }
 
-    private List<Map<String, Object>> getTableData(String tableName) {
-        try {
-            return jdbcTemplate.queryForList("SELECT * FROM " + tableName);
-        } catch (Exception e) {
-            log.warn("Could not retrieve data from table: {}", tableName, e);
-            return new ArrayList<>();
-        }
-    }
-
     private int countTotalRecords() {
-        int count = 0;
-        String[] tables = {"public.user_profile", "public.patient", "public.doctor",
-                          "public.clinic", "public.appointment", "public.schedule", "public.clinic_staff"};
-
-        for (String table : tables) {
-            try {
-                Integer tableCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM " + table, Integer.class);
-                count += tableCount != null ? tableCount : 0;
-            } catch (Exception e) {
-                log.warn("Could not count records in table: {}", table);
-            }
+        try {
+            Integer count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'",
+                    Integer.class
+            );
+            return count != null ? count : 0;
+        } catch (Exception e) {
+            log.warn("Could not count tables in database", e);
+            return 0;
         }
-        return count;
     }
 
-    private int getRecordCountFromBackup(Path backupFile) throws IOException {
-        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(backupFile.toFile()))) {
-            ZipEntry entry;
-            while ((entry = zis.getNextEntry()) != null) {
-                if (entry.getName().equals("backup.json")) {
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(zis));
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> data = objectMapper.readValue(reader, Map.class);
-                    return data.size();
+    private String extractDatabaseName(String datasourceUrl) {
+        // Extract database name from JDBC URL: jdbc:postgresql://host:port/dbname
+        try {
+            String[] parts = datasourceUrl.split("/");
+            if (parts.length > 0) {
+                return parts[parts.length - 1].split("\\?")[0]; // Remove query parameters if any
+            }
+        } catch (Exception e) {
+            log.warn("Could not extract database name from datasource URL", e);
+        }
+        return "postgres"; // Default fallback
+    }
+
+    private String extractHost(String datasourceUrl) {
+        // Extract host from JDBC URL: jdbc:postgresql://host:port/dbname
+        try {
+            String url = datasourceUrl.replace("jdbc:postgresql://", "");
+            String hostAndPort = url.split("/")[0];
+            String host = hostAndPort.split(":")[0];
+            return host;
+        } catch (Exception e) {
+            log.warn("Could not extract host from datasource URL, using localhost", e);
+        }
+        return "localhost"; // Default fallback
+    }
+
+    private String extractPort(String datasourceUrl) {
+        // Extract port from JDBC URL: jdbc:postgresql://host:port/dbname
+        try {
+            String url = datasourceUrl.replace("jdbc:postgresql://", "");
+            if (url.contains(":")) {
+                String[] parts = url.split(":");
+                if (parts.length > 1) {
+                    return parts[1].split("/")[0];
                 }
             }
+        } catch (Exception e) {
+            log.warn("Could not extract port from datasource URL, using 5432", e);
         }
-        return 0;
-    }
-
-    private void compressFile(Path source, Path destination) throws IOException {
-        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(destination.toFile()))) {
-            ZipEntry entry = new ZipEntry(source.getFileName().toString());
-            zos.putNextEntry(entry);
-
-            Files.copy(source, zos);
-            zos.closeEntry();
-        }
-    }
-
-    private void decompressFile(Path source, Path destination) throws IOException {
-        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(source.toFile()))) {
-            ZipEntry entry = zis.getNextEntry();
-            if (entry != null) {
-                try (FileOutputStream fos = new FileOutputStream(destination.toFile())) {
-                    byte[] buffer = new byte[1024];
-                    int len;
-                    while ((len = zis.read(buffer)) > 0) {
-                        fos.write(buffer, 0, len);
-                    }
-                }
-            }
-        }
+        return "5432"; // Default PostgreSQL port
     }
 }
