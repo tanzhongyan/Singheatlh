@@ -254,14 +254,14 @@ public class ScheduleServiceImpl implements
 
     // ========= Slot Service Methods ========
     @Override
-    public Map<Date, List<SlotDto>> generateDoctorSlots(String id) {
+    public Map<String, List<SlotDto>> generateDoctorSlots(String id) {
 
         Doctor doctor = doctorRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundExecption(
                         "Doctor does not exist with id: " + id));
 
         List<ScheduleDto> scheduleDtos = getAvailableSchedulesByDoctor(id);
-        Map<Date, List<SlotDto>> slotsByDate = new HashMap<>();
+        Map<String, List<SlotDto>> slotsByDate = new HashMap<>();
 
         int slotDurationMinutes = doctor.getAppointmentDurationInMinutes();
 
@@ -271,7 +271,7 @@ public class ScheduleServiceImpl implements
                 .map(ScheduleDto::getStartDatetime)
                 .min(LocalDateTime::compareTo)
                 .orElse(LocalDateTime.now());
-        
+
         LocalDateTime latestSchedule = scheduleDtos.stream()
                 .map(ScheduleDto::getEndDatetime)
                 .max(LocalDateTime::compareTo)
@@ -280,7 +280,7 @@ public class ScheduleServiceImpl implements
         List<Appointment> bookedAppointments = appointmentRepository
                 .findByDoctorIdAndStartDatetimeBetween(id, earliestSchedule, latestSchedule)
                 .stream()
-                .filter(apt -> apt.getStatus() == AppointmentStatus.Upcoming || 
+                .filter(apt -> apt.getStatus() == AppointmentStatus.Upcoming ||
                               apt.getStatus() == AppointmentStatus.Ongoing)
                 .toList();
 
@@ -297,13 +297,13 @@ public class ScheduleServiceImpl implements
                 // Check if this slot conflicts with any booked appointment
                 final LocalDateTime slotStart = currentSlotStart;
                 final LocalDateTime slotEnd = currentSlotEnd;
-                
+
                 boolean isBooked = bookedAppointments.stream()
-                        .anyMatch(apt -> 
+                        .anyMatch(apt ->
                             // Slot overlaps with appointment if:
                             // 1. Slot starts before appointment ends AND
                             // 2. Slot ends after appointment starts
-                            slotStart.isBefore(apt.getEndDatetime()) && 
+                            slotStart.isBefore(apt.getEndDatetime()) &&
                             slotEnd.isAfter(apt.getStartDatetime())
                         );
 
@@ -314,11 +314,11 @@ public class ScheduleServiceImpl implements
                     slot.setStartDatetime(currentSlotStart);
                     slot.setEndDatetime(currentSlotEnd);
 
-                    // Convert to Date for grouping (using SQL Date or java.util.Date)
-                    Date date = java.sql.Date.valueOf(currentSlotStart.toLocalDate());
+                    // Convert to date string in YYYY-MM-DD format for consistent JSON serialization
+                    String dateKey = currentSlotStart.toLocalDate().toString();
 
                     // Add to map
-                    slotsByDate.computeIfAbsent(date, k -> new ArrayList<>()).add(slot);
+                    slotsByDate.computeIfAbsent(dateKey, k -> new ArrayList<>()).add(slot);
                 }
 
                 // Move to next slot

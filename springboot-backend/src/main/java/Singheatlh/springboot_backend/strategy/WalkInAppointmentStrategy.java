@@ -3,6 +3,7 @@ package Singheatlh.springboot_backend.strategy;
 import Singheatlh.springboot_backend.dto.CreateAppointmentRequest;
 import Singheatlh.springboot_backend.mapper.AppointmentMapper;
 import Singheatlh.springboot_backend.repository.AppointmentRepository;
+import Singheatlh.springboot_backend.repository.DoctorRepository;
 import Singheatlh.springboot_backend.validation.appointment.AppointmentValidator;
 import org.springframework.stereotype.Component;
 
@@ -19,8 +20,9 @@ public class WalkInAppointmentStrategy extends AbstractAppointmentStrategy {
 
     public WalkInAppointmentStrategy(AppointmentRepository appointmentRepository,
                                     AppointmentMapper appointmentMapper,
-                                    AppointmentValidator appointmentValidator) {
-        super(appointmentRepository, appointmentMapper, appointmentValidator);
+                                    AppointmentValidator appointmentValidator,
+                                    DoctorRepository doctorRepository) {
+        super(appointmentRepository, appointmentMapper, appointmentValidator, doctorRepository);
     }
 
     @Override
@@ -29,11 +31,12 @@ public class WalkInAppointmentStrategy extends AbstractAppointmentStrategy {
     }
 
     /**
-     * Sets the isWalkIn flag to true before validation.
-     * This allows FutureTimeValidationRule to skip the future time check.
+     * No preprocessing needed for walk-in appointments.
+     * The isWalkIn flag is already set by the controller/frontend and verified by AppointmentStrategyFactory.
+     * All validation rules check this flag and skip their checks for walk-ins.
      */
     @Override
     protected void preprocessRequest(CreateAppointmentRequest request) {
-        request.setIsWalkIn(true);
+        // Walk-in flag is already set; no preprocessing needed
     }
 }

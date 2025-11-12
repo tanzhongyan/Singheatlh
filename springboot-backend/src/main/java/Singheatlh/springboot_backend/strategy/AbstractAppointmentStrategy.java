@@ -3,11 +3,14 @@ package Singheatlh.springboot_backend.strategy;
 import Singheatlh.springboot_backend.dto.AppointmentDto;
 import Singheatlh.springboot_backend.dto.CreateAppointmentRequest;
 import Singheatlh.springboot_backend.entity.Appointment;
+import Singheatlh.springboot_backend.entity.Doctor;
 import Singheatlh.springboot_backend.entity.enums.AppointmentStatus;
 import Singheatlh.springboot_backend.mapper.AppointmentMapper;
 import Singheatlh.springboot_backend.repository.AppointmentRepository;
+import Singheatlh.springboot_backend.repository.DoctorRepository;
 import Singheatlh.springboot_backend.validation.appointment.AppointmentValidator;
 import lombok.RequiredArgsConstructor;
+import java.time.LocalDateTime;
 
 /**
  * Abstract base class for appointment creation strategies.
@@ -20,6 +23,7 @@ public abstract class AbstractAppointmentStrategy implements AppointmentCreation
     protected final AppointmentRepository appointmentRepository;
     protected final AppointmentMapper appointmentMapper;
     protected final AppointmentValidator appointmentValidator;
+    protected final DoctorRepository doctorRepository;
 
     /**
      * Template method defining the appointment creation workflow.
@@ -29,6 +33,9 @@ public abstract class AbstractAppointmentStrategy implements AppointmentCreation
     public final AppointmentDto createAppointment(CreateAppointmentRequest request) {
         // Hook method - allow subclasses to modify request before validation
         preprocessRequest(request);
+
+        // Calculate end datetime based on doctor's appointment duration
+        calculateEndDatetime(request);
 
         // Run all validation rules
         appointmentValidator.validate(request);
@@ -41,8 +48,9 @@ public abstract class AbstractAppointmentStrategy implements AppointmentCreation
         appointment.setAppointmentId(appointmentId);
         appointment.setStatus(AppointmentStatus.Upcoming);
 
-        // Persist and return DTO
+        // Persist appointment
         Appointment savedAppointment = appointmentRepository.save(appointment);
+
         return appointmentMapper.toDto(savedAppointment);
     }
 
@@ -55,6 +63,29 @@ public abstract class AbstractAppointmentStrategy implements AppointmentCreation
     protected void preprocessRequest(CreateAppointmentRequest request) {
         // Default: no preprocessing
     }
+
+    /**
+     * Calculate the end datetime based on the doctor's appointment duration.
+     * Fetches the doctor's appointmentDurationInMinutes and adds it to startDatetime.
+     *
+     * @param request The appointment creation request to update with calculated endDatetime
+     * @throws IllegalArgumentException if doctor not found or duration not configured
+     */
+    private void calculateEndDatetime(CreateAppointmentRequest request) {
+        Doctor doctor = doctorRepository.findById(request.getDoctorId())
+            .orElseThrow(() -> new IllegalArgumentException("Doctor not found with id: " + request.getDoctorId()));
+
+        if (doctor.getAppointmentDurationInMinutes() == null || doctor.getAppointmentDurationInMinutes() <= 0) {
+            throw new IllegalArgumentException("Doctor appointment duration not properly configured");
+        }
+
+        // Calculate end datetime by adding duration to start datetime
+        LocalDateTime endDateTime = request.getStartDatetime()
+            .plusMinutes(doctor.getAppointmentDurationInMinutes());
+
+        request.setEndDatetime(endDateTime);
+    }
+
 
     /**
      * Generates a unique appointment ID.

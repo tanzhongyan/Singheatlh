@@ -43,8 +43,8 @@ public class AppointmentStrategyFactory {
      * @return The appropriate strategy (WalkInAppointmentStrategy or RegularAppointmentStrategy)
      */
     public AppointmentCreationStrategy getStrategy(CreateAppointmentRequest request) {
-        // Select strategy based on isWalkIn flag
-        if (Boolean.TRUE.equals(request.getIsWalkIn())) {
+        // Select strategy based on isWalkIn flag (primitive boolean defaults to false)
+        if (request.isWalkIn()) {
             return strategyMap.get("WALK_IN");
         } else {
             return strategyMap.get("REGULAR");

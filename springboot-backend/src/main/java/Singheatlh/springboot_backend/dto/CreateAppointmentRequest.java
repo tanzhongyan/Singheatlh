@@ -20,7 +20,7 @@ public class CreateAppointmentRequest {
     
     private LocalDateTime startDatetime;  // Renamed from appointmentDatetime
 
-    private LocalDateTime endDatetime;  // Added
+    private LocalDateTime endDatetime;  // Automatically calculated by backend using doctor's appointmentDurationInMinutes
 
-    private Boolean isWalkIn;  // Flag to indicate walk-in appointment (default: false/null for regular)
+    private boolean isWalkIn;  // Flag to indicate walk-in appointment (defaults to false for regular appointments)
 }

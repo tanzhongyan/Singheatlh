@@ -128,24 +128,14 @@ const BookAppointmentModal = ({ show, onHide, onSuccess }) => {
       setLoading(true);
       setError(null);
 
-      // Calculate start and end datetime (15 minutes duration)
+      // Backend will automatically calculate endDatetime based on doctor's appointmentDurationInMinutes
       const startDatetime = `${selectedDate}T${selectedTime}:00`;
-
-      // Parse the datetime string and add 15 minutes
-      const [datePart, timePart] = startDatetime.split("T");
-      const [hours, minutes] = timePart.split(":").map(Number);
-
-      // Add 15 minutes
-      const totalMinutes = hours * 60 + minutes + 15;
-      const endHours = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
-      const endMinutes = String(totalMinutes % 60).padStart(2, "0");
-      const endDatetime = `${datePart}T${endHours}:${endMinutes}:00`;
 
       const payload = {
         patientId: user.id,
         doctorId: selectedDoctor.doctorId,
         startDatetime: startDatetime,
-        endDatetime: endDatetime,
+        // endDatetime is automatically calculated by backend
       };
 
       await apiClient.post("/api/appointments", payload);

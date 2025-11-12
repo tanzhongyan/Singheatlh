@@ -87,7 +87,7 @@ const StaffRescheduleAppointmentModal = ({ show, onHide, appointment, onSuccess 
                   <ul className="small text-muted mb-3">
                     <li>Patient: {appointment?.patient?.name || appointment?.patientName || 'Unknown'}</li>
                     <li>Doctor: {appointment?.doctor?.name || appointment?.doctorName || 'Unknown'}</li>
-                    <li>Current Time: {new Date(appointment?.startDatetime).toLocaleString()}</li>
+                    <li>Current Time: {new Date(appointment?.startDatetime).toLocaleString('en-US', { timeZone: 'Asia/Singapore' })}</li>
                   </ul>
                 </div>
 

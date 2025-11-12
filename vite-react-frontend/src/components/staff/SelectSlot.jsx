@@ -10,6 +10,7 @@ export default function SelectSlot({
   setSelectedDate,
   setSelectedTime,
   onSlotSelected, // optional: notify parent with full slot
+  isWalkIn = false, // true for walk-in appointments (allow same-day), false for regular
 }) {
   const [availableSlots, setAvailableSlots] = useState({});
   const [loading, setLoading] = useState(false);
@@ -17,11 +18,16 @@ export default function SelectSlot({
   const [selectedDay, setSelectedDay] = useState(null);
   const [viewMode, setViewMode] = useState("list"); // "list" or "calendar"
 
-  // Get minimum date (tomorrow) in YYYY-MM-DD (UTC date portion)
+  // Get minimum date in YYYY-MM-DD (UTC date portion)
+  // For walk-ins: allow today's date
+  // For regular appointments: require tomorrow onwards
   const getMinDate = () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split("T")[0];
+    const minDate = new Date();
+    if (!isWalkIn) {
+      minDate.setDate(minDate.getDate() + 1); // Regular: tomorrow onwards
+    }
+    // Walk-in: minDate stays as today
+    return minDate.toISOString().split("T")[0];
   };
 
   useEffect(() => {
@@ -92,7 +98,18 @@ export default function SelectSlot({
       return groups;
     }
 
+    const now = new Date();
+    const todayDateStr = now.toISOString().split("T")[0];
+
     slots.forEach((slot) => {
+      // For today's date, skip slots that are in the past
+      if (selectedDay === todayDateStr) {
+        const slotDateTime = new Date(slot.startDatetime);
+        if (slotDateTime <= now) {
+          return; // Skip past slots
+        }
+      }
+
       const hour = new Date(slot.startDatetime).getHours();
       if (hour < 12) groups.morning.push(slot);
       else if (hour < 17) groups.afternoon.push(slot);

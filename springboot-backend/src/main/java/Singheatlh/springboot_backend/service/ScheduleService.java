@@ -6,7 +6,6 @@ import Singheatlh.springboot_backend.dto.SlotDto;
 import Singheatlh.springboot_backend.entity.enums.ScheduleType;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -46,6 +45,7 @@ public interface ScheduleService {
 
     /*
      * Get schedules in slots
+     * Returns a map with date strings (YYYY-MM-DD format) as keys and list of available slots as values
      * */
-    Map<Date, List<SlotDto>> generateDoctorSlots(String id);
+    Map<String, List<SlotDto>> generateDoctorSlots(String id);
 }

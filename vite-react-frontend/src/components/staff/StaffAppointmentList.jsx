@@ -39,6 +39,7 @@ const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => 
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+      timeZone: 'Asia/Singapore',
     });
   };
 
@@ -47,6 +48,7 @@ const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => 
     return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
+      timeZone: 'Asia/Singapore',
     });
   };
 

@@ -24,6 +24,7 @@ const AppointmentList = ({ appointments, onCancel, onRequestReschedule, onViewSu
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+      timeZone: 'Asia/Singapore',
     });
   };
 
@@ -120,6 +121,7 @@ const AppointmentList = ({ appointments, onCancel, onRequestReschedule, onViewSu
                           ? new Date(appointment.endDatetime).toLocaleTimeString('en-US', {
                               hour: '2-digit',
                               minute: '2-digit',
+                              timeZone: 'Asia/Singapore',
                             })
                           : 'Duration not set'}
                       </span>

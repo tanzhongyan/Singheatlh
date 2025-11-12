@@ -15,7 +15,7 @@ public class FutureTimeValidationRule implements AppointmentValidationRule {
     @Override
     public void validate(CreateAppointmentRequest request) {
         // Skip validation for walk-in appointments
-        if (Boolean.TRUE.equals(request.getIsWalkIn())) {
+        if (request.isWalkIn()) {
             return;
         }
 

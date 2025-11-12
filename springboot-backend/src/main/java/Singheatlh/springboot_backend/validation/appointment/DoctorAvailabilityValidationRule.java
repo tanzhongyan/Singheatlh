@@ -24,16 +24,23 @@ public class DoctorAvailabilityValidationRule implements AppointmentValidationRu
 
     @Override
     public void validate(CreateAppointmentRequest request) {
-        // Check for conflicting appointments with a 30-minute buffer
+        // Check for conflicting appointments (actual time overlap only)
+        // No buffer - appointments can be back-to-back as long as they don't overlap
         List<Appointment> conflictingAppointments = appointmentRepository
                 .findByDoctorIdAndStartDatetimeBetween(
                         request.getDoctorId(),
-                        request.getStartDatetime().minusMinutes(30),
+                        request.getStartDatetime(),
                         request.getEndDatetime()
                 )
                 .stream()
                 .filter(apt -> apt.getStatus() == AppointmentStatus.Upcoming ||
                               apt.getStatus() == AppointmentStatus.Ongoing)
+                .filter(apt -> {
+                    // Check for actual time overlap
+                    // Conflict if: apt.start < new.end AND apt.end > new.start
+                    return apt.getStartDatetime().isBefore(request.getEndDatetime()) &&
+                           apt.getEndDatetime().isAfter(request.getStartDatetime());
+                })
                 .collect(Collectors.toList());
 
         if (!conflictingAppointments.isEmpty()) {
