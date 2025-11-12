@@ -10,22 +10,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-
 import Singheatlh.springboot_backend.dto.EmailRequest;
 import Singheatlh.springboot_backend.dto.EmailResponse;
-import Singheatlh.springboot_backend.entity.Appointment;
-import Singheatlh.springboot_backend.entity.Patient;
+import Singheatlh.springboot_backend.dto.NotificationContext;
 import Singheatlh.springboot_backend.entity.QueueTicket;
-import Singheatlh.springboot_backend.repository.AppointmentRepository;
-import Singheatlh.springboot_backend.repository.PatientRepository;
+import Singheatlh.springboot_backend.service.NotificationMessageBuilder;
 import Singheatlh.springboot_backend.service.NotificationService;
+import Singheatlh.springboot_backend.service.NotificationType;
+import Singheatlh.springboot_backend.service.QueuePatientInfoService;
 
 /**
  * Implementation of NotificationService
  * Integrated with SMU Lab Notification Service for sending Email notifications
- * Currently uses hardcoded email address for testing
+ * REFACTORED: Now follows SRP - only responsible for coordinating notification sending
+ * Uses Template Method pattern to eliminate DRY violations
  */
 @Service
 public class NotificationServiceImpl implements NotificationService {
@@ -34,10 +32,10 @@ public class NotificationServiceImpl implements NotificationService {
     private RestTemplate restTemplate;
     
     @Autowired
-    private PatientRepository patientRepository;
+    private QueuePatientInfoService patientInfoService;
     
     @Autowired
-    private AppointmentRepository appointmentRepository;
+    private NotificationMessageBuilder messageBuilder;
     
     @Value("${smu.notification.api.base-url}")
     private String apiBaseUrl;
@@ -45,241 +43,111 @@ public class NotificationServiceImpl implements NotificationService {
     @Value("${smu.notification.api.send-email-endpoint}")
     private String sendEmailEndpoint;
     
+    // Template Method Pattern - eliminates DRY violations
+    // All notification methods follow this same pattern
+    
     @Override
     public void sendQueueNotification3Away(QueueTicket queueTicket) {
-        String patientName = getPatientName(queueTicket);
-        String doctorName = getDoctorName(queueTicket);
-        String appointmentDetails = getAppointmentDetails(queueTicket);
-        
-        String subject = "Queue Update - 3 Patients Away";
-        String message = String.format(
-            "Ticket Number: %s\n\n" +
-            "Dear %s,\n\n" +
-            "%s\n\n" +
-            "Doctor: %s\n\n" +
-            "You are currently 3 patients away from being called. " +
-            "Please proceed closer to the consultation room.\n\n" +
-            "Thank you for your patience.",
-            queueTicket.getTicketNumberForDay(),
-            patientName,
-            appointmentDetails,
-            doctorName
-        );
-        
-        // Send Email via SMU Lab Notification Service
-        sendEmail(queueTicket, subject, message);
+        sendNotification(queueTicket, NotificationType.THREE_AWAY);
     }
     
     @Override
     public void sendQueueNotificationNext(QueueTicket queueTicket) {
-        String patientName = getPatientName(queueTicket);
-        String doctorName = getDoctorName(queueTicket);
-        String appointmentDetails = getAppointmentDetails(queueTicket);
-        
-        String subject = "Queue Update - You're Next!";
-        String message = String.format(
-            "Ticket Number: %s\n\n" +
-            "Dear %s,\n\n" +
-            "%s\n\n" +
-            "Doctor: %s\n\n" +
-            "You are next in line. " +
-            "Please be ready and stay close to the consultation room.\n\n" +
-            "Thank you for your patience.",
-            queueTicket.getTicketNumberForDay(),
-            patientName,
-            appointmentDetails,
-            doctorName
-        );
-        
-        // Send Email via SMU Lab Notification Service
-        sendEmail(queueTicket, subject, message);
+        sendNotification(queueTicket, NotificationType.NEXT);
     }
     
     @Override
     public void sendQueueCalledNotification(QueueTicket queueTicket) {
-        String patientName = getPatientName(queueTicket);
-        String doctorName = getDoctorName(queueTicket);
-        String appointmentDetails = getAppointmentDetails(queueTicket);
-        
-        String subject = "Queue Called - Your Turn Now!";
-        String message = String.format(
-            "Ticket Number: %s\n\n" +
-            "Dear %s,\n\n" +
-            "%s\n\n" +
-            "Doctor: %s\n\n" +
-            "It's your turn now. " +
-            "Please proceed to the consultation room immediately.\n\n" +
-            "Thank you for your cooperation.",
-            queueTicket.getTicketNumberForDay(),
-            patientName,
-            appointmentDetails,
-            doctorName
-        );
-        
-        // Send Email via SMU Lab Notification Service
-        sendEmail(queueTicket, subject, message);
+        sendNotification(queueTicket, NotificationType.CALLED);
     }
     
     @Override
     public void sendFastTrackNotification(QueueTicket queueTicket) {
-        String patientName = getPatientName(queueTicket);
-        String doctorName = getDoctorName(queueTicket);
-        String appointmentDetails = getAppointmentDetails(queueTicket);
+        NotificationContext context = buildNotificationContext(queueTicket);
+        context.setFastTrackReason(queueTicket.getFastTrackReason());
         
-        String subject = "Queue Update - You've Been Fast-Tracked!";
-        String message = String.format(
-            "Ticket Number: %s\n\n" +
-            "Dear %s,\n\n" +
-            "%s\n\n" +
-            "Doctor: %s\n\n" +
-            "Due to your situation! You have been fast-tracked in the queue.\n\n" +
-            "Reason: %s\n\n" +
-            "Please be ready as you will be called soon. " +
-            "Stay close to the consultation room.\n\n" +
-            "Thank you for your patience.",
-            queueTicket.getTicketNumberForDay(),
-            patientName,
-            appointmentDetails,
-            doctorName,
-            queueTicket.getFastTrackReason() != null ? queueTicket.getFastTrackReason() : "Priority/Emergency"
-        );
+        String subject = messageBuilder.getSubject(NotificationType.FAST_TRACK);
+        String message = messageBuilder.buildFastTrackMessage(context);
         
-        // Send Email via SMU Lab Notification Service
         sendEmail(queueTicket, subject, message);
     }
     
     @Override
     public void sendCheckInConfirmationNotification(QueueTicket queueTicket) {
-        String patientName = getPatientName(queueTicket);
-        String appointmentDetails = getAppointmentDetails(queueTicket);
+        NotificationContext context = buildNotificationContext(queueTicket);
+        
         Integer queuePosition = queueTicket.getQueueNumber();
+        context.setQueuePosition(queuePosition);
+        context.setFirstPosition(queuePosition != null && queuePosition == 1);
         
-        String subject = "Check-in Confirmation";
-        String message;
+        // Calculate estimated people ahead
+        int peopleAhead = (queuePosition != null && queuePosition > 0) ? queuePosition - 1 : 0;
+        context.setPeopleAhead(peopleAhead);
         
-        // Different message if patient is immediately called vs. waiting in queue
-        if (queuePosition != null && queuePosition == 1) {
-            message = String.format(
-                "Ticket Number: %s\n\n" +
-                "Dear %s,\n\n" +
-                "%s\n\n" +
-                "You have successfully checked in!\n\n" +
-                "Great news! The doctor is ready to see you now. " +
-                "Please proceed to the consultation room immediately.\n\n" +
-                "Thank you for your promptness.",
-                queueTicket.getTicketNumberForDay(),
-                patientName,
-                appointmentDetails
-            );
-        } else {
-            // Calculate estimated people ahead
-            int peopleAhead = (queuePosition != null && queuePosition > 0) ? queuePosition - 1 : 0;
-            
-            message = String.format(
-                "Ticket Number: %s\n\n" +
-                "Dear %s,\n\n" +
-                "%s\n\n" +
-                "You have successfully checked in!\n\n" +
-                "Current Queue Position: %d\n" +
-                "Number of patients ahead: %d\n\n" +
-                "You will receive notifications as your turn approaches. " +
-                "Please stay nearby and wait for further updates.\n\n" +
-                "Thank you for your patience.",
-                queueTicket.getTicketNumberForDay(),
-                patientName,
-                appointmentDetails,
-                queuePosition != null ? queuePosition : 0,
-                peopleAhead
-            );
-        }
+        String subject = messageBuilder.getSubject(NotificationType.CHECK_IN_CONFIRMATION);
+        String message = messageBuilder.buildCheckInConfirmationMessage(context);
         
-        // Send Email via SMU Lab Notification Service
         sendEmail(queueTicket, subject, message);
     }
-
-    private String getPatientName(QueueTicket queueTicket) {
-        try {
-            java.util.UUID patientId = queueTicket.getPatientId();
-            
-            if (patientId == null && queueTicket.getAppointment() != null) {
-                patientId = queueTicket.getAppointment().getPatientId();
-            }
-            
-            if (patientId != null) {
-                Patient patient = patientRepository.findById(patientId).orElse(null);
-                if (patient != null && patient.getName() != null && !patient.getName().trim().isEmpty()) {
-                    return patient.getName();
-                }
-            }
-        } catch (Exception e) {
-            // Fallback to generic greeting
-        }
-        return "Patient";
+    
+    /**
+     * Template Method - common notification sending pattern
+     * Eliminates duplication across all notification methods
+     */
+    private void sendNotification(QueueTicket queueTicket, NotificationType type) {
+        NotificationContext context = buildNotificationContext(queueTicket);
+        String subject = messageBuilder.getSubject(type);
+        String message = buildMessageForType(type, context);
+        sendEmail(queueTicket, subject, message);
     }
     
-    private String getDoctorName(QueueTicket queueTicket) {
-        if (queueTicket.getAppointment() != null && queueTicket.getAppointment().getDoctor() != null) {
-            String name = queueTicket.getAppointment().getDoctor().getName();
-            return name != null && !name.trim().isEmpty() ? name : "Unknown Doctor";
-        }
-        return "Unknown Doctor";
+    /**
+     * Build notification context from queue ticket
+     * Delegates data extraction to QueuePatientInfoService (SRP)
+     */
+    private NotificationContext buildNotificationContext(QueueTicket queueTicket) {
+        String ticketNumber = queueTicket.getTicketNumberForDay() != null 
+            ? queueTicket.getTicketNumberForDay().toString() 
+            : "N/A";
+        String patientName = patientInfoService.getPatientName(queueTicket);
+        String doctorName = patientInfoService.getDoctorName(queueTicket);
+        String appointmentDetails = patientInfoService.getAppointmentDetails(queueTicket);
+        
+        return new NotificationContext(ticketNumber, patientName, doctorName, appointmentDetails);
     }
     
-    private String getAppointmentDetails(QueueTicket queueTicket) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy 'at' h:mm a");
-        StringBuilder details = new StringBuilder();
-        
-        try {
-            // Check-in time
-            LocalDateTime checkInTime = queueTicket.getCheckInTime();
-            if (checkInTime != null) {
-                details.append("Check-in Time: ").append(checkInTime.format(formatter)).append("\n");
-            }
-            
-            // Appointment date & time
-            if (queueTicket.getAppointment() != null) {
-                LocalDateTime appointmentTime = queueTicket.getAppointment().getStartDatetime();
-                if (appointmentTime != null) {
-                    details.append("Appointment Time: ").append(appointmentTime.format(formatter));
-                }
-            }
-        } catch (Exception e) {
-            // Return minimal details if formatting fails
-            return "Appointment Details: Available in your records";
+    /**
+     * Build message based on notification type
+     * Delegates message building to NotificationMessageBuilder (SRP)
+     */
+    private String buildMessageForType(NotificationType type, NotificationContext context) {
+        switch (type) {
+            case THREE_AWAY:
+                return messageBuilder.buildQueueNotification3AwayMessage(context);
+            case NEXT:
+                return messageBuilder.buildQueueNotificationNextMessage(context);
+            case CALLED:
+                return messageBuilder.buildQueueCalledMessage(context);
+            case FAST_TRACK:
+                return messageBuilder.buildFastTrackMessage(context);
+            case CHECK_IN_CONFIRMATION:
+                return messageBuilder.buildCheckInConfirmationMessage(context);
+            default:
+                return "Queue notification";
         }
-        
-        return details.length() > 0 ? details.toString() : "Appointment Details: Available in your records";
     }
     
     /**
      * Send Email using SMU Lab Notification Service API
-     * Fetches patient email from User_Profile, falls back to hardcoded email if not found
+     * Now ONLY responsible for email sending (SRP)
      * @param queueTicket QueueTicket object containing appointment information
      * @param subject Email subject line
      * @param message Email message content
      */
     private void sendEmail(QueueTicket queueTicket, String subject, String message) {
         try {
-            // Get patient ID - try helper method first, then fetch from appointment directly
-            java.util.UUID patientId = queueTicket.getPatientId();
-            
-            // If helper method returns null, fetch appointment directly
-            if (patientId == null) {
-                Appointment appointment = appointmentRepository.findById(queueTicket.getAppointmentId()).orElse(null);
-                if (appointment != null) {
-                    patientId = appointment.getPatientId();
-                }
-            }
-            
-            // Get patient email from database
-            String email = null;
-            
-            if (patientId != null) {
-                Patient patient = patientRepository.findById(patientId).orElse(null);
-                if (patient != null && patient.getEmail() != null && !patient.getEmail().isEmpty()) {
-                    email = patient.getEmail();
-                }
-            }
+            // Get patient email using the info service
+            String email = patientInfoService.getPatientEmail(queueTicket);
             
             // Skip sending email if no valid email address found
             if (email == null || email.trim().isEmpty()) {

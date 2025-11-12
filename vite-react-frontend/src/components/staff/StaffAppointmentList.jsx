@@ -409,17 +409,32 @@ const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => 
                 <div className="card-body p-4">
                   {/* Status Badge */}
                   <div className="d-flex justify-content-between align-items-start mb-3">
-                    <div className="d-flex align-items-center gap-2">
+                    <div className="d-flex align-items-center gap-2 flex-wrap">
                       <span className={`badge ${getStatusBadge(appointment.status)}`}>
                         {appointment.status}
                       </span>
+                      {typeof queueByAppointment[appointment.appointmentId]?.ticketNumberForDay === 'number' && (
+                        <span 
+                          className="badge bg-primary" 
+                          title="Daily Ticket Number"
+                          style={{ fontWeight: '600' }}
+                        >
+                          <i className="bi bi-ticket-perforated me-1"></i>
+                          #{queueByAppointment[appointment.appointmentId].ticketNumberForDay}
+                        </span>
+                      )}
                       {typeof queueByAppointment[appointment.appointmentId]?.queueNumber === 'number' && queueByAppointment[appointment.appointmentId]?.queueNumber !== 0 && (
-                        <span className="badge bg-info text-dark">
+                        <span 
+                          className="badge bg-info text-dark" 
+                          title="Queue Position"
+                        >
+                          <i className="bi bi-list-ol me-1"></i>
                           Queue #{queueByAppointment[appointment.appointmentId].queueNumber}
                         </span>
                       )}
                       {queueByAppointment[appointment.appointmentId]?.status === 'FAST_TRACKED' && (
                         <span className="badge bg-warning text-dark">
+                          <i className="bi bi-lightning-charge-fill me-1"></i>
                           Fast-tracked
                         </span>
                       )}
@@ -609,11 +624,22 @@ const StaffAppointmentList = ({ appointments, loading, filterType = 'all' }) => 
                         >
                           <div className="d-flex align-items-center">
                             <i className={`bi ${checkInResult[appointment.appointmentId].success ? 'bi-check-circle-fill text-success' : 'bi-exclamation-triangle-fill text-warning'} me-2`}></i>
-                            <div>
+                            <div className="w-100">
                               <div className="small fw-semibold">{checkInResult[appointment.appointmentId].message}</div>
-                              {checkInResult[appointment.appointmentId].success && typeof checkInResult[appointment.appointmentId].queueNumber === 'number' && (
-                                <div className="small text-muted">
-                                  Queue Number: <span className="fw-bold">#{checkInResult[appointment.appointmentId].queueNumber}</span>
+                              {checkInResult[appointment.appointmentId].success && (
+                                <div className="small text-muted mt-1">
+                                  {typeof queueByAppointment[appointment.appointmentId]?.ticketNumberForDay === 'number' && (
+                                    <div>
+                                      <i className="bi bi-ticket-perforated me-1"></i>
+                                      Ticket Number: <span className="fw-bold">#{queueByAppointment[appointment.appointmentId].ticketNumberForDay}</span>
+                                    </div>
+                                  )}
+                                  {typeof checkInResult[appointment.appointmentId].queueNumber === 'number' && (
+                                    <div>
+                                      <i className="bi bi-list-ol me-1"></i>
+                                      Queue Position: <span className="fw-bold">#{checkInResult[appointment.appointmentId].queueNumber}</span>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>

@@ -87,9 +87,12 @@ const TodayCheckIn = () => {
       setToasts([]);
 
       const resp = await apiClient.post(`/api/queue/check-in/${appointment.appointmentId}`);
-  setTicket(resp.data);
-  // show success toast
-  addToast('success', `Checked in. Your queue number is ${resp.data.queueNumber}`);
+      setTicket(resp.data);
+      // show success toast with ticket and queue numbers
+      const ticketNum = resp.data.ticketNumberForDay ? `Ticket #${resp.data.ticketNumberForDay}` : '';
+      const queueNum = resp.data.queueNumber ? `Queue #${resp.data.queueNumber}` : '';
+      const message = ticketNum && queueNum ? `${ticketNum} • ${queueNum}` : (ticketNum || queueNum || 'Checked in successfully');
+      addToast('success', `✓ Checked in! ${message}`);
     } catch (err) {
       console.error('Check-in failed', err);
       const msg = err.response?.data?.message || err.response?.data || err.message || 'Check-in failed';
@@ -232,15 +235,28 @@ const TodayCheckIn = () => {
         {/* Ticket Display (if checked in) */}
         {ticket && (
           <div className="alert alert-success border-0 mb-4" style={{ backgroundColor: '#d1e7dd' }}>
-            <div className="d-flex align-items-center justify-content-center">
+            <div className="d-flex align-items-center justify-content-center flex-wrap">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" className="me-2" viewBox="0 0 16 16">
                 <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/>
                 <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-1h1v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v1H1V2a2 2 0 0 1 2-2z"/>
                 <path d="M1 5v-.5a.5.5 0 0 1 1 0V5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0V8h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1z"/>
               </svg>
-              <div>
-                <strong>Checked In</strong>
-                <span className="ms-3">Queue Number: <strong className="fs-5">#{ticket.queueNumber}</strong></span>
+              <div className="text-center text-md-start">
+                <strong className="d-block mb-1">✓ Checked In</strong>
+                <div className="d-flex gap-3 flex-wrap justify-content-center justify-content-md-start">
+                  {typeof ticket.ticketNumberForDay === 'number' && (
+                    <span className="badge bg-primary" style={{ fontSize: '0.95rem', padding: '0.4rem 0.8rem' }}>
+                      <i className="bi bi-ticket-perforated me-1"></i>
+                      Ticket #{ticket.ticketNumberForDay}
+                    </span>
+                  )}
+                  {typeof ticket.queueNumber === 'number' && (
+                    <span className="badge bg-info text-dark" style={{ fontSize: '0.95rem', padding: '0.4rem 0.8rem' }}>
+                      <i className="bi bi-list-ol me-1"></i>
+                      Queue #{ticket.queueNumber}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>

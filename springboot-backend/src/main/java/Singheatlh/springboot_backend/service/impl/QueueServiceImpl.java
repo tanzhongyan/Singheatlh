@@ -22,7 +22,9 @@ import Singheatlh.springboot_backend.exception.ResourceNotFoundExecption;
 import Singheatlh.springboot_backend.mapper.QueueTicketMapper;
 import Singheatlh.springboot_backend.repository.AppointmentRepository;
 import Singheatlh.springboot_backend.repository.QueueTicketRepository;
+import Singheatlh.springboot_backend.service.CheckInValidator;
 import Singheatlh.springboot_backend.service.NotificationService;
+import Singheatlh.springboot_backend.service.QueueNumberCalculator;
 import Singheatlh.springboot_backend.service.QueueService;
 
 @Service
@@ -34,7 +36,6 @@ public class QueueServiceImpl implements QueueService {
     private static final int SECOND_POSITION = 2;
     private static final int FOURTH_POSITION = 4;
     private static final int NOTIFICATION_POSITIONS_AHEAD = 3;
-    private static final int INITIAL_QUEUE_NUMBER = 1;
     private static final int EMPTY_QUEUE_NUMBER = 0;
     
     // Per-doctor locks to prevent race conditions
@@ -51,6 +52,12 @@ public class QueueServiceImpl implements QueueService {
     
     @Autowired(required = false)
     private NotificationService notificationService;
+    
+    @Autowired
+    private CheckInValidator checkInValidator;
+    
+    @Autowired
+    private QueueNumberCalculator queueNumberCalculator;
 
     @Override
     @Transactional(isolation = Isolation.SERIALIZABLE)
@@ -77,98 +84,84 @@ public class QueueServiceImpl implements QueueService {
         }
     }
     
+    /**
+     * REFACTORED: Performs check-in operation
+     * Now follows SRP - delegates validation and calculations to specialized services
+     * Much cleaner and easier to maintain
+     */
     private QueueTicketDto performCheckIn(String appointmentId, Appointment appointment) {
         try {
             LocalDateTime now = LocalDateTime.now();
-
-            LocalDateTime appointmentDate = appointment.getStartDatetime().toLocalDate().atStartOfDay();
-            LocalDateTime currentDate = now.toLocalDate().atStartOfDay();
             
-            if (currentDate.isAfter(appointmentDate)) {
-                throw new IllegalStateException("Check-in failed: Appointment date has passed. " +
-                    "Appointment was scheduled for " + appointment.getStartDatetime().toLocalDate() + 
-                    " but today is " + now.toLocalDate() + ". Please reschedule for patient.");
-            }
+            // Step 1: Validate check-in (delegated to CheckInValidator)
+            checkInValidator.validateCheckIn(appointment, now);
             
-            // Check appointment status
-            switch (appointment.getStatus()) {
-                case Completed:
-                    throw new IllegalStateException("Check-in failed: This appointment has already been completed on " + 
-                        appointment.getStartDatetime().toLocalDate() + ". Cannot check in for a completed appointment.");
-                
-                case Ongoing:
-                    throw new IllegalStateException("Check-in failed: This appointment is already ongoing. " +
-                        "Patient has already checked in and are currently being served or waiting in queue.");
-                
-                case Missed:
-                    throw new IllegalStateException("Check-in failed: This appointment was marked as missed on " + 
-                        appointment.getStartDatetime().toLocalDate() + ". Please reschedule for patient.");
-                
-                case Cancelled:
-                    throw new IllegalStateException("Check-in failed: This appointment has been cancelled. " +
-                        "Please reschedule for the patient.");
-                
-                case Upcoming:
-                    // Valid status, continue with time validation
-                    break;
-                
-                default:
-                    throw new IllegalStateException("Check-in failed: Invalid appointment status: " + appointment.getStatus());
-            }
-            
-            // if already have ticket
-            if (queueTicketRepository.findByAppointmentId(appointmentId).isPresent()) {
-                throw new IllegalStateException("Check-in failed: Patient have already checked in for this appointment. " +
-                    "Please check patient queue status again or message the system operator if you need assistance.");
-            }
-            
-            Integer maxQueueNumber = queueTicketRepository.findMaxQueueNumberByDoctorIdAndDate(
+            // Step 2: Calculate queue numbers (delegated to QueueNumberCalculator)
+            Integer newQueueNumber = queueNumberCalculator.calculateNextQueueNumber(
                 appointment.getDoctorId(), now);
-            Integer newQueueNumber = (maxQueueNumber == null) ? INITIAL_QUEUE_NUMBER : maxQueueNumber + QUEUE_DECREMENT;
-
-            // Generate ticket_number_for_day (resets daily per clinic)
+            
             Integer clinicId = appointment.getDoctor() != null ? appointment.getDoctor().getClinicId() : null;
-            Integer maxTicketNumberForDay = null;
-            if (clinicId != null) {
-                maxTicketNumberForDay = queueTicketRepository.findMaxTicketNumberForDayByClinicAndDate(clinicId, now);
-            }
-            Integer newTicketNumberForDay = (maxTicketNumberForDay == null) ? 1 : maxTicketNumberForDay + 1;
-
-            QueueTicket queueTicket = new QueueTicket(
-                appointmentId,
-                now,
-                newQueueNumber
-            );
-            queueTicket.setTicketNumberForDay(newTicketNumberForDay);
+            Integer newTicketNumberForDay = queueNumberCalculator.calculateTicketNumberForDay(clinicId, now);
             
-            if (newQueueNumber == FIRST_POSITION) {
-                queueTicket.setStatus(QueueStatus.CALLED);
-                queueTicket.setConsultationStartTime(now);
-            }
+            // Step 3: Create queue ticket
+            QueueTicket queueTicket = createQueueTicket(appointmentId, now, newQueueNumber, newTicketNumberForDay);
             
-            queueTicket = queueTicketRepository.save(queueTicket);
+            // Step 4: Update appointment status
+            updateAppointmentStatus(appointment);
             
-            appointment.setStatus(AppointmentStatus.Ongoing);
-            appointmentRepository.save(appointment);
-            
+            // Step 5: Reload ticket with full appointment data
             queueTicket = queueTicketRepository.findByIdWithAppointment(queueTicket.getTicketId())
                 .orElseThrow(() -> new ResourceNotFoundExecption("Queue ticket not found after save"));
             
-            // Send check-in confirmation notification to the patient
-            if (notificationService != null) {
-                try {
-                    notificationService.sendCheckInConfirmationNotification(queueTicket);
-                } catch (Exception e) {
-                }
-            }
-            
-            if (newQueueNumber == FIRST_POSITION || newQueueNumber == SECOND_POSITION || newQueueNumber == FOURTH_POSITION) {
-                processQueueNotifications(appointment.getDoctorId());
-            }
+            // Step 6: Send notifications
+            sendCheckInNotifications(queueTicket, newQueueNumber, appointment.getDoctorId());
             
             return queueTicketMapper.toDto(queueTicket);
         } catch (Exception e) {
             throw new IllegalStateException("Check-in failed: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Create and save a queue ticket
+     */
+    private QueueTicket createQueueTicket(String appointmentId, LocalDateTime now, 
+                                          Integer queueNumber, Integer ticketNumberForDay) {
+        QueueTicket queueTicket = new QueueTicket(appointmentId, now, queueNumber);
+        queueTicket.setTicketNumberForDay(ticketNumberForDay);
+        
+        // If first in queue, mark as called immediately
+        if (queueNumber == FIRST_POSITION) {
+            queueTicket.setStatus(QueueStatus.CALLED);
+            queueTicket.setConsultationStartTime(now);
+        }
+        
+        return queueTicketRepository.save(queueTicket);
+    }
+    
+    /**
+     * Update appointment status to Ongoing
+     */
+    private void updateAppointmentStatus(Appointment appointment) {
+        appointment.setStatus(AppointmentStatus.Ongoing);
+        appointmentRepository.save(appointment);
+    }
+    
+    /**
+     * Send check-in confirmation and process queue notifications
+     */
+    private void sendCheckInNotifications(QueueTicket queueTicket, Integer queueNumber, String doctorId) {
+        if (notificationService != null) {
+            try {
+                notificationService.sendCheckInConfirmationNotification(queueTicket);
+            } catch (Exception e) {
+                // Fail silently - notification failure shouldn't break check-in
+            }
+        }
+        
+        // Process queue notifications if patient is in the first few positions
+        if (queueNumber == FIRST_POSITION || queueNumber == SECOND_POSITION || queueNumber == FOURTH_POSITION) {
+            processQueueNotifications(doctorId);
         }
     }
 
