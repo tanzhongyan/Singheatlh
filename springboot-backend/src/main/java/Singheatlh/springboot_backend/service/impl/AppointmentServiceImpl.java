@@ -55,10 +55,13 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     /**
      * Convenience method for creating walk-in appointments.
-     * The isWalkIn flag should already be set by the controller/frontend.
-     * This method simply delegates to createAppointment for clarity.
+     * Explicitly sets the isWalkIn flag to true to ensure walk-in validations are applied.
+     * This bypasses the 1-day advance booking requirement.
      */
     public AppointmentDto createWalkInAppointment(CreateAppointmentRequest request) {
+        // Explicitly set the isWalkIn flag to true
+        // This ensures walk-in strategy is used and future time validation is skipped
+        request.setWalkIn(true);
         return createAppointment(request);
     }
 

@@ -3,6 +3,7 @@ package Singheatlh.springboot_backend.strategy;
 import Singheatlh.springboot_backend.dto.CreateAppointmentRequest;
 import Singheatlh.springboot_backend.mapper.AppointmentMapper;
 import Singheatlh.springboot_backend.repository.AppointmentRepository;
+import Singheatlh.springboot_backend.repository.DoctorRepository;
 import Singheatlh.springboot_backend.validation.appointment.AppointmentValidator;
 import org.springframework.stereotype.Component;
 
@@ -19,8 +20,9 @@ public class WalkInAppointmentStrategy extends AbstractAppointmentStrategy {
 
     public WalkInAppointmentStrategy(AppointmentRepository appointmentRepository,
                                     AppointmentMapper appointmentMapper,
-                                    AppointmentValidator appointmentValidator) {
-        super(appointmentRepository, appointmentMapper, appointmentValidator);
+                                    AppointmentValidator appointmentValidator,
+                                    DoctorRepository doctorRepository) {
+        super(appointmentRepository, appointmentMapper, appointmentValidator, doctorRepository);
     }
 
     @Override

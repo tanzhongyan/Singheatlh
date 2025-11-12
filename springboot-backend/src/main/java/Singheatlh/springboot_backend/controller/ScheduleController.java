@@ -134,8 +134,8 @@ public class ScheduleController {
     }
 
     @GetMapping("/doctor/{doctorId}/slot")
-    public ResponseEntity<Map<Date, List<SlotDto>>> getSlotsByDoctor(@PathVariable String doctorId) {
-        Map<Date, List<SlotDto>> slotMap = scheduleService.generateDoctorSlots(doctorId);
+    public ResponseEntity<Map<String, List<SlotDto>>> getSlotsByDoctor(@PathVariable String doctorId) {
+        Map<String, List<SlotDto>> slotMap = scheduleService.generateDoctorSlots(doctorId);
         return ResponseEntity.ok(slotMap);
     }
 

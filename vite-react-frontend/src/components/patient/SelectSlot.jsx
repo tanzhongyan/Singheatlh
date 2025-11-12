@@ -92,7 +92,18 @@ export default function SelectSlot({
       evening: [],
     };
 
+    const now = new Date();
+    const todayDateStr = now.toISOString().split("T")[0];
+
     slots.forEach((slot) => {
+      // For today's date, skip slots that are in the past
+      if (selectedDay === todayDateStr) {
+        const slotDateTime = new Date(slot.startDatetime);
+        if (slotDateTime <= now) {
+          return; // Skip past slots
+        }
+      }
+
       const hour = new Date(slot.startDatetime).getHours();
       if (hour < 12) {
         groups.morning.push(slot);

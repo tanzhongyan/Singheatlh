@@ -377,7 +377,8 @@ const RescheduleAppointmentModal = ({ show, onHide, appointment, onSuccess }) =>
                           <div className="small">
                             {new Date(appointment?.startDatetime).toLocaleTimeString('en-US', {
                               hour: '2-digit',
-                              minute: '2-digit'
+                              minute: '2-digit',
+                              timeZone: 'Asia/Singapore'
                             })}
                           </div>
                         </div>

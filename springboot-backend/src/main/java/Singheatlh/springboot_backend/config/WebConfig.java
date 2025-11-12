@@ -8,6 +8,8 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.util.TimeZone;
+
 @Configuration
 @EnableWebMvc
 public class WebConfig implements WebMvcConfigurer {
@@ -25,6 +27,8 @@ public class WebConfig implements WebMvcConfigurer {
     public ObjectMapper objectMapper() {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
+        // Set timezone to Singapore (UTC+8) for consistent serialization
+        objectMapper.setTimeZone(TimeZone.getTimeZone("Asia/Singapore"));
         return objectMapper;
     }
 }

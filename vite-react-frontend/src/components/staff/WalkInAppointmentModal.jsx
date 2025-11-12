@@ -107,8 +107,8 @@ const WalkInAppointmentModal = ({ show, onHide, onSuccess, clinicId }) => {
       const payload = {
         patientId: formData.patientId,
         doctorId: formData.doctorId,
-        startDatetime: new Date(formData.startDatetime).toISOString(),
-        endDatetime: new Date(formData.endDatetime).toISOString(),
+        startDatetime: formData.startDatetime,
+        // endDatetime is automatically calculated by backend using doctor's appointmentDurationInMinutes
         isWalkIn: true,
       };
 
