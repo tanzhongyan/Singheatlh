@@ -35,7 +35,10 @@ public abstract class AbstractRescheduleStrategy implements AppointmentReschedul
         // Common logic - validate new time is not in the past
         validateNewTimeNotInPast(context);
 
-        // Common logic - check for doctor conflicts
+        // Common logic - update doctor and clinic if provided
+        updateDoctorAndClinic(appointment, context);
+
+        // Common logic - check for doctor conflicts (use updated doctor if changed)
         validateNoDoctorConflicts(appointment, context);
 
         // Common logic - update appointment times
@@ -95,6 +98,22 @@ public abstract class AbstractRescheduleStrategy implements AppointmentReschedul
 
         if (!conflicts.isEmpty()) {
             throw new IllegalArgumentException("Doctor is not available at the requested time");
+        }
+    }
+
+    /**
+     * Update doctor if a new value is provided.
+     * Note: Clinic is automatically determined by the doctor's clinic assignment,
+     * so we only need to update the doctorId. The newClinicId from context is ignored
+     * as the clinic is derived from the selected doctor.
+     * Common logic shared by all reschedule strategies.
+     */
+    private void updateDoctorAndClinic(Appointment appointment, RescheduleContext context) {
+        // Update doctor if a new doctor ID is provided
+        // The clinic is indirectly updated through the doctor's clinic assignment
+        if (context.getNewDoctorId() != null && !context.getNewDoctorId().isEmpty()) {
+            // Doctor ID is already a String (e.g., 'D000000012')
+            appointment.setDoctorId(context.getNewDoctorId());
         }
     }
 

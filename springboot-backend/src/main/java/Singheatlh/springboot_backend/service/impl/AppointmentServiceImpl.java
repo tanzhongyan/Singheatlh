@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import Singheatlh.springboot_backend.dto.AppointmentDto;
 import Singheatlh.springboot_backend.dto.CreateAppointmentRequest;
+import Singheatlh.springboot_backend.dto.request.RescheduleAppointmentRequest;
 import Singheatlh.springboot_backend.entity.Appointment;
 import Singheatlh.springboot_backend.entity.enums.AppointmentStatus;
 import Singheatlh.springboot_backend.mapper.AppointmentMapper;
@@ -142,6 +143,42 @@ public class AppointmentServiceImpl implements AppointmentService {
         RescheduleContext context = RescheduleContext.builder()
             .isStaff(true)
             .newDateTime(newDateTime)
+            .now(LocalDateTime.now())
+            .build();
+
+        // Delegate to strategy pattern
+        return rescheduleFactory.getStrategy(context).reschedule(appointment, context);
+    }
+
+    @Override
+    public AppointmentDto rescheduleAppointment(String appointmentId, RescheduleAppointmentRequest request) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+            .orElseThrow(() -> new RuntimeException("Appointment not found with id: " + appointmentId));
+
+        // Build reschedule context for patient with optional doctor/clinic changes
+        RescheduleContext context = RescheduleContext.builder()
+            .isStaff(false)
+            .newDateTime(request.getNewDateTime())
+            .newDoctorId(request.getNewDoctorId())
+            .newClinicId(request.getNewClinicId())
+            .now(LocalDateTime.now())
+            .build();
+
+        // Delegate to strategy pattern
+        return rescheduleFactory.getStrategy(context).reschedule(appointment, context);
+    }
+
+    @Override
+    public AppointmentDto rescheduleAppointmentByStaff(String appointmentId, RescheduleAppointmentRequest request) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+            .orElseThrow(() -> new RuntimeException("Appointment not found with id: " + appointmentId));
+
+        // Build reschedule context for staff with optional doctor/clinic changes
+        RescheduleContext context = RescheduleContext.builder()
+            .isStaff(true)
+            .newDateTime(request.getNewDateTime())
+            .newDoctorId(request.getNewDoctorId())
+            .newClinicId(request.getNewClinicId())
             .now(LocalDateTime.now())
             .build();
 

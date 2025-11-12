@@ -33,4 +33,17 @@ public class RescheduleContext {
      * Allows for consistent time checking and testability.
      */
     private LocalDateTime now;
+
+    /**
+     * New doctor ID (optional - if null, keeps current doctor).
+     * Allows rescheduling with a different doctor.
+     * Format: String ID like 'D000000012'
+     */
+    private String newDoctorId;
+
+    /**
+     * New clinic ID (optional - if null, keeps current clinic).
+     * Allows rescheduling with a different clinic.
+     */
+    private Integer newClinicId;
 }

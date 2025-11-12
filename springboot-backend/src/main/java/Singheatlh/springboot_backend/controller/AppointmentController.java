@@ -20,6 +20,7 @@ import Singheatlh.springboot_backend.dto.AppointmentDto;
 import Singheatlh.springboot_backend.dto.CreateAppointmentRequest;
 import Singheatlh.springboot_backend.dto.ErrorResponse;
 import Singheatlh.springboot_backend.dto.MedicalSummaryDto;
+import Singheatlh.springboot_backend.dto.request.RescheduleAppointmentRequest;
 import Singheatlh.springboot_backend.entity.enums.AppointmentStatus;
 import Singheatlh.springboot_backend.service.AppointmentService;
 import Singheatlh.springboot_backend.service.MedicalSummaryService;
@@ -125,6 +126,26 @@ public class AppointmentController {
         }
     }
 
+    @PutMapping("/{id}/reschedule-with-doctor")
+    public ResponseEntity<?> rescheduleAppointmentWithDoctor(
+            @PathVariable String id,
+            @RequestBody RescheduleAppointmentRequest request) {
+        try {
+            if (request.getNewDateTime() == null) {
+                return ResponseEntity.badRequest().body(new ErrorResponse("New date/time is required"));
+            }
+            AppointmentDto rescheduledAppointment = appointmentService.rescheduleAppointment(id, request);
+            return ResponseEntity.ok(rescheduledAppointment);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @PutMapping("/{id}/reschedule-by-staff")
     public ResponseEntity<?> rescheduleAppointmentByStaff(
             @PathVariable String id,
@@ -134,6 +155,26 @@ public class AppointmentController {
                 return ResponseEntity.badRequest().build();
             }
             AppointmentDto rescheduledAppointment = appointmentService.rescheduleAppointmentByStaff(id, newDateTime);
+            return ResponseEntity.ok(rescheduledAppointment);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PutMapping("/{id}/reschedule-by-staff-with-doctor")
+    public ResponseEntity<?> rescheduleAppointmentByStaffWithDoctor(
+            @PathVariable String id,
+            @RequestBody RescheduleAppointmentRequest request) {
+        try {
+            if (request.getNewDateTime() == null) {
+                return ResponseEntity.badRequest().body(new ErrorResponse("New date/time is required"));
+            }
+            AppointmentDto rescheduledAppointment = appointmentService.rescheduleAppointmentByStaff(id, request);
             return ResponseEntity.ok(rescheduledAppointment);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)

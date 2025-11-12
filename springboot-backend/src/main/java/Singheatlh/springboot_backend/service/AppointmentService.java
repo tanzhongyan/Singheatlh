@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import Singheatlh.springboot_backend.dto.AppointmentDto;
 import Singheatlh.springboot_backend.dto.CreateAppointmentRequest;
+import Singheatlh.springboot_backend.dto.request.RescheduleAppointmentRequest;
 import Singheatlh.springboot_backend.entity.enums.AppointmentStatus;
 
 public interface AppointmentService {
@@ -45,6 +46,18 @@ public interface AppointmentService {
     AppointmentDto rescheduleAppointment(String appointmentId, LocalDateTime newDateTime);
 
     /**
+     * Reschedule an appointment with optional doctor and clinic changes.
+     * Allows patients to change the date, time, doctor, and/or clinic.
+     *
+     * @param appointmentId The appointment ID to reschedule
+     * @param request The reschedule request containing new date/time and optional doctor/clinic
+     * @return The updated appointment DTO
+     * @throws RuntimeException if appointment not found
+     * @throws IllegalArgumentException if validation fails
+     */
+    AppointmentDto rescheduleAppointment(String appointmentId, RescheduleAppointmentRequest request);
+
+    /**
      * Reschedule an appointment by staff on behalf of a patient.
      * Unlike patient reschedule, this bypasses the 24-hour restriction
      * and allows same-day rescheduling.
@@ -56,6 +69,17 @@ public interface AppointmentService {
      * @throws IllegalArgumentException if validation fails (e.g., doctor unavailable)
      */
     AppointmentDto rescheduleAppointmentByStaff(String appointmentId, LocalDateTime newDateTime);
+
+    /**
+     * Reschedule an appointment by staff with optional doctor and clinic changes.
+     *
+     * @param appointmentId The appointment ID to reschedule
+     * @param request The reschedule request containing new date/time and optional doctor/clinic
+     * @return The updated appointment DTO
+     * @throws RuntimeException if appointment not found
+     * @throws IllegalArgumentException if validation fails
+     */
+    AppointmentDto rescheduleAppointmentByStaff(String appointmentId, RescheduleAppointmentRequest request);
 
     // ========== Clinic Staff Methods ==========
 

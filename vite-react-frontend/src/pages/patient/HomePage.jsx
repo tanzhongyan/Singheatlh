@@ -33,7 +33,7 @@ const HomePage = () => {
                 <div className="card h-100 border-0 shadow-sm hover-card">
                   <div className="card-body p-4">
                     <div className="d-flex align-items-center mb-3">
-                      <div className="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+                      <div className="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center me-3" style={{ width: "48px", height: "48px" }}>
                         <i
                           className="bi bi-calendar-check text-primary"
                           style={{ fontSize: "1.5rem" }}
@@ -59,7 +59,7 @@ const HomePage = () => {
                 <div className="card h-100 border-0 shadow-sm hover-card">
                   <div className="card-body p-4">
                     <div className="d-flex align-items-center mb-3">
-                      <div className="rounded-circle bg-success bg-opacity-10 p-3 me-3">
+                      <div className="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center me-3" style={{ width: "48px", height: "48px" }}>
                         <i
                           className="bi bi-plus-circle text-success"
                           style={{ fontSize: "1.5rem" }}

@@ -71,7 +71,10 @@ const AppointmentsPage = () => {
   const handleRescheduleSuccess = () => {
     setShowRescheduleModal(false);
     setPendingRescheduleAppointment(null);
-    fetchAppointments();
+    // Add small delay to ensure backend has persisted changes
+    setTimeout(() => {
+      fetchAppointments();
+    }, 500);
   };
 
   const handleViewSummary = async (appointment) => {

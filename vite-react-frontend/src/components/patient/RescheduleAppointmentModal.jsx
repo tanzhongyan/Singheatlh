@@ -187,9 +187,56 @@ const RescheduleAppointmentModal = ({ show, onHide, appointment, onSuccess }) =>
     try {
       setLoading(true);
       const newDateTime = `${selectedDate}T${selectedTime}:00`;
-      await apiClient.put(`/api/appointments/${appointment.appointmentId}/reschedule`, null, {
-        params: { newDateTime }
+
+      // Check if doctor was changed - need to convert both to same type for comparison
+      const currentDoctorId = String(appointment.doctorId || '');
+      const newDoctorId = String(selectedDoctor.doctorId || '');
+      const isDoctorChanged = newDoctorId !== currentDoctorId;
+
+      console.log('Reschedule Debug:', {
+        currentDoctorId,
+        newDoctorId,
+        isDoctorChanged,
+        appointmentDoctorId: appointment.doctorId,
+        selectedDoctorId: selectedDoctor.doctorId,
+        appointmentData: {
+          doctorName: appointment.doctorName,
+          clinicName: appointment.clinicName,
+          doctorId: appointment.doctorId,
+          clinicId: appointment.clinicId
+        },
+        selectedDoctorData: {
+          name: selectedDoctor.name,
+          doctorId: selectedDoctor.doctorId,
+          clinicId: selectedClinic.clinicId
+        }
       });
+
+      // Use the appropriate endpoint based on whether doctor was changed
+      let endpoint;
+      let requestBody;
+
+      if (isDoctorChanged) {
+        // Use endpoint that supports doctor changes
+        endpoint = `/api/appointments/${appointment.appointmentId}/reschedule-with-doctor`;
+        requestBody = {
+          newDateTime,
+          newDoctorId: selectedDoctor.doctorId  // Send as string, not integer
+        };
+        console.log('Sending to reschedule-with-doctor:', { endpoint, requestBody });
+      } else {
+        // Use simple query param endpoint for time-only rescheduling
+        endpoint = `/api/appointments/${appointment.appointmentId}/reschedule`;
+        requestBody = null;
+        console.log('Sending to reschedule (time-only):', { endpoint, newDateTime });
+      }
+
+      const response = isDoctorChanged
+        ? await apiClient.put(endpoint, requestBody)
+        : await apiClient.put(endpoint, null, { params: { newDateTime } });
+
+      console.log('Reschedule response:', response.data);
+
       setSuccess(true);
       addToast('success', 'Appointment rescheduled successfully!');
       setTimeout(() => {
