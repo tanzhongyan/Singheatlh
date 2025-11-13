@@ -35,6 +35,9 @@ public class SystemBackupServiceImpl implements SystemBackupService {
 
     @Value("${backup.directory:./backups}")
     private String backupDirectory;
+    
+    @Value("${docker.container.name:supabase-db}")
+    private String dockerContainerName;
 
     private static final String BACKUP_FILE_EXTENSION = ".sql.gz";
 
@@ -50,38 +53,41 @@ public class SystemBackupServiceImpl implements SystemBackupService {
 
             // Extract database credentials from datasource URL
             String dbName = extractDatabaseName(datasourceUrl);
-            String host = extractHost(datasourceUrl);
-            String port = extractPort(datasourceUrl);
-
-            // Build pg_dump command
+            
+            // Build docker exec command to run pg_dump inside the container
             List<String> command = new ArrayList<>();
+            command.add("docker");
+            command.add("exec");
+            command.add("-e");
+            command.add("PGPASSWORD=" + datasourcePassword); // Set password as env var
+            command.add(dockerContainerName);
             command.add("pg_dump");
-            command.add("-h");
-            command.add(host);
-            command.add("-p");
-            command.add(port);
             command.add("-U");
             command.add(datasourceUsername);
             command.add("-d");
             command.add(dbName);
             command.add("-F");
             command.add("c"); // Custom format (binary, compressible)
-            command.add("-f");
-            command.add(backupFile.toString());
+            command.add("--file=/tmp/backup.dump"); // Temp file inside container
             command.add("-v"); // Verbose
 
-            // Set password via environment variable to avoid command line exposure
             ProcessBuilder pb = new ProcessBuilder(command);
-            pb.environment().put("PGPASSWORD", datasourcePassword);
+            pb.redirectErrorStream(true); // Combine stdout and stderr for easier capture
+
+            log.info("Executing pg_dump via docker exec (container: {})", dockerContainerName);
+            log.debug("Database: {}, Username: {}", dbName, datasourceUsername);
 
             // Execute pg_dump
             Process process = pb.start();
 
-            // Capture output
-            BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-            String errorLine;
-            while ((errorLine = errorReader.readLine()) != null) {
-                log.debug("pg_dump: {}", errorLine);
+            // Capture output in real-time (must do this BEFORE waiting or can deadlock)
+            StringBuilder output = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    log.debug("pg_dump: {}", line);
+                    output.append(line).append("\n");
+                }
             }
 
             // Wait for process to complete with timeout
@@ -93,12 +99,67 @@ public class SystemBackupServiceImpl implements SystemBackupService {
 
             int exitCode = process.exitValue();
             if (exitCode != 0) {
-                throw new RuntimeException("pg_dump failed with exit code: " + exitCode);
+                String errorMsg = output.toString();
+                log.error("pg_dump failed with output:\n{}", errorMsg);
+                throw new RuntimeException("pg_dump failed with exit code: " + exitCode + 
+                    "\nError details: " + errorMsg +
+                    "\n\nConnection details:" +
+                    "\n  Container: " + dockerContainerName +
+                    "\n  Database: " + dbName +
+                    "\n  Username: " + datasourceUsername +
+                    "\n\nPlease verify the Docker container is running and credentials are correct.");
+            }
+            
+            log.info("pg_dump completed successfully, copying backup from container...");
+            
+            // Copy backup file from container to host
+            List<String> copyCommand = new ArrayList<>();
+            copyCommand.add("docker");
+            copyCommand.add("cp");
+            copyCommand.add(dockerContainerName + ":/tmp/backup.dump");
+            copyCommand.add(backupFile.toString());
+            
+            ProcessBuilder copyPb = new ProcessBuilder(copyCommand);
+            copyPb.redirectErrorStream(true);
+            Process copyProcess = copyPb.start();
+            
+            // Capture copy output
+            StringBuilder copyOutput = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(copyProcess.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    log.debug("docker cp: {}", line);
+                    copyOutput.append(line).append("\n");
+                }
+            }
+            
+            boolean copyCompleted = copyProcess.waitFor(1, TimeUnit.MINUTES);
+            if (!copyCompleted) {
+                copyProcess.destroy();
+                throw new RuntimeException("Docker cp timed out");
+            }
+            
+            int copyExitCode = copyProcess.exitValue();
+            if (copyExitCode != 0) {
+                throw new RuntimeException("Failed to copy backup from container: " + copyOutput.toString());
+            }
+            
+            // Clean up temp file in container
+            try {
+                List<String> cleanupCommand = new ArrayList<>();
+                cleanupCommand.add("docker");
+                cleanupCommand.add("exec");
+                cleanupCommand.add(dockerContainerName);
+                cleanupCommand.add("rm");
+                cleanupCommand.add("/tmp/backup.dump");
+                new ProcessBuilder(cleanupCommand).start();
+            } catch (Exception e) {
+                log.warn("Failed to cleanup temp backup file in container: {}", e.getMessage());
             }
 
-            // Verify backup file was created
+            // Verify backup file was created on host
             if (!Files.exists(backupFile)) {
-                throw new RuntimeException("Backup file was not created");
+                throw new RuntimeException("Backup file was not created on host");
             }
 
             long fileSize = Files.size(backupFile);
@@ -191,16 +252,33 @@ public class SystemBackupServiceImpl implements SystemBackupService {
 
             // Extract database credentials from datasource URL
             String dbName = extractDatabaseName(datasourceUrl);
-            String host = extractHost(datasourceUrl);
-            String port = extractPort(datasourceUrl);
 
-            // Build pg_restore command with options to handle incompatibilities
+            // Copy backup file into Docker container first
+            List<String> copyCommand = new ArrayList<>();
+            copyCommand.add("docker");
+            copyCommand.add("cp");
+            copyCommand.add(backupFile.toString());
+            copyCommand.add(dockerContainerName + ":/tmp/" + backupId + BACKUP_FILE_EXTENSION);
+
+            ProcessBuilder copyPb = new ProcessBuilder(copyCommand);
+            Process copyProcess = copyPb.start();
+            boolean copyCompleted = copyProcess.waitFor(2, TimeUnit.MINUTES);
+            if (!copyCompleted) {
+                copyProcess.destroy();
+                throw new RuntimeException("Docker copy timed out");
+            }
+            if (copyProcess.exitValue() != 0) {
+                throw new RuntimeException("Failed to copy backup to Docker container");
+            }
+
+            // Build docker exec command to run pg_restore inside container
             List<String> command = new ArrayList<>();
+            command.add("docker");
+            command.add("exec");
+            command.add("-e");
+            command.add("PGPASSWORD=" + datasourcePassword);
+            command.add(dockerContainerName);
             command.add("pg_restore");
-            command.add("-h");
-            command.add(host);
-            command.add("-p");
-            command.add(port);
             command.add("-U");
             command.add(datasourceUsername);
             command.add("-d");
@@ -212,11 +290,10 @@ public class SystemBackupServiceImpl implements SystemBackupService {
             command.add("--disable-triggers"); // Disable triggers during restore
             command.add("-j");
             command.add("4"); // Use 4 parallel jobs for faster restore
-            command.add(backupFile.toString());
+            command.add("/tmp/" + backupId + BACKUP_FILE_EXTENSION);
 
-            // Set password via environment variable
+            // Execute docker exec with pg_restore
             ProcessBuilder pb = new ProcessBuilder(command);
-            pb.environment().put("PGPASSWORD", datasourcePassword);
 
             // Execute pg_restore
             Process process = pb.start();
