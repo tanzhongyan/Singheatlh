@@ -252,16 +252,33 @@ public class SystemBackupServiceImpl implements SystemBackupService {
 
             // Extract database credentials from datasource URL
             String dbName = extractDatabaseName(datasourceUrl);
-            String host = extractHost(datasourceUrl);
-            String port = extractPort(datasourceUrl);
 
-            // Build pg_restore command with options to handle incompatibilities
+            // Copy backup file into Docker container first
+            List<String> copyCommand = new ArrayList<>();
+            copyCommand.add("docker");
+            copyCommand.add("cp");
+            copyCommand.add(backupFile.toString());
+            copyCommand.add(dockerContainerName + ":/tmp/" + backupId + BACKUP_FILE_EXTENSION);
+
+            ProcessBuilder copyPb = new ProcessBuilder(copyCommand);
+            Process copyProcess = copyPb.start();
+            boolean copyCompleted = copyProcess.waitFor(2, TimeUnit.MINUTES);
+            if (!copyCompleted) {
+                copyProcess.destroy();
+                throw new RuntimeException("Docker copy timed out");
+            }
+            if (copyProcess.exitValue() != 0) {
+                throw new RuntimeException("Failed to copy backup to Docker container");
+            }
+
+            // Build docker exec command to run pg_restore inside container
             List<String> command = new ArrayList<>();
+            command.add("docker");
+            command.add("exec");
+            command.add("-e");
+            command.add("PGPASSWORD=" + datasourcePassword);
+            command.add(dockerContainerName);
             command.add("pg_restore");
-            command.add("-h");
-            command.add(host);
-            command.add("-p");
-            command.add(port);
             command.add("-U");
             command.add(datasourceUsername);
             command.add("-d");
@@ -273,11 +290,10 @@ public class SystemBackupServiceImpl implements SystemBackupService {
             command.add("--disable-triggers"); // Disable triggers during restore
             command.add("-j");
             command.add("4"); // Use 4 parallel jobs for faster restore
-            command.add(backupFile.toString());
+            command.add("/tmp/" + backupId + BACKUP_FILE_EXTENSION);
 
-            // Set password via environment variable
+            // Execute docker exec with pg_restore
             ProcessBuilder pb = new ProcessBuilder(command);
-            pb.environment().put("PGPASSWORD", datasourcePassword);
 
             // Execute pg_restore
             Process process = pb.start();
