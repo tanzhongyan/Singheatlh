@@ -49,6 +49,7 @@ cp db/.env.example db/.env && cp springboot-backend/src/main/resources/applicati
 
 ### Quick Start (Automated)
 
+**Windows:**
 ```bash
 # 1. Install dependencies
 npm install
@@ -57,8 +58,29 @@ npm install
 npm run dev:setup
 
 # 3. Insert seed data (inserts liness into db, to be ran only after confirming the tables are created in the db studio)
-npm run dev: seed
+npm run db:seed
 ```
+
+**macOS/Linux:**
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Start everything (database + backend + frontend)
+npm run dev:setup:unix
+
+# 3. Insert seed data (inserts liness into db, to be ran only after confirming the tables are created in the db studio)
+npm run db:seed
+```
+
+> **Note**: Seeding will take approximately 10 minutes as supabase is creating authentication profiles for 3358 users. After seeding is done, you may log in as any user found in [User Seed Data File](./db/sample-data/user_profile.csv) with password: `Password123!`.
+
+**Test accounts to login**
+|Email|Role|Password|
+|-----|----|--------|
+|hui.lim+3018@example.com|Patient|`Password123!`|
+|marcus.tan+1@example.com|Clinic Staff|`Password123!`|
+|admin@system.com|System Admin|`Password123!`|
 
 **That's it!** Your app will be running at:
 
@@ -68,117 +90,10 @@ npm run dev: seed
 
 ---
 
-## 📋 Available Commands
-
-### Windows Users
-
-| Command                 | Description                                                         |
-| ----------------------- | ------------------------------------------------------------------- |
-| `npm run dev:setup`     | **First-time setup**: Start database, build backend, run everything |
-| `npm run dev`           | **Daily use**: Start backend + frontend (assumes DB is running)     |
-| `npm run db:up`         | Start database containers                                           |
-| `npm run db:down`       | Stop database and remove all data                                   |
-| `npm run db:restart`    | Restart database (useful for resets)                                |
-| `npm run db:seed`       | Load ~600K sample records (run after backend starts)                |
-| `npm run backend`       | Start Spring Boot backend only                                      |
-| `npm run backend:build` | Build Spring Boot JAR                                               |
-| `npm run frontend`      | Start React frontend only                                           |
-
-### Linux/Mac Users
-
-Use the same commands as Windows, **except** for Maven-related commands - use the `:unix` suffix:
-
-| Command                      | Description                                                         |
-| ---------------------------- | ------------------------------------------------------------------- |
-| `npm run dev:setup:unix`     | **First-time setup**: Start database, build backend, run everything |
-| `npm run backend:unix`       | Start Spring Boot backend only                                      |
-| `npm run backend:build:unix` | Build Spring Boot JAR                                               |
-
-**Note:** This is due to Windows using `mvnw.cmd` and Unix using `./mvnw`. All other commands work cross-platform.
-
-### Common Workflows
-
-**Starting Fresh (First Time):**
-
-```bash
-npm install
-npm run dev:setup
-```
-
-**Daily Development:**
-
-```bash
-npm run db:up        # Start database
-npm run dev          # Start backend + frontend
-```
-
-**Reset Everything:**
-
-```bash
-npm run db:down      # Stop and clear database
-npm run dev:setup    # Restart from scratch
-```
-
----
-
-## 🔧 Manual Setup (Alternative)
-
-If you prefer to run components individually:
-
-### 1. Database Setup
-
-```bash
-cd db
-
-# Copy environment file (one-time)
-Copy-Item .env.example .env    # Windows PowerShell
-# or: cp .env.example .env     # macOS/Linux
-
-# Start database
-docker compose up -d
-
-# Access Studio at http://localhost:8000
-# Login: supabase / postgres
-```
-
-### 2. Backend Setup
-
-```bash
-cd springboot-backend
-
-# Copy config file (one-time)
-Copy-Item src/main/resources/application.properties.example src/main/resources/application.properties
-
-# Start backend
-.\mvnw.cmd spring-boot:run     # Windows
-# or: ./mvnw spring-boot:run   # macOS/Linux
-```
-
-**First run**: Flyway automatically creates all database tables.
-
-### 3. Inserting Seed Data (To be done only once)
-
-```bash
-cd db
-bash seed-data.sh
-```
-
-Ensure that the tables have been set up through flyway before running this script
-
-### 4. Frontend Setup
-
-```bash
-cd vite-react-frontend
-
-# Install and start
-npm install
-npm run dev
-```
-
-## � Documentation
+## 📄 Documentation
 
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)**: Layered architecture pattern and project structure
-- **[development.md](./development.md)**: API endpoints reference, database migrations guide, CORS configuration
+- **[DEVELOPMENT.md](./DEVELOPMENT.md)**: npm commands, API endpoints reference, database migrations guide, CORS configuration
 
 ---
 

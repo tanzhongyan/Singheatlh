@@ -4,6 +4,115 @@ This document outlines reusable components, API endpoints, and database migratio
 
 ---
 
+## 📋 Available Commands
+
+### Windows Users
+
+| Command                 | Description                                                         |
+| ----------------------- | ------------------------------------------------------------------- |
+| `npm run dev:setup`     | **First-time setup**: Start database, build backend, run everything |
+| `npm run dev`           | **Daily use**: Start backend + frontend (assumes DB is running)     |
+| `npm run db:up`         | Start database containers                                           |
+| `npm run db:down`       | Stop database and remove all data                                   |
+| `npm run db:restart`    | Restart database (useful for resets)                                |
+| `npm run db:seed`       | Load ~600K sample records (run after backend starts)                |
+| `npm run backend`       | Start Spring Boot backend only                                      |
+| `npm run backend:build` | Build Spring Boot JAR                                               |
+| `npm run frontend`      | Start React frontend only                                           |
+
+### Linux/Mac Users
+
+Use the same commands as Windows, **except** for Maven-related commands - use the `:unix` suffix:
+
+| Command                      | Description                                                         |
+| ---------------------------- | ------------------------------------------------------------------- |
+| `npm run dev:setup:unix`     | **First-time setup**: Start database, build backend, run everything |
+| `npm run backend:unix`       | Start Spring Boot backend only                                      |
+| `npm run backend:build:unix` | Build Spring Boot JAR                                               |
+
+**Note:** This is due to Windows using `mvnw.cmd` and Unix using `./mvnw`. All other commands work cross-platform.
+
+### Common Workflows
+
+**Starting Fresh (First Time):**
+
+```bash
+npm install
+npm run dev:setup
+```
+
+**Daily Development:**
+
+```bash
+npm run db:up        # Start database
+npm run dev          # Start backend + frontend
+```
+
+**Reset Everything:**
+
+```bash
+npm run db:down      # Stop and clear database
+npm run dev:setup    # Restart from scratch
+```
+
+---
+
+## 🔧 Manual Setup (Alternative)
+
+If you prefer to run components individually:
+
+### 1. Database Setup
+
+```bash
+cd db
+
+# Copy environment file (one-time)
+Copy-Item .env.example .env    # Windows PowerShell
+# or: cp .env.example .env     # macOS/Linux
+
+# Start database
+docker compose up -d
+
+# Access Studio at http://localhost:8000
+# Login: supabase / postgres
+```
+
+### 2. Backend Setup
+
+```bash
+cd springboot-backend
+
+# Copy config file (one-time)
+Copy-Item src/main/resources/application.properties.example src/main/resources/application.properties
+
+# Start backend
+.\mvnw.cmd spring-boot:run     # Windows
+# or: ./mvnw spring-boot:run   # macOS/Linux
+```
+
+**First run**: Flyway automatically creates all database tables.
+
+### 3. Inserting Seed Data (To be done only once)
+
+```bash
+cd db
+bash seed-data.sh
+```
+
+Ensure that the tables have been set up through flyway before running this script
+
+### 4. Frontend Setup
+
+```bash
+cd vite-react-frontend
+
+# Install and start
+npm install
+npm run dev
+```
+
+---
+
 ## Local Development Environment
 
 ### Database Services
@@ -324,169 +433,6 @@ ARRIVAL_SCENARIOS = {
 | Studio not loading schemas | Check all containers are healthy: `docker ps`<br>Restart if needed: `docker compose restart` |
 | Can't access Studio GUI | Access through Kong at `http://localhost:8000`<br>Login with: `supabase` / `postgres` |
 | Port 5434 already in use | Change `POSTGRES_EXTERNAL_PORT` in `.env`<br>Update `application.properties` to match |
-
----
-
-## Backend API Endpoints
-
-**Base URL**: `http://localhost:8080/api`
-
-**Note**: Most endpoints are currently set to `permitAll()` for development. In production, implement proper role-based access control.
-
----
-
-### Authentication (`/api/auth`)
-
-| Method | Endpoint | Description | Request Body | Response |
-|--------|----------|-------------|--------------|----------|
-| POST | `/signup` | Register new user | `SignUpRequest` | `UserDto` or error |
-| POST | `/login` | Authenticate user | `LoginRequest` | `UserDto` or 401 |
-| GET | `/profile` | Get current user profile | - | `UserDto` |
-| PUT | `/email` | Update user email | `UpdateEmailRequest` | Success message |
-| PUT | `/password` | Change password | `ChangePasswordRequest` | Success message |
-| POST | `/password/reset` | Request password reset | `ResetPasswordRequest` | Success message |
-| POST | `/validate-token` | Validate JWT token | `TokenValidationRequest` | `TokenValidationResponse` |
-
----
-
-### Users (`/api/users`)
-
-| Method | Endpoint | Description | Request Body | Response |
-|--------|----------|-------------|--------------|----------|
-| GET | `/{id}` | Get user by ID (UUID) | - | `UserDto` |
-| GET | `/` | Get all users | - | `List<UserDto>` |
-| GET | `/email/{email}` | Get user by email | - | `UserDto` |
-| PUT | `/{id}` | Update user | `UserDto` | `UserDto` |
-| DELETE | `/{id}` | Delete user | - | 204 No Content |
-
----
-
-### Patients (`/api/patients`)
-
-| Method | Endpoint | Description | Request Body | Response |
-|--------|----------|-------------|--------------|----------|
-| GET | `/{id}` | Get patient by ID (UUID) | - | `PatientDto` |
-| GET | `/` | Get all patients | - | `List<PatientDto>` |
-| POST | `/` | Create new patient | `CreatePatientRequest` | `PatientDto` |
-| PUT | `/{id}` | Update patient | `PatientDto` | `PatientDto` |
-| DELETE | `/{id}` | Delete patient | - | 204 No Content |
-
----
-
-### Clinic Staff (`/api/clinic-staff`)
-
-| Method | Endpoint | Description | Request Body | Response |
-|--------|----------|-------------|--------------|----------|
-| POST | `/` | Create clinic staff | `CreateClinicStaffRequest` | `ClinicStaffDto` |
-| GET | `/{id}` | Get clinic staff by ID (UUID) | - | `ClinicStaffDto` |
-| GET | `/` | Get all clinic staff | - | `List<ClinicStaffDto>` |
-| PUT | `/{id}` | Update clinic staff | `ClinicStaffDto` | `ClinicStaffDto` |
-| DELETE | `/{id}` | Delete clinic staff | - | 204 No Content |
-| GET | `/search?name={name}` | Search by name | - | `List<ClinicStaffDto>` |
-| GET | `/clinic/{clinicId}` | Get staff by clinic | - | `List<ClinicStaffDto>` |
-| GET | `/email/{email}` | Get staff by email | - | `ClinicStaffDto` |
-
----
-
-### System Administrators (`/api/system-administrators`)
-
-| Method | Endpoint | Description | Request Body | Response |
-|--------|----------|-------------|--------------|----------|
-| POST | `/` | Create system admin | `CreateSystemAdministratorRequest` | `SystemAdministratorDto` |
-| GET | `/{id}` | Get admin by ID (UUID) | - | `SystemAdministratorDto` |
-| GET | `/` | Get all admins | - | `List<SystemAdministratorDto>` |
-| PUT | `/{id}` | Update admin | `SystemAdministratorDto` | `SystemAdministratorDto` |
-| DELETE | `/{id}` | Delete admin | - | 204 No Content |
-
-**Admin-specific operations:**
-
-| Method | Endpoint | Description | Request Body | Response |
-|--------|----------|-------------|--------------|----------|
-| GET | `/users` | Get all users (admin view) | - | `List<UserDto>` |
-| POST | `/users/patient` | Create patient | `CreatePatientRequest` | `PatientDto` |
-| POST | `/users/staff` | Create clinic staff | `CreateClinicStaffRequest` | `ClinicStaffDto` |
-| PUT | `/users/{userId}` | Update user | `UserDto` | `UserDto` |
-| DELETE | `/users/{userId}` | Delete user | - | 204 No Content |
-| GET | `/doctors` | Get all doctors | - | `List<DoctorDto>` |
-| POST | `/doctors` | Create doctor | `DoctorDto` | `DoctorDto` |
-| PUT | `/doctors/{doctorId}` | Update doctor | `DoctorDto` | `DoctorDto` |
-| DELETE | `/doctors/{doctorId}` | Delete doctor | - | 204 No Content |
-| GET | `/clinics` | Get all clinics | - | `List<ClinicDto>` |
-| PUT | `/clinics/{clinicId}/hours` | Update clinic hours | `UpdateClinicHoursRequest` | `ClinicDto` |
-| POST | `/clinics/import` | Bulk import clinics | `List<ClinicDto>` | `List<ClinicDto>` |
-
----
-
-### Doctors (`/api/doctor`)
-
-| Method | Endpoint | Description | Request Body | Response |
-|--------|----------|-------------|--------------|----------|
-| GET | `/{id}` | Get doctor by ID (String) | - | `DoctorDto` |
-| GET | `/` | Get all doctors | - | `List<DoctorDto>` |
-| GET | `/clinic/{clinicId}` | Get doctors by clinic | - | `List<DoctorDto>` |
-| POST | `/` | Create doctor | `DoctorDto` | `DoctorDto` |
-| PUT | `/` | Update doctor | `DoctorDto` | `DoctorDto` |
-| DELETE | `/{id}` | Delete doctor | - | 204 No Content |
-
----
-
-### Appointments (`/api/appointments`)
-
-**Create & List:**
-
-| Method | Endpoint | Description | Request Body | Response |
-|--------|----------|-------------|--------------|----------|
-| POST | `/` | Create appointment | `CreateAppointmentRequest` | `AppointmentDto` |
-| GET | `/` | Get all appointments | - | `List<AppointmentDto>` |
-| GET | `/{id}` | Get appointment by ID (String) | - | `AppointmentDto` |
-
-**Filter by Status:**
-
-| Method | Endpoint | Description | Response |
-|--------|----------|-------------|----------|
-| GET | `/status/{status}` | Get by status (Upcoming/Completed/Cancelled/Missed/Ongoing) | `List<AppointmentDto>` |
-| GET | `/upcoming` | Get upcoming appointments | `List<AppointmentDto>` |
-| GET | `/completed` | Get completed appointments | `List<AppointmentDto>` |
-| GET | `/cancelled` | Get cancelled appointments | `List<AppointmentDto>` |
-| GET | `/missed` | Get missed appointments | `List<AppointmentDto>` |
-| GET | `/ongoing` | Get ongoing appointments | `List<AppointmentDto>` |
-
-**Filter by Patient/Doctor:**
-
-| Method | Endpoint | Description | Response |
-|--------|----------|-------------|----------|
-| GET | `/patient/{patientId}` | Get all appointments for patient (UUID) | `List<AppointmentDto>` |
-| GET | `/patient/{patientId}/upcoming` | Get upcoming appointments for patient | `List<AppointmentDto>` |
-| GET | `/doctor/{doctorId}` | Get all appointments for doctor (String) | `List<AppointmentDto>` |
-| GET | `/doctor/{doctorId}/upcoming` | Get upcoming appointments for doctor | `List<AppointmentDto>` |
-
-**Update Operations:**
-
-| Method | Endpoint | Description | Query Params | Response |
-|--------|----------|-------------|--------------|----------|
-| PUT | `/{id}/status` | Update appointment status | `?status={AppointmentStatus}` | `AppointmentDto` |
-| PUT | `/{id}/cancel` | Cancel appointment | - | 200 OK |
-| PUT | `/{id}/complete` | Mark as completed | - | `AppointmentDto` |
-| PUT | `/{id}/mark-missed` | Mark as missed | - | `AppointmentDto` |
-| PUT | `/{id}/start` | Start appointment (Ongoing) | - | `AppointmentDto` |
-| PUT | `/{id}/reschedule` | Reschedule appointment | `?newDateTime={ISO-8601}` | `AppointmentDto` |
-
----
-
-### Clinics (`/api/admin`)
-
-**Admin Clinic Management:**
-
-| Method | Endpoint | Description | Request Body | Response |
-|--------|----------|-------------|--------------|----------|
-| POST | `/clinics` | Create clinic | `ClinicDto` | `ClinicDto` |
-| GET | `/clinics` | Get all clinics | - | `List<ClinicDto>` |
-| GET | `/clinics/{clinicId}` | Get clinic by ID | - | `ClinicDto` |
-| GET | `/clinics/type/{type}` | Get clinics by type | - | `List<ClinicDto>` |
-| PUT | `/clinics/{clinicId}` | Update clinic | `ClinicDto` | `ClinicDto` |
-| DELETE | `/clinics/{clinicId}` | Delete clinic | - | 204 No Content |
-| POST | `/clinics/import` | Bulk import clinics | `List<ClinicDto>` | `List<ClinicDto>` |
-| PUT | `/clinics/{clinicId}/hours` | Update operating hours | `UpdateClinicHoursRequest` | `ClinicDto` |
 
 ---
 

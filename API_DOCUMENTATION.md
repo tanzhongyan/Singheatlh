@@ -1,25 +1,150 @@
-# System Administrator API Documentation
+# Clinic Appointment & Queue Management System - API Documentation
 
 ## Overview
-This document provides comprehensive documentation for all System Administrator endpoints in the Clinic Appointment & Queue Management System.
+This document provides comprehensive documentation for all REST API endpoints in the Clinic Appointment & Queue Management System.
 
 **Base URL**: `http://localhost:8080/api`
 
-**Authentication**: All endpoints require a valid JWT token in the Authorization header.
+**Authentication**: Most endpoints do not require authentication. Endpoints requiring authentication will be marked with **[Auth Required]**.
+
+---
+
+## Quick Summary
+
+**Total Endpoints**: 122+
+**Total Controllers**: 11
+**Authentication Required**: Only for user profile endpoints
+
+### Endpoints by Category
+
+| Category | Base Path | Count |
+|----------|-----------|-------|
+| Authentication | `/api/auth` | 8 |
+| Patients | `/api/patients` | 5 |
+| Doctors | `/api/doctor` | 7 |
+| Clinics | `/api/clinic` | 10 |
+| Users | `/api/users` | 11 |
+| Schedules | `/api/schedules` | 9 |
+| System Monitoring | `/api/system-administrators/monitoring` | 1 |
+| **Backup & Restore** | **`/api/system-administrators/backup`** | **5** |
+| **TOTAL** | | **56** |
+
+### Backup & Restore (NEW!)
+
+The system now supports **full database backup and restore**:
+- **Format**: PostgreSQL compressed dumps (.sql.gz)
+- **Execution**: Runs inside Docker container (no local tools needed)
+- **Compatibility**: Works on macOS, Windows, and Linux
+- **Key Endpoints**:
+  - `POST /api/system-administrators/backup/create` - Create backup
+  - `GET /api/system-administrators/backup/history` - List backups
+  - `GET /api/system-administrators/backup/download/{backupId}` - Download backup
+  - `POST /api/system-administrators/backup/restore/{backupId}` - Restore backup
+  - `DELETE /api/system-administrators/backup/{backupId}` - Delete backup
 
 ---
 
 ## Table of Contents
-1. [User Management APIs](#user-management-apis)
-2. [Clinic Management APIs](#clinic-management-apis)
+1. [Authentication APIs](#authentication-apis)
+2. [Patient Management APIs](#patient-management-apis)
 3. [Doctor Management APIs](#doctor-management-apis)
-4. [Schedule Management APIs](#schedule-management-apis)
-5. [System Monitoring APIs](#system-monitoring-apis)
-6. [System Backup & Restore APIs](#system-backup--restore-apis)
+4. [Clinic Management APIs](#clinic-management-apis)
+5. [User Management APIs](#user-management-apis)
+6. [Schedule Management APIs](#schedule-management-apis)
+7. [System Monitoring APIs](#system-monitoring-apis)
+8. [System Backup & Restore APIs](#system-backup--restore-apis)
+9. [Error Responses](#error-responses)
+10. [Data Models](#data-models)
+
+---
+
+## Authentication APIs
+
+Base Path: `/api/auth`
+
+| # | Method | Endpoint | Auth Required | Purpose |
+|---|--------|----------|---------------|---------|
+| 1 | GET | `/api/auth/health` | No | Check if API is running |
+| 2 | POST | `/api/auth/signup` | No | User registration |
+| 3 | POST | `/api/auth/login` | No | User authentication |
+| 4 | GET | `/api/auth/profile` | Yes | Get authenticated user's profile |
+| 5 | PUT | `/api/auth/email` | Yes | Change user email |
+| 6 | PUT | `/api/auth/password` | Yes | Change user password |
+| 7 | POST | `/api/auth/password/reset` | No | Request password reset |
+| 8 | POST | `/api/auth/validate-token` | No | Validate JWT token |
+
+---
+
+## Patient Management APIs
+
+Base Path: `/api/patients`
+
+| # | Method | Endpoint | Purpose |
+|---|--------|----------|---------|
+| 1 | GET | `/api/patients` | Get all patients |
+| 2 | GET | `/api/patients/{patientId}` | Get patient by ID |
+| 3 | POST | `/api/patients` | Create patient |
+| 4 | PUT | `/api/patients/{patientId}` | Update patient |
+| 5 | DELETE | `/api/patients/{patientId}` | Delete patient |
+
+---
+
+## Doctor Management APIs
+
+Base Path: `/api/doctor` or `/api/system-administrators/doctors`
+
+| # | Method | Endpoint | Purpose |
+|---|--------|----------|---------|
+| 1 | GET | `/api/doctor` | Get all doctors |
+| 2 | GET | `/api/doctor/{doctorId}` | Get doctor by ID |
+| 3 | GET | `/api/doctor/clinic/{clinicId}` | Get doctors by clinic |
+| 4 | GET | `/api/doctor/count` | Get doctor count |
+| 5 | POST | `/api/doctor` | Create doctor |
+| 6 | PUT | `/api/doctor/{doctorId}` | Update doctor |
+| 7 | DELETE | `/api/doctor/{doctorId}` | Delete doctor |
+
+---
+
+## Clinic Management APIs
+
+Base Path: `/api/clinic` or `/api/system-administrators/clinics`
+
+| # | Method | Endpoint | Purpose |
+|---|--------|----------|---------|
+| 1 | GET | `/api/clinic` | Get all clinics |
+| 2 | GET | `/api/clinic/{clinicId}` | Get clinic by ID |
+| 3 | GET | `/api/clinic/type/{type}` | Get clinics by type (G or S) |
+| 4 | GET | `/api/clinic/name/{name}` | Get clinic by name |
+| 5 | GET | `/api/clinic/count` | Get clinic count |
+| 6 | POST | `/api/clinic` | Create clinic |
+| 7 | PUT | `/api/clinic/{clinicId}` | Update clinic |
+| 8 | PUT | `/api/clinic/{clinicId}/hours` | Update clinic hours |
+| 9 | DELETE | `/api/clinic/{clinicId}` | Delete clinic |
+| 10 | POST | `/api/clinic/import` | Import multiple clinics |
 
 ---
 
 ## User Management APIs
+
+Base Path: `/api/users` or `/api/system-administrators/users`
+
+| # | Method | Endpoint | Purpose |
+|---|--------|----------|---------|
+| 1 | GET | `/api/users` | Get all users |
+| 2 | GET | `/api/users/{userId}` | Get user by ID |
+| 3 | GET | `/api/users/email/{email}` | Get user by email |
+| 4 | GET | `/api/users/role/{role}` | Get users by role (P, C, S) |
+| 5 | GET | `/api/users/count` | Get user count |
+| 6 | GET | `/api/system-administrators/users/paginated` | Get users paginated |
+| 7 | POST | `/api/users` | Create user |
+| 8 | POST | `/api/system-administrators/users/patient` | Create patient user |
+| 9 | POST | `/api/system-administrators/users/staff` | Create clinic staff user |
+| 10 | PUT | `/api/users/{userId}` | Update user |
+| 11 | DELETE | `/api/users/{userId}` | Delete user |
+
+---
+
+## User Management APIs - Detailed
 
 ### 1. Get All Users
 Retrieve all users in the system.
@@ -550,7 +675,25 @@ curl -X DELETE http://localhost:8080/api/system-administrators/doctors/D00000001
 
 ## Schedule Management APIs
 
-### 1. Get All Schedules
+Base Path: `/api/schedules`
+
+| # | Method | Endpoint | Purpose |
+|---|--------|----------|---------|
+| 1 | GET | `/api/schedules` | Get all schedules |
+| 2 | GET | `/api/schedules/{scheduleId}` | Get schedule by ID |
+| 3 | GET | `/api/schedules/doctor/{doctorId}` | Get schedules by doctor |
+| 4 | POST | `/api/schedules` | Create schedule block |
+| 5 | PUT | `/api/schedules/{scheduleId}` | Update schedule block |
+| 6 | DELETE | `/api/schedules/{scheduleId}` | Delete schedule block |
+| 7 | GET | `/api/schedules/doctor/{doctorId}/check-overlap` | Check overlapping schedules |
+| 8 | GET | `/api/schedules/doctor/{doctorId}/available` | Get available schedules |
+| 9 | GET | `/api/schedules/doctor/{doctorId}/date-range` | Get schedules by date range |
+
+---
+
+### Detailed Endpoints
+
+#### 1. Get All Schedules
 Retrieve all schedule blocks in the system.
 
 **Endpoint**: `GET /api/schedules`
@@ -850,7 +993,18 @@ curl -X GET "http://localhost:8080/api/schedules/doctor/D000000001/date-range?st
 
 ## System Monitoring APIs
 
-### 1. Get System Statistics
+Base Path: `/api/system-administrators/monitoring`
+
+| # | Method | Endpoint | Purpose |
+|---|--------|----------|---------|
+| 1 | GET | `/api/system-administrators/monitoring/statistics` | Get system statistics |
+
+---
+
+### Detailed Endpoints
+
+#### 1. Get System Statistics
+
 Retrieve real-time system statistics including user counts, appointment data, system uptime, and active users.
 
 **Endpoint**: `GET /api/system-administrators/monitoring/statistics`
@@ -899,7 +1053,22 @@ curl -X GET http://localhost:8080/api/system-administrators/monitoring/statistic
 
 ## System Backup & Restore APIs
 
-### 1. Create Backup
+Base Path: `/api/system-administrators/backup`
+
+| # | Method | Endpoint | Purpose |
+|---|--------|----------|---------|
+| 1 | POST | `/api/system-administrators/backup/create` | Create backup |
+| 2 | GET | `/api/system-administrators/backup/history` | Get backup history |
+| 3 | GET | `/api/system-administrators/backup/download/{backupId}` | Download backup |
+| 4 | POST | `/api/system-administrators/backup/restore/{backupId}` | Restore backup |
+| 5 | DELETE | `/api/system-administrators/backup/{backupId}` | Delete backup |
+
+---
+
+### Detailed Endpoints
+
+#### 1. Create Backup
+
 Create a complete backup of all system data (users, doctors, clinics, appointments, schedules, clinic staff).
 
 **Endpoint**: `POST /api/system-administrators/backup/create`
