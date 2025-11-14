@@ -49,6 +49,8 @@ cp db/.env.example db/.env && cp springboot-backend/src/main/resources/applicati
 
 ### Quick Start (Automated)
 
+Ensure that your Docker desktop is active.
+
 **Windows:**
 ```bash
 # 1. Install dependencies
