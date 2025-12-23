@@ -58,7 +58,7 @@ const SignUpPage = () => {
       if (error) throw error;
 
       setMessage(
-        "Check your email for verification link! You can now sign in."
+        "Account created successfully! Redirecting to login..."
       );
       setEmail("");
       setPassword("");

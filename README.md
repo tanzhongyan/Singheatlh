@@ -203,7 +203,48 @@ CORS is configured for `http://localhost:5173` only. If you change the frontend 
 
 ---
 
-## 📖 Additional Resources
+## � Docker Deployment (Production)
+
+### Quick Deploy to VPS
+
+**Linux/Mac:**
+```bash
+cp .env.production.example .env
+# Edit .env with your production values
+./scripts/deploy.sh
+```
+
+**Windows:**
+```powershell
+Copy-Item .env.production.example .env
+# Edit .env with your production values
+.\scripts\deploy.ps1
+```
+
+### What Gets Containerized?
+
+✅ Database (Supabase PostgreSQL)  
+✅ Backend (Spring Boot with Flyway migrations)  
+✅ Frontend (React + Nginx)  
+
+**All data persists** in Docker volumes - your database survives container restarts!
+
+### Startup Order
+
+```
+DB → Backend (runs migrations) → Frontend
+```
+
+Migrations run **automatically** when backend starts - no manual intervention needed!
+
+### 📚 Docker Documentation
+
+- **Quick Start**: [DOCKER_README.md](./DOCKER_README.md)
+- **Full Deployment Guide**: [DOCKER_DEPLOYMENT.md](./DOCKER_DEPLOYMENT.md)
+
+---
+
+## �📖 Additional Resources
 
 - **API Documentation**: See [development.md](./development.md) for all 74 available endpoints
 - **Database Migrations**: Add new tables/columns using Flyway - guide in [development.md](./development.md)
@@ -245,3 +286,4 @@ See the [GitHub contributors page](https://github.com/jovibong/OOP/graphs/contri
 ## 📝 License
 
 This project is licensed under the ISC License.
+

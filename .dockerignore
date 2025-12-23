@@ -1,0 +1,34 @@
+# Docker and containerization
+.env
+.env.production
+.env.local
+*.log
+
+# Backups
+backups/
+*.sql
+*.sql.gz
+
+# Docker volumes (if accidentally created in project dir)
+volumes/
+
+# Build artifacts
+springboot-backend/target/
+vite-react-frontend/dist/
+vite-react-frontend/node_modules/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.cache

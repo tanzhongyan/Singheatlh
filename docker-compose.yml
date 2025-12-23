@@ -1,0 +1,342 @@
+# =====================================================
+# SingHealth Clinic Management System - Production Docker Compose
+# =====================================================
+# 
+# Services:
+# - db: Supabase PostgreSQL with Auth, Studio, Kong API Gateway
+# - backend: Spring Boot Java application with Flyway migrations
+# - frontend: Vite React application served by Nginx
+#
+# Startup Order: db → backend (runs migrations) → frontend
+# =====================================================
+
+name: singhealth-clinic-system
+
+services:
+
+  # =====================================================
+  # DATABASE SERVICES (Supabase Stack)
+  # =====================================================
+  
+  db:
+    container_name: supabase-db
+    image: supabase/postgres:15.8.1.085
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_EXTERNAL_PORT:-5434}:5432"
+    volumes:
+      # Database initialization scripts
+      - ./db/volumes/db/webhooks.sql:/docker-entrypoint-initdb.d/init-scripts/98-webhooks.sql:Z
+      - ./db/volumes/db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:Z
+      - ./db/volumes/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:Z
+      # Sample data for migrations
+      - ./db/sample-data:/sample-data:ro
+      # Persistent data storage
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    environment:
+      POSTGRES_HOST: /var/run/postgresql
+      PGPORT: 5432
+      POSTGRES_PORT: 5432
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXP: ${JWT_EXPIRY:-3600}
+    command:
+      - "postgres"
+      - "-c"
+      - "config_file=/etc/postgresql/postgresql.conf"
+      - "-c"
+      - "log_min_messages=fatal"
+    networks:
+      - singhealth-network
+
+  auth:
+    container_name: supabase-auth
+    image: supabase/gotrue:v2.180.0
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9999/health"]
+      timeout: 5s
+      interval: 5s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: ${API_EXTERNAL_URL:-http://localhost:8000}
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-postgres}
+      GOTRUE_SITE_URL: ${SITE_URL:-http://localhost:3000}
+      GOTRUE_URI_ALLOW_LIST: ${ADDITIONAL_REDIRECT_URLS:-}
+      GOTRUE_DISABLE_SIGNUP: ${DISABLE_SIGNUP:-false}
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: ${JWT_EXPIRY:-3600}
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: ${ENABLE_EMAIL_SIGNUP:-true}
+      GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: ${ENABLE_ANONYMOUS_USERS:-false}
+      GOTRUE_MAILER_AUTOCONFIRM: ${ENABLE_EMAIL_AUTOCONFIRM:-false}
+      GOTRUE_SMTP_ADMIN_EMAIL: ${SMTP_ADMIN_EMAIL:-admin@example.com}
+      GOTRUE_SMTP_HOST: ${SMTP_HOST:-smtp.example.com}
+      GOTRUE_SMTP_PORT: ${SMTP_PORT:-587}
+      GOTRUE_SMTP_USER: ${SMTP_USER:-}
+      GOTRUE_SMTP_PASS: ${SMTP_PASS:-}
+      GOTRUE_SMTP_SENDER_NAME: ${SMTP_SENDER_NAME:-SingHealth}
+      GOTRUE_EXTERNAL_PHONE_ENABLED: ${ENABLE_PHONE_SIGNUP:-false}
+      GOTRUE_SMS_AUTOCONFIRM: ${ENABLE_PHONE_AUTOCONFIRM:-false}
+    networks:
+      - singhealth-network
+
+  rest:
+    container_name: supabase-rest
+    image: postgrest/postgrest:v13.0.7
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-postgres}
+      PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS:-public,storage,graphql_public}
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_APP_SETTINGS_JWT_SECRET: ${JWT_SECRET}
+      PGRST_APP_SETTINGS_JWT_EXP: ${JWT_EXPIRY:-3600}
+    command: ["postgrest"]
+    networks:
+      - singhealth-network
+
+  meta:
+    container_name: supabase-meta
+    image: supabase/postgres-meta:v0.91.6
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PG_META_PORT: 8080
+      PG_META_DB_HOST: db
+      PG_META_DB_PORT: 5432
+      PG_META_DB_NAME: ${POSTGRES_DB:-postgres}
+      PG_META_DB_USER: supabase_admin
+      PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      CRYPTO_KEY: ${PG_META_CRYPTO_KEY}
+    networks:
+      - singhealth-network
+
+  kong:
+    container_name: supabase-kong
+    image: kong:2.8.1
+    restart: unless-stopped
+    ports:
+      - "${KONG_HTTP_PORT:-8000}:8000"
+      - "${KONG_HTTPS_PORT:-8443}:8443"
+    volumes:
+      - ./db/volumes/api/kong.yml:/home/kong/temp.yml:ro,z
+    depends_on:
+      auth:
+        condition: service_healthy
+      rest:
+        condition: service_started
+      db:
+        condition: service_healthy
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /home/kong/kong.yml
+      KONG_DNS_ORDER: LAST,A,CNAME
+      KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth
+      KONG_NGINX_PROXY_PROXY_BUFFER_SIZE: 160k
+      KONG_NGINX_PROXY_PROXY_BUFFERS: 64 160k
+      SUPABASE_ANON_KEY: ${ANON_KEY}
+      SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY}
+      DASHBOARD_USERNAME: ${DASHBOARD_USERNAME:-supabase}
+      DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD:-postgres}
+    entrypoint: bash -c 'eval "echo \"$$(cat ~/temp.yml)\"" > ~/kong.yml && /docker-entrypoint.sh kong docker-start'
+    networks:
+      - singhealth-network
+
+  studio:
+    container_name: supabase-studio
+    image: supabase/studio:2025.10.01-sha-8460121
+    restart: unless-stopped
+    ports:
+      - "${STUDIO_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/platform/profile').then((r) => {if (r.status !== 200) throw new Error(r.status)})"]
+      timeout: 10s
+      interval: 5s
+      retries: 3
+    depends_on:
+      meta:
+        condition: service_started
+    environment:
+      HOSTNAME: "::"
+      STUDIO_PG_META_URL: http://meta:8080
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PG_META_CRYPTO_KEY: ${PG_META_CRYPTO_KEY}
+      DEFAULT_ORGANIZATION_NAME: ${STUDIO_DEFAULT_ORGANIZATION:-SingHealth}
+      DEFAULT_PROJECT_NAME: ${STUDIO_DEFAULT_PROJECT:-Clinic System}
+      SUPABASE_URL: http://kong:8000
+      SUPABASE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL:-http://localhost:8000}
+      SUPABASE_ANON_KEY: ${ANON_KEY}
+      SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY}
+      AUTH_JWT_SECRET: ${JWT_SECRET}
+    networks:
+      - singhealth-network
+
+  # =====================================================
+  # SPRING BOOT BACKEND
+  # =====================================================
+  
+  backend:
+    container_name: singhealth-backend
+    build:
+      context: ./springboot-backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    # Security hardening
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: false  # Spring Boot needs write access for temp files
+    tmpfs:
+      - /tmp
+    depends_on:
+      - db
+      - kong
+    environment:
+      # Spring Boot configuration
+      SPRING_APPLICATION_NAME: springboot-backend
+      
+      # Database connection (internal network)
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-postgres}
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      
+      # Supabase configuration
+      SUPABASE_ANON_KEY: ${ANON_KEY}
+      SUPABASE_URL: http://kong:8000
+      
+      # JPA/Hibernate configuration
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+      SPRING_JPA_SHOW_SQL: ${SHOW_SQL:-false}
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: ${FORMAT_SQL:-false}
+      
+      # Flyway migration configuration
+      SPRING_FLYWAY_ENABLED: true
+      SPRING_FLYWAY_LOCATIONS: classpath:db/migration
+      SPRING_FLYWAY_BASELINE_ON_MIGRATE: true
+      SPRING_FLYWAY_TABLE: flyway_schema_history
+      SPRING_FLYWAY_VALIDATE_ON_MIGRATE: true
+      SPRING_FLYWAY_SCHEMAS: public
+      SPRING_FLYWAY_FAIL_ON_MISSING_LOCATIONS: true
+      SPRING_FLYWAY_CLEAN_DISABLED: true
+      
+      # Logging
+      LOGGING_LEVEL_ORG_FLYWAYDB: INFO
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB: ${LOG_LEVEL_WEB:-INFO}
+      LOGGING_LEVEL_ORG_HIBERNATE: ${LOG_LEVEL_HIBERNATE:-INFO}
+      
+      # Server configuration
+      SERVER_PORT: 8080
+      SERVER_ERROR_INCLUDE_MESSAGE: always
+      SERVER_ERROR_INCLUDE_BINDING_ERRORS: always
+      
+      # Actuator configuration for health checks
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health
+      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: always
+      MANAGEMENT_HEALTH_DB_ENABLED: true
+      MANAGEMENT_ENDPOINTS_WEB_BASEPATH: /actuator
+      
+      # Security - Allow unauthenticated access to health endpoint
+      SPRING_SECURITY_USER_NAME: admin
+      SPRING_SECURITY_USER_PASSWORD: admin
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    networks:
+      - singhealth-network
+
+  # =====================================================
+  # VITE REACT FRONTEND
+  # =====================================================
+  
+  frontend:
+    container_name: singhealth-frontend
+    build:
+      context: ./vite-react-frontend
+      dockerfile: Dockerfile
+      args:
+        # Build-time environment variables for Vite
+        # Note: These must be your server's public URL, not container hostnames
+        - VITE_SUPABASE_URL=${VITE_SUPABASE_URL:-http://localhost:8000}
+        - VITE_SUPABASE_ANON_KEY=${ANON_KEY}
+        - VITE_BACKEND_URL=${VITE_BACKEND_URL:-http://localhost:8080}
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    # Security hardening
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+      - CHOWN
+      - SETGID
+      - SETUID
+    # Tmpfs for temporary files
+    tmpfs:
+      - /var/run
+      - /var/cache/nginx
+    depends_on:
+      - backend
+      - kong
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    networks:
+      - singhealth-network
+
+# =====================================================
+# PERSISTENT VOLUMES
+# =====================================================
+
+volumes:
+  postgres-data:
+    name: singhealth-postgres-data
+    driver: local
+
+# =====================================================
+# NETWORKS
+# =====================================================
+
+networks:
+  singhealth-network:
+    name: singhealth-network
+    driver: bridge

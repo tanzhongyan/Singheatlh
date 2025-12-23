@@ -48,6 +48,165 @@ npm run db:up        # Start database
 npm run dev          # Start backend + frontend
 ```
 
+---
+
+## 🐳 Docker Production Deployment
+
+For VPS/server deployment, use Docker Compose.
+
+### Quick Deploy
+
+```bash
+# 1. Setup
+cp .env.production.example .env
+nano .env  # Edit with server IP/domain
+
+# 2. Deploy
+docker compose up -d
+
+# 3. Monitor
+docker compose logs -f
+```
+
+### Service Startup Order
+
+1. **Database** (Supabase) - 30-45s → Initializes DB, creates roles
+2. **Backend** (Spring Boot) - 60-90s → Waits for DB, runs Flyway migrations automatically
+3. **Frontend** (Nginx) - 10-20s → Waits for backend, serves React app
+
+### Essential Commands
+
+```bash
+# Logs
+docker compose logs -f              # All services
+docker compose logs -f backend      # Specific service
+
+# Operations
+docker compose ps                   # Status
+docker compose restart backend      # Restart service
+git pull && docker compose up -d --build  # Update
+
+# Backup
+docker compose exec db pg_dump -U postgres postgres > backup.sql
+docker compose exec -T db psql -U postgres postgres < backup.sql
+```
+
+### Critical .env Configuration
+
+```bash
+# Security (MUST CHANGE)
+POSTGRES_PASSWORD=strong-password
+JWT_SECRET=32-char-secret  # Generate: openssl rand -base64 32
+
+# Server URLs (use your public IP or domain)
+SITE_URL=http://your-server-ip
+VITE_SUPABASE_URL=http://your-server-ip:8000
+VITE_BACKEND_URL=http://your-server-ip:8080
+
+# Ports (change if conflicts)
+FRONTEND_PORT=80
+BACKEND_PORT=8080
+```
+
+### Data Persistence
+
+All data persists in Docker volume `singhealth-postgres-data`. Containers restart without data loss.
+
+### Security
+
+1. **Dedicated user**: `oop_user` with Docker group access
+2. **Reverse proxy**: Nginx/Caddy with SSL (Let's Encrypt)
+3. **Firewall**: Only expose 80/443, keep 8080/8000/3000 internal
+4. **Backups**: Schedule with cron
+
+See [README.md](./README.md#-docker-production-deployment) for full guide.
+
+---
+
+## 🐳 Docker Production Deployment
+
+For VPS/server deployment, use Docker Compose instead of npm scripts.
+
+### Quick Deploy
+
+```bash
+# 1. Setup environment
+cp .env.production.example .env
+nano .env  # Edit with your server IP/domain
+
+# 2. Deploy all services
+docker compose up -d
+
+# 3. Monitor startup
+docker compose logs -f
+```
+
+### Service Startup Order
+
+1. **Database** (Supabase) - 30-45 seconds
+2. **Backend** (Spring Boot) - 60-90 seconds
+   - Waits for DB health check
+   - Runs Flyway migrations automatically
+3. **Frontend** (Nginx) - 10-20 seconds
+   - Waits for backend health check
+
+### Useful Commands
+
+```bash
+# View all logs
+docker compose logs -f
+
+# View specific service
+docker compose logs -f backend
+
+# Check status
+docker compose ps
+
+# Restart service
+docker compose restart backend
+
+# Update deployment
+git pull
+docker compose up -d --build
+
+# Backup database
+docker compose exec db pg_dump -U postgres postgres > backup.sql
+```
+
+### Configuration
+
+Edit `.env` before deployment:
+
+```bash
+# Security (MUST CHANGE)
+POSTGRES_PASSWORD=strong-password-here
+JWT_SECRET=your-32-char-secret  # Generate: openssl rand -base64 32
+
+# Server URLs (use your IP or domain)
+SITE_URL=http://your-server-ip
+VITE_SUPABASE_URL=http://your-server-ip:8000
+VITE_BACKEND_URL=http://your-server-ip:8080
+
+# Ports (change if conflicts)
+FRONTEND_PORT=80
+BACKEND_PORT=8080
+KONG_HTTP_PORT=8000
+STUDIO_PORT=3000
+```
+
+### Data Persistence
+
+All data persists in Docker volume `singhealth-postgres-data`. Containers can restart without data loss.
+
+### Security Best Practices
+
+1. **Dedicated user**: Create `oop_user` with minimal privileges
+2. **Reverse proxy**: Use Nginx/Caddy with SSL (Let's Encrypt)
+3. **Firewall**: Only expose 80/443, keep 8080/8000/3000 internal
+4. **Backups**: Schedule automated database backups
+
+See [README.md](./README.md#-docker-production-deployment) for full deployment guide.
+
 **Reset Everything:**
 
 ```bash
