@@ -14,9 +14,12 @@ from typing import List, Dict, Tuple
 OUTPUT_DIR = "sample-data"
 # Use the actual current date/time when generating data
 TODAY = datetime.now()
-SCHEDULE_END_DATE = datetime(2025, 12, 1)  # Schedules extend to Dec 1
-NUM_PATIENTS = 800
-NUM_APPOINTMENTS = 5000
+SCHEDULE_END_DATE = datetime(2036, 12, 31)  # Schedules extend 10 years into the future
+NUM_PATIENTS = 100
+NUM_CLINICS = 5  # Portfolio: only 5 clinics needed
+DOCTORS_PER_CLINIC = 4  # Each clinic has 4 doctors
+STAFF_PER_CLINIC = 1  # Each clinic has 1 staff member
+NUM_APPOINTMENTS = 10000  # Reasonable number for 10 years with fewer patients
 APPOINTMENT_DURATION_MINUTES = 15
 
 # Patient arrival scenarios for today's appointments
@@ -86,11 +89,13 @@ def parse_time(time_str: str) -> datetime.time:
 
 
 def load_clinics() -> List[Dict]:
-    """Load existing clinic data"""
+    """Load only the first NUM_CLINICS from existing clinic data for portfolio project"""
     clinics = []
     with open(f"{OUTPUT_DIR}/clinics.csv", "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for idx, row in enumerate(reader, start=1):
+            if idx > NUM_CLINICS:
+                break
             clinics.append({
                 "clinic_id": idx,
                 "name": row["name"],
@@ -138,10 +143,9 @@ def generate_user_profiles(num_clinics: int) -> List[Dict]:
 
     email_counter = 1
 
-    # 2. Clinic Staff (1-2 per clinic)
+    # 2. Clinic Staff (exactly STAFF_PER_CLINIC per clinic)
     for clinic_id in range(1, num_clinics + 1):
-        num_staff = random.randint(1, 2)
-        for _ in range(num_staff):
+        for _ in range(STAFF_PER_CLINIC):
             name = name_permutations[name_idx % len(name_permutations)]
             name_idx += 1
             email = f"{name.lower().replace(' ', '.')}+{email_counter}@example.com"
@@ -174,13 +178,12 @@ def generate_user_profiles(num_clinics: int) -> List[Dict]:
 
 
 def generate_doctors(num_clinics: int) -> List[Dict]:
-    """Generate doctor.csv data (2-5 doctors per clinic)"""
+    """Generate doctor.csv data (exactly DOCTORS_PER_CLINIC doctors per clinic)"""
     doctors = []
     doctor_counter = 1
 
     for clinic_id in range(1, num_clinics + 1):
-        num_doctors = random.randint(2, 5)
-        for _ in range(num_doctors):
+        for _ in range(DOCTORS_PER_CLINIC):
             name = f"Dr. {generate_name()}"
             # Appointment duration: 15, 20, or 30 minutes (most doctors use 15)
             appointment_duration = random.choices([15, 20, 30], weights=[0.7, 0.2, 0.1])[0]
@@ -196,16 +199,19 @@ def generate_doctors(num_clinics: int) -> List[Dict]:
 
 
 def generate_schedules(doctors: List[Dict], clinics: List[Dict]) -> List[Dict]:
-    """Generate schedule.csv data from past 7 days to November 15"""
+    """Generate schedule.csv data from past 7 days to 5 years in the future - all doctors AVAILABLE during clinic hours"""
     schedules = []
     schedule_counter = 1
 
     # Create clinic lookup
     clinic_lookup = {c["clinic_id"]: c for c in clinics}
 
-    # Calculate total days from 7 days ago to Nov 15 (inclusive)
+    # Calculate total days from 7 days ago to SCHEDULE_END_DATE (inclusive)
     start_date = TODAY - timedelta(days=7)
     total_days = (SCHEDULE_END_DATE - start_date).days + 1  # +1 to include end date
+
+    print(f"  Generating schedules for {total_days} days ({start_date.strftime('%Y-%m-%d')} to {SCHEDULE_END_DATE.strftime('%Y-%m-%d')})")
+    print(f"  This will create {len(doctors)} doctors × {total_days} days = ~{len(doctors) * total_days} schedule entries...")
 
     for doctor in doctors:
         clinic_id = int(doctor["clinic_id"])
@@ -215,43 +221,24 @@ def generate_schedules(doctors: List[Dict], clinics: List[Dict]) -> List[Dict]:
         for day_offset in range(total_days):
             schedule_date = start_date + timedelta(days=day_offset)
 
-            # Skip weekends randomly (30% chance)
-            if schedule_date.weekday() >= 5 and random.random() < 0.3:
+            # Skip Sundays (weekday 6) - clinics typically closed
+            if schedule_date.weekday() == 6:
                 continue
 
             opening = datetime.combine(schedule_date, clinic["opening_hours"])
             closing = datetime.combine(schedule_date, clinic["closing_hours"])
 
-            # Create schedule blocks for the day
-            current_time = opening
+            # Create one AVAILABLE block for the entire clinic day
+            # (Assuming each doctor is free during clinic opening/closing hours)
+            schedules.append({
+                "schedule_id": f"S{str(schedule_counter).zfill(9)}",
+                "doctor_id": doctor["doctor_id"],
+                "start_datetime": opening.strftime("%Y-%m-%d %H:%M:%S"),
+                "end_datetime": closing.strftime("%Y-%m-%d %H:%M:%S"),
+                "type": "AVAILABLE"
+            })
 
-            while current_time < closing:
-                # Randomly create AVAILABLE or UNAVAILABLE blocks
-                is_lunch = (current_time.hour == 12 or current_time.hour == 13) and random.random() < 0.7
-
-                if is_lunch:
-                    block_type = "UNAVAILABLE"
-                    duration_hours = random.choice([1, 1.5])
-                else:
-                    block_type = "AVAILABLE" if random.random() < 0.85 else "UNAVAILABLE"
-                    duration_hours = random.choice([2, 3, 4])
-
-                end_time = current_time + timedelta(hours=duration_hours)
-
-                # Don't exceed closing time
-                if end_time > closing:
-                    end_time = closing
-
-                schedules.append({
-                    "schedule_id": f"S{str(schedule_counter).zfill(9)}",
-                    "doctor_id": doctor["doctor_id"],
-                    "start_datetime": current_time.strftime("%Y-%m-%d %H:%M:%S"),
-                    "end_datetime": end_time.strftime("%Y-%m-%d %H:%M:%S"),
-                    "type": block_type
-                })
-
-                schedule_counter += 1
-                current_time = end_time
+            schedule_counter += 1
 
     return schedules
 

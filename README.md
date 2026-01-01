@@ -1,6 +1,8 @@
-# OOP
+# Singheatlh - OOP Project
 
-Appointment and Queue Management System for SingHealth Clinics
+Appointment and Queue Management System for Singheatlh Clinics as part of our OOP project.
+
+![Website Demo](demo.gif)
 
 ## Fullstack Project: Vite + React Frontend & Spring Boot Backend
 
@@ -88,8 +90,7 @@ npm run db:seed
 |Email|Role|Password|
 |-----|----|--------|
 |hui.lim+3018@example.com|Patient|`Password123!`|
-|marcus.tan+1@example.com|Clinic Staff|`Password123!`|
-|admin@system.com|System Admin|`Password123!`|
+|amanda.chua+1@example.com|Clinic Staff|`Password123!`|
 
 **That's it!** Your app will be running at:
 
