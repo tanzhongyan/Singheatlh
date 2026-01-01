@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "SingHealth Clinic Management System",
   "scripts": {
-    "dev:setup": "npm install && npm run db:down && npm run db:up && npm run backend:build && concurrently \"npm run backend\" \"npm run frontend\"",
-    "dev:setup:unix": "npm install && npm run db:down && npm run db:up && npm run backend:build:unix && concurrently \"npm run backend:unix\" \"npm run frontend\"",
+    "dev:setup": "npm install && npm run db:down && npm run db:up && npm run backend:build && concurrently \"npm run backend\" \"npm run frontend:dev\"",
+    "dev:setup:unix": "npm install && npm run db:down && npm run db:up && npm run backend:build:unix && concurrently \"npm run backend:unix\" \"npm run frontend:dev\"",
     "dev:seed": "cd db && bash seed-data.sh",
-    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend:dev\"",
     "db:down": "cd db && docker compose down -v && cd ..",
     "db:up": "cd db && docker compose up -d && cd ..",
     "db:restart": "npm run db:down && npm run db:up",
@@ -15,8 +15,16 @@
     "backend:build": "cd springboot-backend && .\\mvnw.cmd clean install -DskipTests",
     "backend:unix": "cd springboot-backend && ./mvnw spring-boot:run",
     "backend:build:unix": "cd springboot-backend && ./mvnw clean install -DskipTests",
-    "frontend": "cd vite-react-frontend && npm install && npm run dev",
-    "frontend:dev": "cd vite-react-frontend && npm run dev"
+    "frontend:dev": "cd vite-react-frontend && npm install && npm run dev",
+    "frontend:prod": "docker compose up -d --build frontend",
+    "deploy": "docker compose up -d --build",
+    "deploy:seed": "docker compose up -d --build && timeout /t 15 /nobreak && cd db && bash seed-data.sh",
+    "deploy:seed:unix": "docker compose up -d --build && sleep 15 && cd db && bash seed-data.sh",
+    "deploy:down": "docker compose down",
+    "deploy:clean": "docker compose down -v",
+    "deploy:restart": "docker compose restart",
+    "deploy:logs": "docker compose logs -f",
+    "deploy:status": "docker compose ps"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
