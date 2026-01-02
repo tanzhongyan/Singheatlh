@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+// Use environment variable for backend URL, with fallback for development
+// In production, this will be set during build via VITE_BACKEND_URL
 const apiClient = axios.create({
-    baseURL: 'http://localhost:8080',
+    baseURL: import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080',
     headers: {
         'Content-Type': 'application/json'
     }
