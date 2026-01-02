@@ -1,0 +1,55 @@
+# Docker Compose Override for Ghost Infrastructure Integration
+# This file modifies Singheatlh's docker-compose.yml for deployment behind root Caddy
+
+services:
+  # ====================
+  # SUPABASE SERVICES
+  # Remove external port exposure, use internal-only communication
+  # ====================
+
+  db:
+    ports: []
+    expose:
+      - "5432"
+
+  kong:
+    ports: []
+    expose:
+      - "8000"
+      - "8443"
+
+  studio:
+    ports: []
+    expose:
+      - "3000"
+
+  # ====================
+  # APPLICATION SERVICES
+  # ====================
+
+  backend:
+    ports: []
+    expose:
+      - "8080"
+
+  # ====================
+  # FRONTEND
+  # Connect to ghost_network for root Caddy access
+  # ====================
+
+  frontend:
+    ports: []
+    expose:
+      - "80"
+    networks:
+      - singhealth-network  # Keep internal network for backend communication
+      - ghost_network       # Add external network for root Caddy
+
+# ====================
+# NETWORKS
+# ====================
+
+networks:
+  # Connect to root Ghost network
+  ghost_network:
+    external: true
