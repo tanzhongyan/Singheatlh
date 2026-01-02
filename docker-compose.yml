@@ -283,6 +283,36 @@ services:
       - singhealth-network
 
   # =====================================================
+  # DATABASE SEEDER
+  # =====================================================
+  
+  seeder:
+    container_name: singhealth-seeder
+    build:
+      context: ./db/seeder
+      dockerfile: Dockerfile
+    restart: on-failure
+    depends_on:
+      backend:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    environment:
+      # Database connection
+      DB_NAME: ${POSTGRES_DB:-postgres}
+      DB_USER: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_HOST: db
+      DB_PORT: 5432
+      
+      # Supabase Auth configuration
+      API_EXTERNAL_URL: ${API_EXTERNAL_URL:-http://localhost:8000}
+      SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
+      MOCK_USER_PASSWORD: ${MOCK_USER_PASSWORD:-Test1234!}
+    networks:
+      - singhealth-network
+
+  # =====================================================
   # VITE REACT FRONTEND
   # =====================================================
   

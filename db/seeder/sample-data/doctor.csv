@@ -1,0 +1,21 @@
+doctor_id,name,clinic_id,appointment_duration_in_minutes
+D000000001,Dr. Kevin Ho,1,15
+D000000002,Dr. Nicole Tay,1,15
+D000000003,Dr. Nicole Lee,1,15
+D000000004,Dr. Jun Chen,1,15
+D000000005,Dr. Benjamin Nair,2,20
+D000000006,Dr. Benjamin Goh,2,15
+D000000007,Dr. Wei Nair,2,20
+D000000008,Dr. Ong Chen,2,15
+D000000009,Dr. Grace Ho,3,20
+D000000010,Dr. Goh Sim,3,20
+D000000011,Dr. Grace Ong,3,15
+D000000012,Dr. Tan Ang,3,15
+D000000013,Dr. Rajesh Nair,4,15
+D000000014,Dr. Steven Chua,4,15
+D000000015,Dr. Rachel Chen,4,15
+D000000016,Dr. Tan Koh,4,15
+D000000017,Dr. Rajesh Ali,5,20
+D000000018,Dr. Rajesh Ang,5,30
+D000000019,Dr. Rui Kumar,5,20
+D000000020,Dr. Kevin Kumar,5,30
