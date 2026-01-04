@@ -30,7 +30,7 @@ const Navbar = () => {
           }
         >
           <i className="bi bi-heart-pulse-fill me-2 text-primary"></i>
-          SingHealth
+          Singheatlh
         </Link>
 
         <button

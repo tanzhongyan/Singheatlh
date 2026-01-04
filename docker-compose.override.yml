@@ -42,7 +42,7 @@ services:
     expose:
       - "80"
     networks:
-      - singhealth-network  # Keep internal network for backend communication
+      - singheatlh-network  # Keep internal network for backend communication
       - ghost_network       # Add external network for root Caddy
 
 # ====================

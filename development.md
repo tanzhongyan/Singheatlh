@@ -110,7 +110,7 @@ BACKEND_PORT=8080
 
 ### Data Persistence
 
-All data persists in Docker volume `singhealth-postgres-data`. Containers restart without data loss.
+All data persists in Docker volume `singheatlh-postgres-data`. Containers restart without data loss.
 
 ### Security
 
@@ -196,7 +196,7 @@ STUDIO_PORT=3000
 
 ### Data Persistence
 
-All data persists in Docker volume `singhealth-postgres-data`. Containers can restart without data loss.
+All data persists in Docker volume `singheatlh-postgres-data`. Containers can restart without data loss.
 
 ### Security Best Practices
 

@@ -64,7 +64,7 @@ def wait_for_tables(db_config, max_retries=60):
         try:
             conn = psycopg2.connect(**db_config)
             cursor = conn.cursor()
-            cursor.execute("SELECT 1 FROM \"Clinic\" LIMIT 1;")
+            cursor.execute("SELECT 1 FROM clinic LIMIT 1;")
             cursor.close()
             conn.close()
             log_success("Tables found")
@@ -268,14 +268,14 @@ def load_user_profiles_and_appointments(db_config):
         
         # Update existing user_profiles
         cursor.execute("""
-            UPDATE "User_Profile" 
+            UPDATE user_profile 
             SET 
                 name = tup.name,
                 role = tup.role,
                 telephone_number = tup.telephone_number,
                 clinic_id = tup.clinic_id
             FROM temp_user_profiles tup
-            WHERE "User_Profile".email = tup.email;
+            WHERE user_profile.email = tup.email;
         """)
         
         # Create user ID mapping
@@ -285,7 +285,7 @@ def load_user_profiles_and_appointments(db_config):
                 tup.user_id as old_user_id,
                 up.user_id as new_user_id
             FROM temp_user_profiles tup
-            JOIN "User_Profile" up ON tup.email = up.email;
+            JOIN user_profile up ON tup.email = up.email;
         """)
         
         # Create temp table for appointments
@@ -310,7 +310,7 @@ def load_user_profiles_and_appointments(db_config):
         
         # Insert appointments with correct user IDs
         cursor.execute("""
-            INSERT INTO "Appointment" (appointment_id, patient_id, doctor_id, start_datetime, end_datetime, status)
+            INSERT INTO appointment (appointment_id, patient_id, doctor_id, start_datetime, end_datetime, status)
             SELECT 
                 ta.appointment_id,
                 um.new_user_id as patient_id,
@@ -323,10 +323,10 @@ def load_user_profiles_and_appointments(db_config):
         """)
         
         # Get counts
-        cursor.execute('SELECT COUNT(*) FROM "User_Profile";')
+        cursor.execute('SELECT COUNT(*) FROM user_profile;')
         user_count = cursor.fetchone()[0]
         
-        cursor.execute('SELECT COUNT(*) FROM "Appointment";')
+        cursor.execute('SELECT COUNT(*) FROM appointment;')
         appointment_count = cursor.fetchone()[0]
         
         conn.commit()
@@ -385,9 +385,9 @@ def main():
     # Load Clinic data
     print()
     log_info("2/10", "Loading Clinic data...")
-    if load_csv_to_table(db_config, 'Clinic', './sample-data/clinics.csv', 
+    if load_csv_to_table(db_config, 'clinic', './sample-data/clinics.csv', 
                          ['name', 'address', 'telephone_number', 'type', 'opening_hours', 'closing_hours']):
-        result = execute_sql(db_config, 'SELECT COUNT(*) FROM "Clinic";')
+        result = execute_sql(db_config, 'SELECT COUNT(*) FROM clinic;')
         clinic_count = result[0][0] if result else 0
         log_success(f"Loaded {clinic_count} clinics")
     else:
@@ -396,9 +396,9 @@ def main():
     # Load Doctor data
     print()
     log_info("3/10", "Loading Doctor data...")
-    if load_csv_to_table(db_config, 'Doctor', './sample-data/doctor.csv',
+    if load_csv_to_table(db_config, 'doctor', './sample-data/doctor.csv',
                          ['doctor_id', 'name', 'clinic_id', 'appointment_duration_in_minutes']):
-        result = execute_sql(db_config, 'SELECT COUNT(*) FROM "Doctor";')
+        result = execute_sql(db_config, 'SELECT COUNT(*) FROM doctor;')
         doctor_count = result[0][0] if result else 0
         log_success(f"Loaded {doctor_count} doctors")
     else:
@@ -418,9 +418,9 @@ def main():
     # Load Schedule data
     print()
     log_info("8/10", "Loading Schedule data...")
-    if load_csv_to_table(db_config, 'Schedule', './sample-data/schedule.csv',
+    if load_csv_to_table(db_config, 'schedule', './sample-data/schedule.csv',
                          ['schedule_id', 'doctor_id', 'start_datetime', 'end_datetime', 'type']):
-        result = execute_sql(db_config, 'SELECT COUNT(*) FROM "Schedule";')
+        result = execute_sql(db_config, 'SELECT COUNT(*) FROM schedule;')
         schedule_count = result[0][0] if result else 0
         log_success(f"Loaded {schedule_count} schedules")
     else:
@@ -429,9 +429,9 @@ def main():
     # Load Medical_Summary data
     print()
     log_info("9/10", "Loading Medical_Summary data...")
-    if load_csv_to_table(db_config, 'Medical_Summary', './sample-data/medical_summary.csv',
+    if load_csv_to_table(db_config, 'medical_summary', './sample-data/medical_summary.csv',
                          ['summary_id', 'appointment_id', 'treatment_summary']):
-        result = execute_sql(db_config, 'SELECT COUNT(*) FROM "Medical_Summary";')
+        result = execute_sql(db_config, 'SELECT COUNT(*) FROM medical_summary;')
         medical_count = result[0][0] if result else 0
         log_success(f"Loaded {medical_count} medical summaries")
     else:
@@ -440,10 +440,10 @@ def main():
     # Load Queue_Ticket data
     print()
     log_info("10/10", "Loading Queue_Ticket data...")
-    if load_csv_to_table(db_config, 'Queue_Ticket', './sample-data/queue_ticket.csv',
+    if load_csv_to_table(db_config, 'queue_ticket', './sample-data/queue_ticket.csv',
                          ['appointment_id', 'status', 'check_in_time', 'queue_number', 'is_fast_tracked', 
                           'fast_track_reason', 'ticket_number_for_day', 'consultation_start_time', 'consultation_complete_time']):
-        result = execute_sql(db_config, 'SELECT COUNT(*) FROM "Queue_Ticket";')
+        result = execute_sql(db_config, 'SELECT COUNT(*) FROM queue_ticket;')
         queue_count = result[0][0] if result else 0
         log_success(f"Loaded {queue_count} queue tickets")
     else:

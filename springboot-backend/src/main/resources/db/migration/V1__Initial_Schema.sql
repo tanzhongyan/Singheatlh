@@ -1,5 +1,5 @@
 -- =====================================================
--- Initial Database Schema for SingHealth Clinic System
+-- Initial Database Schema for Singheatlh Clinic System
 -- Migration: V1__Initial_Schema.sql
 -- Description: Creates all core tables for the appointment and queue management system
 -- =====================================================

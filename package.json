@@ -1,7 +1,7 @@
 {
-  "name": "singhealth-app",
-  "version": "1.0.0",
-  "description": "SingHealth Clinic Management System",
+  "name": "singheatlh-app",
+  "version": "0.0.0",
+  "description": "Singheatlh Clinic Management System",
   "scripts": {
     "dev:setup": "npm install && npm run db:down && npm run db:up && npm run backend:build && concurrently \"npm run backend\" \"npm run frontend:dev\"",
     "dev:setup:unix": "npm install && npm run db:down && npm run db:up && npm run backend:build:unix && concurrently \"npm run backend:unix\" \"npm run frontend:dev\"",

@@ -1,5 +1,5 @@
 # =====================================================
-# SingHealth Clinic Management System - Production Docker Compose
+# Singheatlh Clinic Management System - Production Docker Compose
 # =====================================================
 # 
 # Services:
@@ -10,7 +10,7 @@
 # Startup Order: db → backend (runs migrations) → frontend
 # =====================================================
 
-name: singhealth-clinic-system
+name: singheatlh-clinic-system
 
 services:
 
@@ -56,7 +56,7 @@ services:
       - "-c"
       - "log_min_messages=fatal"
     networks:
-      - singhealth-network
+      - singheatlh-network
 
   auth:
     container_name: singheatlh-auth
@@ -93,11 +93,11 @@ services:
       GOTRUE_SMTP_PORT: ${SMTP_PORT:-587}
       GOTRUE_SMTP_USER: ${SMTP_USER:-}
       GOTRUE_SMTP_PASS: ${SMTP_PASS:-}
-      GOTRUE_SMTP_SENDER_NAME: ${SMTP_SENDER_NAME:-SingHealth}
+      GOTRUE_SMTP_SENDER_NAME: ${SMTP_SENDER_NAME:-Singheatlh}
       GOTRUE_EXTERNAL_PHONE_ENABLED: ${ENABLE_PHONE_SIGNUP:-false}
       GOTRUE_SMS_AUTOCONFIRM: ${ENABLE_PHONE_AUTOCONFIRM:-false}
     networks:
-      - singhealth-network
+      - singheatlh-network
 
   rest:
     container_name: singheatlh-rest
@@ -116,7 +116,7 @@ services:
       PGRST_APP_SETTINGS_JWT_EXP: ${JWT_EXPIRY:-3600}
     command: ["postgrest"]
     networks:
-      - singhealth-network
+      - singheatlh-network
 
   meta:
     container_name: singheatlh-meta
@@ -134,7 +134,7 @@ services:
       PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD}
       CRYPTO_KEY: ${PG_META_CRYPTO_KEY}
     networks:
-      - singhealth-network
+      - singheatlh-network
 
   kong:
     container_name: singheatlh-kong
@@ -165,7 +165,8 @@ services:
       DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD:-postgres}
     entrypoint: bash -c 'eval "echo \"$$(cat ~/temp.yml)\"" > ~/kong.yml && /docker-entrypoint.sh kong docker-start'
     networks:
-      - singhealth-network
+      - singheatlh-network
+      - ghost_network
 
   studio:
     container_name: singheatlh-studio
@@ -186,7 +187,7 @@ services:
       STUDIO_PG_META_URL: http://meta:8080
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       PG_META_CRYPTO_KEY: ${PG_META_CRYPTO_KEY}
-      DEFAULT_ORGANIZATION_NAME: ${STUDIO_DEFAULT_ORGANIZATION:-SingHealth}
+      DEFAULT_ORGANIZATION_NAME: ${STUDIO_DEFAULT_ORGANIZATION:-Singheatlh}
       DEFAULT_PROJECT_NAME: ${STUDIO_DEFAULT_PROJECT:-Clinic System}
       SUPABASE_URL: http://kong:8000
       SUPABASE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL:-http://localhost:8000}
@@ -194,14 +195,14 @@ services:
       SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY}
       AUTH_JWT_SECRET: ${JWT_SECRET}
     networks:
-      - singhealth-network
+      - singheatlh-network
 
   # =====================================================
   # SPRING BOOT BACKEND
   # =====================================================
   
   backend:
-    container_name: singhealth-backend
+    container_name: singheatlh-backend
     build:
       context: ./springboot-backend
       dockerfile: Dockerfile
@@ -225,8 +226,8 @@ services:
       # Spring Boot configuration
       SPRING_APPLICATION_NAME: springboot-backend
       
-      # Database connection (internal network)
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-postgres}
+      # Database connection (use container name for multi-network setup)
+      SPRING_DATASOURCE_URL: jdbc:postgresql://singheatlh-db:5432/${POSTGRES_DB:-postgres}
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
@@ -274,20 +275,21 @@ services:
       SPRING_SECURITY_USER_NAME: admin
       SPRING_SECURITY_USER_PASSWORD: admin
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "wget --tries=1 --spider http://localhost:8080/ 2>&1 | grep -q '403' || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 90s
     networks:
-      - singhealth-network
+      - singheatlh-network
+      - ghost_network
 
   # =====================================================
   # DATABASE SEEDER
   # =====================================================
   
   seeder:
-    container_name: singhealth-seeder
+    container_name: singheatlh-seeder
     build:
       context: ./db/seeder
       dockerfile: Dockerfile
@@ -305,19 +307,19 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       
-      # Supabase Auth configuration
-      API_EXTERNAL_URL: ${API_EXTERNAL_URL:-http://localhost:8000}
+      # Supabase Auth configuration (use internal Kong for seeder)
+      API_EXTERNAL_URL: http://singheatlh-kong:8000
       SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
       MOCK_USER_PASSWORD: ${MOCK_USER_PASSWORD:-Test1234!}
     networks:
-      - singhealth-network
+      - singheatlh-network
 
   # =====================================================
   # VITE REACT FRONTEND
   # =====================================================
   
   frontend:
-    container_name: singhealth-frontend
+    container_name: singheatlh-frontend
     build:
       context: ./vite-react-frontend
       dockerfile: Dockerfile
@@ -354,7 +356,8 @@ services:
       retries: 3
       start_period: 10s
     networks:
-      - singhealth-network
+      - singheatlh-network
+      - ghost_network
 
 # =====================================================
 # PERSISTENT VOLUMES
@@ -362,7 +365,7 @@ services:
 
 volumes:
   postgres-data:
-    name: singhealth-postgres-data
+    name: singheatlh-postgres-data
     driver: local
 
 # =====================================================
@@ -370,6 +373,9 @@ volumes:
 # =====================================================
 
 networks:
-  singhealth-network:
-    name: singhealth-network
+  singheatlh-network:
+    name: singheatlh-network
     driver: bridge
+  ghost_network:
+    external: true
+    name: ghost_network

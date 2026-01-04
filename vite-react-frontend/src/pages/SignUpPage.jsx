@@ -86,7 +86,7 @@ const SignUpPage = () => {
               <div className="col-md-6 bg-primary text-white p-5 d-flex flex-column justify-content-center">
                 <h1 className="display-4 fw-bold mb-3">
                   <i className="bi bi-heart-pulse-fill me-3"></i>
-                  SingHealth
+                  Singheatlh
                 </h1>
                 <p className="lead mb-4">Join Our Healthcare Community</p>
                 <p className="mb-0 opacity-75">

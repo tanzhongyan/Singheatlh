@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Mock Data Generator for SingHealth Clinic System
+Mock Data Generator for Singheatlh Clinic System
 Generates relationally-consistent CSV files based on existing clinic data
 """
 

@@ -90,7 +90,7 @@ const LandingPage = () => {
       <section className="py-5 bg-white">
         <div className="container py-5">
           <div className="text-center mb-5">
-            <h2 className="display-5 fw-bold mb-3">Why Choose SingHealth?</h2>
+            <h2 className="display-5 fw-bold mb-3">Why Choose Singheatlh?</h2>
             <p className="lead text-muted">
               Experience healthcare the modern way
             </p>
@@ -257,7 +257,7 @@ const LandingPage = () => {
             <div className="col-lg-8">
               <h2 className="display-5 fw-bold mb-4">Ready to Get Started?</h2>
               <p className="lead mb-4">
-                Join thousands of patients who trust SingHealth for their
+                Join thousands of patients who trust Singheatlh for their
                 healthcare needs.
               </p>
               <Link
@@ -278,7 +278,7 @@ const LandingPage = () => {
             <div className="col-md-6 text-center text-md-start mb-3 mb-md-0">
               <p className="mb-0">
                 <i className="bi bi-heart-pulse-fill me-2"></i>© 2025
-                SingHealth. All rights reserved.
+                Singheatlh. All rights reserved.
               </p>
             </div>
             <div className="col-md-6 text-center text-md-end">

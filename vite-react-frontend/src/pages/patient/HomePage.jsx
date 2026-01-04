@@ -130,7 +130,7 @@ const HomePage = () => {
                               Email Support
                             </p>
                             <p className="mb-0 fw-semibold">
-                              support@singhealth.sg
+                              support@singheatlh.sg
                             </p>
                           </div>
                         </div>
