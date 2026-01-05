@@ -330,8 +330,9 @@ services:
         - VITE_SUPABASE_ANON_KEY=${ANON_KEY}
         - VITE_BACKEND_URL=${VITE_BACKEND_URL:-http://localhost:8080}
     restart: unless-stopped
-    ports:
-      - "${FRONTEND_PORT:-80}:80"
+    # Port 80 is handled by Caddy reverse proxy
+    # ports:
+    #   - "${FRONTEND_PORT:-80}:80"
     # Security hardening
     security_opt:
       - no-new-privileges:true
